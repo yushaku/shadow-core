@@ -1,0 +1,72 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ClPool Seconds in Range Tests medium fee, 1:1 price, additional liquidity around current price deposit some LP, should have seconds debt 1`] = `
+Array [
+  Object {
+    "boostedSecondsDebt": "0",
+    "boostedSecondsInRange": "0",
+    "secondsDebt": "-395999",
+    "secondsInRange": "395999",
+    "tickLower": "-887220",
+    "tickUpper": "887220",
+  },
+]
+`;
+
+exports[`ClPool Seconds in Range Tests medium fee, 1:1 price, additional liquidity around current price mint an out of range position and attach, seconds and boosted seconds should be 0 boostInfo boostAmount 1`] = `"3000000000000000000"`;
+
+exports[`ClPool Seconds in Range Tests medium fee, 1:1 price, additional liquidity around current price remove some LP, should have less seconds debt 1`] = `
+Array [
+  Object {
+    "boostedSecondsDebt": "0",
+    "boostedSecondsInRange": "0",
+    "secondsDebt": "-395999",
+    "secondsInRange": "395999",
+    "tickLower": "-887220",
+    "tickUpper": "887220",
+  },
+]
+`;
+
+exports[`ClPool Seconds in Range Tests medium fee, 1:1 price, additional liquidity around current price secondsInRange results 1`] = `
+Array [
+  Object {
+    "boostedSecondsInRange": "0",
+    "lastBoostedSecondsInRange": "0",
+    "lastSecondsInRange": "208799",
+    "lastSecondsPerBoostedLiquidity": "604800",
+    "lastSecondsPerLiquidity": "792000000000000000208799",
+    "secondsInRange": "395999",
+    "secondsPerBoostedLiquidity": "396000",
+    "secondsPerLiquidity": "395999",
+    "tickLower": "-887220",
+    "tickUpper": "887220",
+  },
+]
+`;
+
+exports[`ClPool Seconds in Range Tests medium fee, 1:1 price, additional liquidity around current price swap token0 for token1 to price 0.40000 after 604800 seconds 1`] = `
+Array [
+  Object {
+    "boostedSecondsInRange": "0",
+    "secondsInRange": "395999",
+    "secondsPerBoostedLiquidity": "396000",
+    "secondsPerLiquidity": "395999",
+    "tickLower": "-887220",
+    "tickUpper": "887220",
+  },
+]
+`;
+
+exports[`ClPool Seconds in Range Tests medium fee, 1:1 price, additional liquidity around current price swap token1 for token0 to price 2.5000 after undefined seconds 1`] = `
+Array [
+  Object {
+    "boostedSecondsInRange": "0",
+    "secondsInRange": "0",
+    "secondsPerBoostedLiquidity": "396000",
+    "secondsPerLiquidity": "792000000000000000000000",
+    "tickLower": "-887220",
+    "tickUpper": "887220",
+  },
+]
+`;

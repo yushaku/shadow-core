@@ -1,0 +1,963 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`GaugeV2 tests medium fee, 1:1 price, additional liquidity around current price advance period, period earned should stay, new period earned should be 0 new period 1`] = `
+Array [
+  Object {
+    "boostedLiquidity": "0.0",
+    "liquidity": "8.0",
+  },
+  Object {
+    "earned": "0.0",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "0.0",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "0.0",
+    "name": "direct position",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "0.0",
+    "name": "nfp tokenId 1",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "0.0",
+    "name": "nfp tokenId 2",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "0.0",
+    "name": "nfp tokenId 3",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+]
+`;
+
+exports[`GaugeV2 tests medium fee, 1:1 price, additional liquidity around current price advance period, period earned should stay, new period earned should be 0 old period 1`] = `
+Array [
+  Object {
+    "boostedLiquidity": "0.0",
+    "liquidity": "8.0",
+  },
+  Object {
+    "earned": "53099.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "48599.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "2699.999999999999999999",
+    "name": "direct position",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "53099.999999999999999999",
+    "name": "nfp tokenId 1",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "48599.999999999999999999",
+    "name": "nfp tokenId 2",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "2699.999999999999999999",
+    "name": "nfp tokenId 3",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+]
+`;
+
+exports[`GaugeV2 tests medium fee, 1:1 price, additional liquidity around current price get rewards getting rewards for tokenId NFPs 1`] = `
+Array [
+  Object {
+    "rewards": "809099.999999999999999996",
+    "tokenId": "1",
+  },
+  Object {
+    "rewards": "782999.999999999999999996",
+    "tokenId": "2",
+  },
+  Object {
+    "rewards": "24299.999999999999999996",
+    "tokenId": "3",
+  },
+]
+`;
+
+exports[`GaugeV2 tests medium fee, 1:1 price, additional liquidity around current price swap token0 for token1 to price 0.28571 after 3600 seconds 1`] = `
+Array [
+  Object {
+    "boostedLiquidity": "0.0",
+    "liquidity": "8.0",
+  },
+  Object {
+    "earned": "5399.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "899.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "2699.999999999999999999",
+    "name": "direct position",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "5399.999999999999999999",
+    "name": "nfp tokenId 1",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "899.999999999999999999",
+    "name": "nfp tokenId 2",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "2699.999999999999999999",
+    "name": "nfp tokenId 3",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+]
+`;
+
+exports[`GaugeV2 tests medium fee, 1:1 price, additional liquidity around current price swap token0 for token1 to price 0.40000 after 3600 seconds 1`] = `
+Array [
+  Object {
+    "boostedLiquidity": "0.0",
+    "liquidity": "8.0",
+  },
+  Object {
+    "earned": "4499.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "0.0",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "2699.999999999999999999",
+    "name": "direct position",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "4499.999999999999999999",
+    "name": "nfp tokenId 1",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "0.0",
+    "name": "nfp tokenId 2",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "2699.999999999999999999",
+    "name": "nfp tokenId 3",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+]
+`;
+
+exports[`GaugeV2 tests medium fee, 1:1 price, additional liquidity around current price swap token1 for token0 to price 0.33333 after 3600 seconds 1`] = `
+Array [
+  Object {
+    "boostedLiquidity": "0.0",
+    "liquidity": "8.0",
+  },
+  Object {
+    "earned": "6299.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "1799.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "2699.999999999999999999",
+    "name": "direct position",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "6299.999999999999999999",
+    "name": "nfp tokenId 1",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "1799.999999999999999999",
+    "name": "nfp tokenId 2",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "2699.999999999999999999",
+    "name": "nfp tokenId 3",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+]
+`;
+
+exports[`GaugeV2 tests medium fee, 1:1 price, additional liquidity around current price swap token1 for token0 to price 2.5000 after 3600 seconds 1`] = `
+Array [
+  Object {
+    "boostedLiquidity": "0.0",
+    "liquidity": "8.0",
+  },
+  Object {
+    "earned": "1799.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "0.0",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "0.0",
+    "name": "direct position",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "1799.999999999999999999",
+    "name": "nfp tokenId 1",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "0.0",
+    "name": "nfp tokenId 2",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "0.0",
+    "name": "nfp tokenId 3",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+]
+`;
+
+exports[`GaugeV2 tests medium fee, 1:1 price, additional liquidity around current price swap token1 for token0 to price 3.0000 after 3600 seconds 1`] = `
+Array [
+  Object {
+    "boostedLiquidity": "0.0",
+    "liquidity": "8.0",
+  },
+  Object {
+    "earned": "2699.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "0.0",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "899.999999999999999999",
+    "name": "direct position",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "2699.999999999999999999",
+    "name": "nfp tokenId 1",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "0.0",
+    "name": "nfp tokenId 2",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "899.999999999999999999",
+    "name": "nfp tokenId 3",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+]
+`;
+
+exports[`GaugeV2 tests medium fee, 1:1 price, additional liquidity around current price swap token1 for token0 to price 3.5000 after 3600 seconds 1`] = `
+Array [
+  Object {
+    "boostedLiquidity": "0.0",
+    "liquidity": "8.0",
+  },
+  Object {
+    "earned": "3599.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "0.0",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "1799.999999999999999999",
+    "name": "direct position",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "3599.999999999999999999",
+    "name": "nfp tokenId 1",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "0.0",
+    "name": "nfp tokenId 2",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "1799.999999999999999999",
+    "name": "nfp tokenId 3",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+]
+`;
+
+exports[`GaugeV2 tests medium fee, 1:1 price, additional liquidity around current price test again in the new period swap token0 for token1 to price 0.28571 after 3600 seconds 1`] = `
+Array [
+  Object {
+    "boostedLiquidity": "0.0",
+    "liquidity": "8.0",
+  },
+  Object {
+    "earned": "4499.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "1799.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "2699.999999999999999999",
+    "name": "direct position",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "4499.999999999999999999",
+    "name": "nfp tokenId 1",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "1799.999999999999999999",
+    "name": "nfp tokenId 2",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "2699.999999999999999999",
+    "name": "nfp tokenId 3",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+]
+`;
+
+exports[`GaugeV2 tests medium fee, 1:1 price, additional liquidity around current price test again in the new period swap token0 for token1 to price 0.40000 after 3600 seconds 1`] = `
+Array [
+  Object {
+    "boostedLiquidity": "0.0",
+    "liquidity": "8.0",
+  },
+  Object {
+    "earned": "3599.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "899.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "2699.999999999999999999",
+    "name": "direct position",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "3599.999999999999999999",
+    "name": "nfp tokenId 1",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "899.999999999999999999",
+    "name": "nfp tokenId 2",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "2699.999999999999999999",
+    "name": "nfp tokenId 3",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+]
+`;
+
+exports[`GaugeV2 tests medium fee, 1:1 price, additional liquidity around current price test again in the new period swap token1 for token0 to price 0.33333 after 3600 seconds 1`] = `
+Array [
+  Object {
+    "boostedLiquidity": "0.0",
+    "liquidity": "8.0",
+  },
+  Object {
+    "earned": "5399.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "2699.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "2699.999999999999999999",
+    "name": "direct position",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "5399.999999999999999999",
+    "name": "nfp tokenId 1",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "2699.999999999999999999",
+    "name": "nfp tokenId 2",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "2699.999999999999999999",
+    "name": "nfp tokenId 3",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+]
+`;
+
+exports[`GaugeV2 tests medium fee, 1:1 price, additional liquidity around current price test again in the new period swap token1 for token0 to price 2.5000 after 3600 seconds 1`] = `
+Array [
+  Object {
+    "boostedLiquidity": "0.0",
+    "liquidity": "8.0",
+  },
+  Object {
+    "earned": "899.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "899.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "0.0",
+    "name": "direct position",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "899.999999999999999999",
+    "name": "nfp tokenId 1",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "899.999999999999999999",
+    "name": "nfp tokenId 2",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "0.0",
+    "name": "nfp tokenId 3",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+]
+`;
+
+exports[`GaugeV2 tests medium fee, 1:1 price, additional liquidity around current price test again in the new period swap token1 for token0 to price 3.0000 after 3600 seconds 1`] = `
+Array [
+  Object {
+    "boostedLiquidity": "0.0",
+    "liquidity": "8.0",
+  },
+  Object {
+    "earned": "1799.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "899.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "899.999999999999999999",
+    "name": "direct position",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "1799.999999999999999999",
+    "name": "nfp tokenId 1",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "899.999999999999999999",
+    "name": "nfp tokenId 2",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "899.999999999999999999",
+    "name": "nfp tokenId 3",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+]
+`;
+
+exports[`GaugeV2 tests medium fee, 1:1 price, additional liquidity around current price test again in the new period swap token1 for token0 to price 3.5000 after 3600 seconds 1`] = `
+Array [
+  Object {
+    "boostedLiquidity": "0.0",
+    "liquidity": "8.0",
+  },
+  Object {
+    "earned": "2699.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "899.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "1799.999999999999999999",
+    "name": "direct position",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "2699.999999999999999999",
+    "name": "nfp tokenId 1",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "899.999999999999999999",
+    "name": "nfp tokenId 2",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "1799.999999999999999999",
+    "name": "nfp tokenId 3",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+]
+`;
+
+exports[`GaugeV2 tests medium fee, 1:1 price, additional liquidity around current price test boosted after a week earned should increase since boosted in range was only half a week 1`] = `
+Array [
+  Object {
+    "boostedLiquidity": "0.0",
+    "liquidity": "8.0",
+  },
+  Object {
+    "earned": "151199.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "148499.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "2699.999999999999999999",
+    "name": "direct position",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "604799.999999999999999998",
+    "name": "nfp tokenId 1",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "585899.999999999999999998",
+    "name": "nfp tokenId 2",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "18899.999999999999999998",
+    "name": "nfp tokenId 3",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+]
+`;
+
+exports[`GaugeV2 tests medium fee, 1:1 price, additional liquidity around current price test boosted swap token0 for token1 to price 0.28571 after 3600 seconds 1`] = `
+Array [
+  Object {
+    "boostedLiquidity": "6.0",
+    "liquidity": "8.0",
+  },
+  Object {
+    "earned": "80099.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "77399.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "2699.999999999999999999",
+    "name": "direct position",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "93599.999999999999999998",
+    "name": "nfp tokenId 1",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "82799.999999999999999998",
+    "name": "nfp tokenId 2",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "10799.999999999999999998",
+    "name": "nfp tokenId 3",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+]
+`;
+
+exports[`GaugeV2 tests medium fee, 1:1 price, additional liquidity around current price test boosted swap token0 for token1 to price 0.40000 after 3600 seconds 1`] = `
+Array [
+  Object {
+    "boostedLiquidity": "6.0",
+    "liquidity": "8.0",
+  },
+  Object {
+    "earned": "79199.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "76499.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "2699.999999999999999999",
+    "name": "direct position",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "89999.999999999999999998",
+    "name": "nfp tokenId 1",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "79199.999999999999999998",
+    "name": "nfp tokenId 2",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "10799.999999999999999998",
+    "name": "nfp tokenId 3",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+]
+`;
+
+exports[`GaugeV2 tests medium fee, 1:1 price, additional liquidity around current price test boosted swap token1 for token0 to price 0.33333 after 3600 seconds 1`] = `
+Array [
+  Object {
+    "boostedLiquidity": "6.0",
+    "liquidity": "8.0",
+  },
+  Object {
+    "earned": "80999.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "78299.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "2699.999999999999999999",
+    "name": "direct position",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "97199.999999999999999998",
+    "name": "nfp tokenId 1",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "86399.999999999999999998",
+    "name": "nfp tokenId 2",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "10799.999999999999999998",
+    "name": "nfp tokenId 3",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+]
+`;
+
+exports[`GaugeV2 tests medium fee, 1:1 price, additional liquidity around current price test boosted swap token1 for token0 to price 2.5000 after 3600 seconds 1`] = `
+Array [
+  Object {
+    "boostedLiquidity": "6.0",
+    "liquidity": "8.0",
+  },
+  Object {
+    "earned": "76499.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "76499.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "0.0",
+    "name": "direct position",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "79199.999999999999999998",
+    "name": "nfp tokenId 1",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "79199.999999999999999998",
+    "name": "nfp tokenId 2",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "0.0",
+    "name": "nfp tokenId 3",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+]
+`;
+
+exports[`GaugeV2 tests medium fee, 1:1 price, additional liquidity around current price test boosted swap token1 for token0 to price 3.0000 after 3600 seconds 1`] = `
+Array [
+  Object {
+    "boostedLiquidity": "6.0",
+    "liquidity": "8.0",
+  },
+  Object {
+    "earned": "77399.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "76499.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "899.999999999999999999",
+    "name": "direct position",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "82799.999999999999999998",
+    "name": "nfp tokenId 1",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "79199.999999999999999998",
+    "name": "nfp tokenId 2",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "3599.999999999999999998",
+    "name": "nfp tokenId 3",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+]
+`;
+
+exports[`GaugeV2 tests medium fee, 1:1 price, additional liquidity around current price test boosted swap token1 for token0 to price 3.5000 after 3600 seconds 1`] = `
+Array [
+  Object {
+    "boostedLiquidity": "6.0",
+    "liquidity": "8.0",
+  },
+  Object {
+    "earned": "78299.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "76499.999999999999999999",
+    "name": "direct position",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "1799.999999999999999999",
+    "name": "direct position",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "86399.999999999999999998",
+    "name": "nfp tokenId 1",
+    "tickLower": -887220,
+    "tickUpper": 887220,
+  },
+  Object {
+    "earned": "79199.999999999999999998",
+    "name": "nfp tokenId 2",
+    "tickLower": -887220,
+    "tickUpper": -120,
+  },
+  Object {
+    "earned": "7199.999999999999999998",
+    "name": "nfp tokenId 3",
+    "tickLower": 120,
+    "tickUpper": 887220,
+  },
+]
+`;

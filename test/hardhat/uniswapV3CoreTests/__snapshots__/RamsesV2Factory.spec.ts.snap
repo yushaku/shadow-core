@@ -1,0 +1,7 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ClPoolFactory #createPool gas 1`] = `637210`;
+
+exports[`ClPoolFactory factory bytecode size 1`] = `2420`;
+
+exports[`ClPoolFactory pool bytecode size 1`] = `744`;
