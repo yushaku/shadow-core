@@ -6,7 +6,7 @@ Core smart contract repository for Shadow Exchange
 
 - [Contract Addresses](https://docs.shadow.so/pages/contract-addresses)
 - [Security Audits](https://docs.shadow.so/pages/audits)
-- [Technical Documentation](https://docs.shadow.so/pages/x-33)
+- [Documentation](https://docs.shadow.so/)
 - [License (BUSL-1.1)](https://docs.shadow.so/pages/BUSL)
 
 ## Architecture
