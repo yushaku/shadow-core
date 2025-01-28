@@ -19,7 +19,7 @@ Shadow is built on Ramses V3 Core, which is based on Uniswap V3, with several en
 
 The protocol has undergone multiple security reviews:
 
-- Spearbit Audit [Report]
+- Spearbit Audit [Report](https://cantina.xyz/portfolio/98695d75-ee7d-4e1c-aa96-6379f73c5b2c)
 - Consensys Diligence Audit [Report](https://diligence.consensys.io/audits/2024/08/ramses-v3)
 - Code4rena Contest [Report](https://code4rena.com/reports/2024-10-ramses-exchange)
 - Additional specialized testing by 100Proof, Zenith Mitigation, and yAudit
