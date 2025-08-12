@@ -4,9 +4,9 @@ pragma solidity ^0.8.17;
 /// @title Dummy contract that always reverts
 /// @notice Used as a placeholder to ensure reverts on attempted calls to protocols unsupported on a given chain
 contract UnsupportedProtocol {
-    error UnsupportedProtocolError();
+	error UnsupportedProtocolError();
 
-    fallback() external {
-        revert UnsupportedProtocolError();
-    }
+	fallback() external {
+		revert UnsupportedProtocolError();
+	}
 }

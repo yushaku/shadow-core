@@ -13,7 +13,7 @@ interface IMinter {
     /// @dev when attempting to update emissions more than once per period
     error SAME_PERIOD();
     /// @dev error for if a contract is not set correctly
-    error INVALID_CONTRACT();   
+    error INVALID_CONTRACT();
 
     event SetVeDist(address _value);
     event SetVoter(address _value);
@@ -42,10 +42,7 @@ interface IMinter {
 
     /// @notice calculates the emissions to be sent to the voter
     /// @return _weeklyEmissions the amount of emissions for the week
-    function calculateWeeklyEmissions()
-        external
-        view
-        returns (uint256 _weeklyEmissions);
+    function calculateWeeklyEmissions() external view returns (uint256 _weeklyEmissions);
 
     /// @notice kicks off the initial minting and variable declarations
     function kickoff(

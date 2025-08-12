@@ -2,7 +2,7 @@
 pragma solidity ^0.8.17;
 
 contract TestCustomErrors {
-    // adding so that hardhat knows this custom signature selector for external contracts
-    error InvalidSignature();
-    error UnsafeCast();
+	// adding so that hardhat knows this custom signature selector for external contracts
+	error InvalidSignature();
+	error UnsafeCast();
 }

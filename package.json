@@ -6,7 +6,8 @@
   "scripts": {
     "lint": "solhint 'contracts/**/*.sol'",
     "lint:fix": "solhint 'contracts/**/*.sol' --fix",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "format:sol": "prettier --write --plugin=prettier-plugin-solidity 'contracts/**/*.sol'"
   },
   "dependencies": {
     "@nomicfoundation/hardhat-verify": "^2.1.1",

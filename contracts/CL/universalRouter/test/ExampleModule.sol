@@ -2,15 +2,15 @@
 pragma solidity ^0.8.17;
 
 contract ExampleModule {
-    event ExampleModuleEvent(string message);
+	event ExampleModuleEvent(string message);
 
-    error CauseRevert();
+	error CauseRevert();
 
-    function logEvent() public {
-        emit ExampleModuleEvent('testEvent');
-    }
+	function logEvent() public {
+		emit ExampleModuleEvent("testEvent");
+	}
 
-    function causeRevert() public pure {
-        revert CauseRevert();
-    }
+	function causeRevert() public pure {
+		revert CauseRevert();
+	}
 }

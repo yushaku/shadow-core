@@ -13,7 +13,7 @@ Core smart contract repository for Shadow Exchange
 
 ![Architecture](https://github.com/user-attachments/assets/c3871a65-7d2e-4b00-97dc-a2bc42477dc7)
 
-Shadow is built on Ramses V3 Core, which is based on Uniswap V3, with several enhancements. These improvements include [dynamic system and protocol fee mechanisms](/pages/x-33#fees), [FeeShare™](/pages/x-33#fee-share), and [x(3,3)](/pages/x-33). Ramses V3 Core also introduces a new accounting system to track how much active liquidity each concentrated liquidity position provides. 
+Shadow is built on Ramses V3 Core, which is based on Uniswap V3, with several enhancements. These improvements include [dynamic system and protocol fee mechanisms](/pages/x-33#fees), [FeeShare™](/pages/x-33#fee-share), and [x(3,3)](/pages/x-33). Ramses V3 Core also introduces a new accounting system to track how much active liquidity each concentrated liquidity position provides.
 
 ## Security
 
@@ -27,6 +27,7 @@ The protocol has undergone multiple security reviews:
 ## Protected Contracts
 
 The following contracts are protected under BUSL-1.1 license:
+
 - Voter.sol
-- GaugeV3.sol  
+- GaugeV3.sol
 - FeeDistributor.sol
