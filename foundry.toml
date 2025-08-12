@@ -1,0 +1,14 @@
+# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
+
+[profile.default]
+src = "src"
+out = "out"
+test = "test"
+libs = ["node_modules", "lib"]
+script = "script"
+
+remappings = [
+    'forge-std/=lib/forge-std/src',
+    '@openzeppelin/=node_modules/@openzeppelin/',
+    '@openzeppelin-contracts-upgradeable/=node_modules/@openzeppelin/contracts-upgradeable/',
+]
