@@ -34,7 +34,7 @@ const config: HardhatUserConfig = {
     coinmarketcap: "",
   },
   namedAccounts: {
-    deployer: { default: 0 }
+    deployer: { default: 0 },
   },
 };
 
