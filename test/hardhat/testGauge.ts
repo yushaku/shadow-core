@@ -1,9 +1,4 @@
-import {
-  time,
-  loadFixture,
-  mine,
-  setBalance,
-} from "@nomicfoundation/hardhat-network-helpers";
+import { time, loadFixture, mine, setBalance } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import { ethers, upgrades } from "hardhat";
 import { TestDeploy, testDeploy } from "../../utils/testDeployment";
@@ -44,26 +39,18 @@ describe("Gauge", function () {
     const Voter = await ethers.getContractFactory("MockVoter");
     voter = await Voter.deploy();
 
-    const Reward = await ethers.getContractFactory(
-      "contracts/mock/ERC20.sol:TestERC20",
-    );
+    const Reward = await ethers.getContractFactory("contracts/mock/ERC20.sol:TestERC20");
 
     reward = (await Reward.deploy("Test", "Reward")) as TestERC20;
 
     rewardTwo = (await Reward.deploy("TestTwo", "RewardTwo")) as TestERC20;
 
     const Gauge = await ethers.getContractFactory("Gauge");
-    const Proxy = await ethers.getContractFactory(
-      "RamsesTransparentUpgradeableProxy",
-    );
+    const Proxy = await ethers.getContractFactory("RamsesTransparentUpgradeableProxy");
     const proxy = await Proxy.deploy(proxyAdmin.getAddress());
 
     const _gauge = await Gauge.deploy();
-    await proxyAdmin.upgradeAndCall(
-      proxy.getAddress(),
-      _gauge.getAddress(),
-      "",
-    );
+    await proxyAdmin.upgradeAndCall(proxy.getAddress(), _gauge.getAddress(), "");
 
     gauge = await ethers.getContractAt("Gauge", await proxy.getAddress());
     await gauge.initialize(
@@ -87,43 +74,27 @@ describe("Gauge", function () {
   it("Should not have any issues with notifyReward", async function () {
     const one = ethers.parseEther("1");
     let now = await time.latest();
-    await expect(gauge.notifyRewardAmount(reward.getAddress(), one)).to.not.be
-      .reverted;
+    await expect(gauge.notifyRewardAmount(reward.getAddress(), one)).to.not.be.reverted;
     expect(await reward.balanceOf(gauge.getAddress())).equal(one);
-    expect((await gauge.rewardData(reward.getAddress())).rewardRate).equal(
-      one / 604800n,
-    );
-    expect((await gauge.rewardData(reward.getAddress())).periodFinish).equal(
-      now + 604800 + 1,
-    );
-    expect(
-      (await gauge.rewardData(reward.getAddress())).rewardPerTokenStored,
-    ).equal(0);
+    expect((await gauge.rewardData(reward.getAddress())).rewardRate).equal(one / 604800n);
+    expect((await gauge.rewardData(reward.getAddress())).periodFinish).equal(now + 604800 + 1);
+    expect((await gauge.rewardData(reward.getAddress())).rewardPerTokenStored).equal(0);
     expect(await gauge.rewardPerToken(reward.getAddress())).equal(0);
-    expect(
-      (await gauge.rewardData(reward.getAddress())).lastUpdateTime,
-    ).greaterThanOrEqual(now);
+    expect((await gauge.rewardData(reward.getAddress())).lastUpdateTime).greaterThanOrEqual(now);
     now = await time.latest();
-    await expect(gauge.notifyRewardAmount(reward.getAddress(), one / 2n)).to.be
-      .reverted;
-    await expect(gauge.notifyRewardAmount(reward.getAddress(), one + 1n)).to.not
-      .be.reverted;
-    expect(
-      (await gauge.rewardData(reward.getAddress())).lastUpdateTime,
-    ).greaterThanOrEqual(now);
-    expect(
-      (await gauge.rewardData(reward.getAddress())).rewardRate,
-    ).lessThanOrEqual(one + one / 604800n);
+    await expect(gauge.notifyRewardAmount(reward.getAddress(), one / 2n)).to.be.reverted;
+    await expect(gauge.notifyRewardAmount(reward.getAddress(), one + 1n)).to.not.be.reverted;
+    expect((await gauge.rewardData(reward.getAddress())).lastUpdateTime).greaterThanOrEqual(now);
+    expect((await gauge.rewardData(reward.getAddress())).rewardRate).lessThanOrEqual(
+      one + one / 604800n,
+    );
     expect(await gauge.rewardsList()).contains(reward.getAddress());
   });
 
   it("Should not have any issues with deposits boosted", async function () {
     const one = ethers.parseEther("1");
-    await expect(
-      gauge["deposit(uint256,uint256,address[])"](one, 1, [
-        reward.getAddress(),
-      ]),
-    ).to.not.be.reverted;
+    await expect(gauge["deposit(uint256,uint256,address[])"](one, 1, [reward.getAddress()])).to.not
+      .be.reverted;
     await gauge.notifyRewardAmount(reward.getAddress(), one);
 
     expect(await gauge.balanceOf(deployer.address)).equal(one);
@@ -132,21 +103,15 @@ describe("Gauge", function () {
     const adjusted = (one * one) / one + (one * 60n) / 100n;
     const derivedBalance = derived + adjusted;
     expect(await gauge.derivedBalance(deployer.address)).equal(derivedBalance);
-    expect(await gauge.derivedSupplyPerReward(reward.getAddress())).equal(
-      derivedBalance,
-    );
-    expect(await gauge.getRegisteredRewards(deployer.address)).contains(
-      reward.getAddress(),
-    );
+    expect(await gauge.derivedSupplyPerReward(reward.getAddress())).equal(derivedBalance);
+    expect(await gauge.getRegisteredRewards(deployer.address)).contains(reward.getAddress());
   });
 
   it("Should not have any issues with withdraws boosted", async function () {
     const one = ethers.parseEther("1");
     await gauge.notifyRewardAmount(reward.getAddress(), one);
 
-    await gauge["deposit(uint256,uint256,address[])"](one, 1, [
-      reward.getAddress(),
-    ]);
+    await gauge["deposit(uint256,uint256,address[])"](one, 1, [reward.getAddress()]);
 
     await expect(gauge.withdrawAll()).to.not.be.reverted;
     expect(await gauge.balanceOf(deployer.address)).equal(0);
@@ -157,11 +122,8 @@ describe("Gauge", function () {
 
   it("Should not have any issues with deposits unboosted", async function () {
     const one = ethers.parseEther("1");
-    await expect(
-      gauge["deposit(uint256,uint256,address[])"](one, 0, [
-        reward.getAddress(),
-      ]),
-    ).to.not.be.reverted;
+    await expect(gauge["deposit(uint256,uint256,address[])"](one, 0, [reward.getAddress()])).to.not
+      .be.reverted;
     await gauge.notifyRewardAmount(reward.getAddress(), one);
 
     expect(await gauge.balanceOf(deployer.address)).equal(one);
@@ -170,12 +132,8 @@ describe("Gauge", function () {
 
     const derivedBalance = derived;
     expect(await gauge.derivedBalance(deployer.address)).equal(derivedBalance);
-    expect(await gauge.derivedSupplyPerReward(reward.getAddress())).equal(
-      derivedBalance,
-    );
-    expect(await gauge.getRegisteredRewards(deployer.address)).contains(
-      reward.getAddress(),
-    );
+    expect(await gauge.derivedSupplyPerReward(reward.getAddress())).equal(derivedBalance);
+    expect(await gauge.getRegisteredRewards(deployer.address)).contains(reward.getAddress());
     await time.increase(604800);
   });
 
@@ -183,9 +141,7 @@ describe("Gauge", function () {
     const one = ethers.parseEther("1");
     await gauge.notifyRewardAmount(reward.getAddress(), one);
 
-    await gauge["deposit(uint256,uint256,address[])"](one, 0, [
-      reward.getAddress(),
-    ]);
+    await gauge["deposit(uint256,uint256,address[])"](one, 0, [reward.getAddress()]);
 
     await expect(gauge.withdrawAll()).to.not.be.reverted;
     expect(await gauge.balanceOf(deployer.address)).equal(0);
@@ -196,18 +152,14 @@ describe("Gauge", function () {
 
   it("Should not have no issues with reward accounting unboosted", async function () {
     const one = ethers.parseEther("1");
-    await expect(
-      gauge["deposit(uint256,uint256,address[])"](one, 0, [
-        reward.getAddress(),
-      ]),
-    ).to.not.be.reverted;
+    await expect(gauge["deposit(uint256,uint256,address[])"](one, 0, [reward.getAddress()])).to.not
+      .be.reverted;
     await gauge.notifyRewardAmount(reward.getAddress(), one);
 
     await time.increase(604800);
     let earned = await gauge.earned(reward.getAddress(), deployer.address);
     let bal = await reward.balanceOf(deployer.address);
-    await expect(gauge.getReward(deployer.address, [reward.getAddress()])).to
-      .not.be.reverted;
+    await expect(gauge.getReward(deployer.address, [reward.getAddress()])).to.not.be.reverted;
     let balAfter = await reward.balanceOf(deployer.address);
     bal = balAfter - bal;
     expect(earned).equal(bal);
@@ -217,18 +169,14 @@ describe("Gauge", function () {
 
   it("Should have no issues with reward accounting boosted", async function () {
     const one = ethers.parseEther("1");
-    await expect(
-      gauge["deposit(uint256,uint256,address[])"](one, 1, [
-        reward.getAddress(),
-      ]),
-    ).to.not.be.reverted;
+    await expect(gauge["deposit(uint256,uint256,address[])"](one, 1, [reward.getAddress()])).to.not
+      .be.reverted;
     await gauge.notifyRewardAmount(reward.getAddress(), one);
 
     await time.increase(604800);
     let earned = await gauge.earned(reward.getAddress(), deployer.address);
     let bal = await reward.balanceOf(deployer.address);
-    await expect(gauge.getReward(deployer.address, [reward.getAddress()])).to
-      .not.be.reverted;
+    await expect(gauge.getReward(deployer.address, [reward.getAddress()])).to.not.be.reverted;
     let balAfter = await reward.balanceOf(deployer.address);
     bal = balAfter - bal;
     expect(earned).equal(bal);
@@ -239,16 +187,12 @@ describe("Gauge", function () {
   it("Should have no issues with reward accounting when notify is called before a deposit", async function () {
     const one = ethers.parseEther("1");
     await gauge.notifyRewardAmount(reward.getAddress(), one);
-    await expect(
-      gauge["deposit(uint256,uint256,address[])"](one, 1, [
-        reward.getAddress(),
-      ]),
-    ).to.not.be.reverted;
+    await expect(gauge["deposit(uint256,uint256,address[])"](one, 1, [reward.getAddress()])).to.not
+      .be.reverted;
     await time.increase(604800);
     let earned = await gauge.earned(reward.getAddress(), deployer.address);
     let bal = await reward.balanceOf(deployer.address);
-    await expect(gauge.getReward(deployer.address, [reward.getAddress()])).to
-      .not.be.reverted;
+    await expect(gauge.getReward(deployer.address, [reward.getAddress()])).to.not.be.reverted;
     let balAfter = await reward.balanceOf(deployer.address);
     bal = balAfter - bal;
     expect(earned).equal(bal);
@@ -258,18 +202,14 @@ describe("Gauge", function () {
 
   it("Should have no issues with reward accounting when deposit is made an epoch before notifying", async function () {
     const one = ethers.parseEther("1");
-    await gauge["deposit(uint256,uint256,address[])"](one, 1, [
-      reward.getAddress(),
-    ]);
+    await gauge["deposit(uint256,uint256,address[])"](one, 1, [reward.getAddress()]);
     await time.increase(604801);
-    await expect(gauge.notifyRewardAmount(reward.getAddress(), one)).to.not.be
-      .reverted;
+    await expect(gauge.notifyRewardAmount(reward.getAddress(), one)).to.not.be.reverted;
     await time.increase(604800);
 
     let earned = await gauge.earned(reward.getAddress(), deployer.address);
     let bal = await reward.balanceOf(deployer.address);
-    await expect(gauge.getReward(deployer.address, [reward.getAddress()])).to
-      .not.be.reverted;
+    await expect(gauge.getReward(deployer.address, [reward.getAddress()])).to.not.be.reverted;
     let balAfter = await reward.balanceOf(deployer.address);
     bal = balAfter - bal;
     expect(earned).equal(bal);
@@ -279,12 +219,8 @@ describe("Gauge", function () {
 
   it("Should not have any issues with multiple deposits unboosted", async function () {
     const one = ethers.parseEther("1");
-    await gauge["deposit(uint256,uint256,address[])"](one, 0, [
-      reward.getAddress(),
-    ]);
-    await gauge
-      .connect(user)
-      ["deposit(uint256,uint256,address[])"](one, 0, [reward.getAddress()]);
+    await gauge["deposit(uint256,uint256,address[])"](one, 0, [reward.getAddress()]);
+    await gauge.connect(user)["deposit(uint256,uint256,address[])"](one, 0, [reward.getAddress()]);
     await gauge.notifyRewardAmount(reward.getAddress(), one);
 
     expect(await gauge.balanceOf(deployer.address)).equal(one);
@@ -300,26 +236,18 @@ describe("Gauge", function () {
       derivedBalance + derivedBalance,
     );
 
-    expect(await gauge.getRegisteredRewards(deployer.address)).contains(
-      reward.getAddress(),
-    );
-    expect(await gauge.getRegisteredRewards(user.address)).contains(
-      reward.getAddress(),
-    );
+    expect(await gauge.getRegisteredRewards(deployer.address)).contains(reward.getAddress());
+    expect(await gauge.getRegisteredRewards(user.address)).contains(reward.getAddress());
 
     await time.increase(604800);
-    let deployerEarned = await gauge.earned(
-      reward.getAddress(),
-      deployer.address,
-    );
+    let deployerEarned = await gauge.earned(reward.getAddress(), deployer.address);
     let userEarned = await gauge.earned(reward.getAddress(), user.address);
     let deployerBalBefore = await reward.balanceOf(deployer.address);
     let userBalBefore = await reward.balanceOf(user.address);
 
     await gauge.getReward(deployer.address, [reward.getAddress()]);
     await gauge.connect(user).getReward(user.address, [reward.getAddress()]);
-    let deployerBal =
-      (await reward.balanceOf(deployer.address)) - deployerBalBefore;
+    let deployerBal = (await reward.balanceOf(deployer.address)) - deployerBalBefore;
     let userBal = (await reward.balanceOf(user.address)) - userBalBefore;
     expect(deployerEarned).equal(deployerBal);
     expect(userEarned).equal(userBal);
@@ -344,12 +272,8 @@ describe("Gauge", function () {
 
   it("Should not have any issues with multiple deposits boosted", async function () {
     const one = ethers.parseEther("1");
-    await gauge["deposit(uint256,uint256,address[])"](one, 1, [
-      reward.getAddress(),
-    ]);
-    await gauge
-      .connect(user)
-      ["deposit(uint256,uint256,address[])"](one, 2, [reward.getAddress()]);
+    await gauge["deposit(uint256,uint256,address[])"](one, 1, [reward.getAddress()]);
+    await gauge.connect(user)["deposit(uint256,uint256,address[])"](one, 2, [reward.getAddress()]);
     await gauge.notifyRewardAmount(reward.getAddress(), one);
 
     expect(await gauge.balanceOf(deployer.address)).equal(one);
@@ -370,12 +294,8 @@ describe("Gauge", function () {
       derivedBalance + userDerivedBalance,
     );
 
-    expect(await gauge.getRegisteredRewards(deployer.address)).contains(
-      await reward.getAddress(),
-    );
-    expect(await gauge.getRegisteredRewards(user.address)).contains(
-      await reward.getAddress(),
-    );
+    expect(await gauge.getRegisteredRewards(deployer.address)).contains(await reward.getAddress());
+    expect(await gauge.getRegisteredRewards(user.address)).contains(await reward.getAddress());
 
     let bal = await reward.balanceOf(deployer.address);
 
@@ -383,18 +303,14 @@ describe("Gauge", function () {
     bal = (await reward.balanceOf(deployer.address)) - bal;
 
     await time.increase(604800);
-    let deployerEarned = await gauge.earned(
-      reward.getAddress(),
-      deployer.address,
-    );
+    let deployerEarned = await gauge.earned(reward.getAddress(), deployer.address);
     let userEarned = await gauge.earned(reward.getAddress(), user.address);
     let deployerBalBefore = await reward.balanceOf(deployer.address);
     let userBalBefore = await reward.balanceOf(user.address);
     console.log(deployerEarned, userEarned);
     await gauge.getReward(deployer.address, [reward.getAddress()]);
     await gauge.connect(user).getReward(user.address, [reward.getAddress()]);
-    let deployerBal =
-      (await reward.balanceOf(deployer.address)) - deployerBalBefore;
+    let deployerBal = (await reward.balanceOf(deployer.address)) - deployerBalBefore;
     let userBal = (await reward.balanceOf(user.address)) - userBalBefore;
     expect(deployerEarned).equal(deployerBal);
     expect(userEarned).equal(userBal);
@@ -419,21 +335,14 @@ describe("Gauge", function () {
 
   it("Should not have any issues with deposits at different times", async function () {
     const one = ethers.parseEther("1");
-    await gauge["deposit(uint256,uint256,address[])"](one, 0, [
-      reward.getAddress(),
-    ]);
+    await gauge["deposit(uint256,uint256,address[])"](one, 0, [reward.getAddress()]);
     await gauge.notifyRewardAmount(reward.getAddress(), one);
 
     await time.increase(302400);
-    await gauge
-      .connect(user)
-      ["deposit(uint256,uint256,address[])"](one, 0, [reward.getAddress()]);
+    await gauge.connect(user)["deposit(uint256,uint256,address[])"](one, 0, [reward.getAddress()]);
     await time.increase(302400);
 
-    let deployerEarned = await gauge.earned(
-      reward.getAddress(),
-      deployer.address,
-    );
+    let deployerEarned = await gauge.earned(reward.getAddress(), deployer.address);
     let userEarned = await gauge.earned(reward.getAddress(), user.address);
 
     expect(deployerEarned + userEarned).lessThanOrEqual(one);
@@ -441,11 +350,9 @@ describe("Gauge", function () {
 
     let deployerBal = await reward.balanceOf(deployer.address);
     let userBal = await reward.balanceOf(user.address);
-    await expect(gauge.getReward(deployer.address, [reward.getAddress()])).to
-      .not.be.reverted;
-    await expect(
-      gauge.connect(user).getReward(user.address, [reward.getAddress()]),
-    ).to.not.be.reverted;
+    await expect(gauge.getReward(deployer.address, [reward.getAddress()])).to.not.be.reverted;
+    await expect(gauge.connect(user).getReward(user.address, [reward.getAddress()])).to.not.be
+      .reverted;
 
     deployerBal = (await reward.balanceOf(deployer.address)) - deployerBal;
 
@@ -457,13 +364,9 @@ describe("Gauge", function () {
 
   it("Should not lose rewards when withdrawing", async function () {
     const one = ethers.parseEther("1");
-    await gauge["deposit(uint256,uint256,address[])"](one, 0, [
-      reward.getAddress(),
-    ]);
+    await gauge["deposit(uint256,uint256,address[])"](one, 0, [reward.getAddress()]);
     await gauge.notifyRewardAmount(reward.getAddress(), one);
-    await gauge
-      .connect(user)
-      ["deposit(uint256,uint256,address[])"](one, 0, [reward.getAddress()]);
+    await gauge.connect(user)["deposit(uint256,uint256,address[])"](one, 0, [reward.getAddress()]);
 
     await gauge.withdrawAll();
     let earned = await gauge.earned(reward.getAddress(), deployer.address);
@@ -471,22 +374,16 @@ describe("Gauge", function () {
 
     await time.increase(3600);
     await mine();
-    expect(earned).equal(
-      await gauge.earned(reward.getAddress(), deployer.address),
-    );
+    expect(earned).equal(await gauge.earned(reward.getAddress(), deployer.address));
   });
 
   it("Should not have any issues with multiple deposits and withdraws", async function () {
     const one = ethers.parseEther("1");
-    await gauge["deposit(uint256,uint256,address[])"](one, 0, [
-      reward.getAddress(),
-    ]);
+    await gauge["deposit(uint256,uint256,address[])"](one, 0, [reward.getAddress()]);
     await gauge.notifyRewardAmount(reward.getAddress(), one);
 
     await time.increase(3600);
-    await gauge
-      .connect(user)
-      ["deposit(uint256,uint256,address[])"](one, 0, [reward.getAddress()]);
+    await gauge.connect(user)["deposit(uint256,uint256,address[])"](one, 0, [reward.getAddress()]);
     await gauge.withdraw(ethers.parseEther("0.5"));
 
     await time.increase(3600);
@@ -494,18 +391,13 @@ describe("Gauge", function () {
     await gauge.getReward(deployer.address, [reward.getAddress()]);
     bal = (await reward.balanceOf(deployer.address)) - bal;
 
-    await gauge["deposit(uint256,uint256,address[])"](
-      ethers.parseEther("0.5"),
-      0,
-      [reward.getAddress()],
-    );
+    await gauge["deposit(uint256,uint256,address[])"](ethers.parseEther("0.5"), 0, [
+      reward.getAddress(),
+    ]);
 
     await time.increase(597600);
 
-    let deployerEarned = await gauge.earned(
-      reward.getAddress(),
-      deployer.address,
-    );
+    let deployerEarned = await gauge.earned(reward.getAddress(), deployer.address);
     let userEarned = await gauge.earned(reward.getAddress(), user.address);
 
     expect(deployerEarned + userEarned).lessThanOrEqual(one);
@@ -513,11 +405,9 @@ describe("Gauge", function () {
 
     let deployerBal = await reward.balanceOf(deployer.address);
     let userBal = await reward.balanceOf(user.address);
-    await expect(gauge.getReward(deployer.address, [reward.getAddress()])).to
-      .not.be.reverted;
-    await expect(
-      gauge.connect(user).getReward(user.address, [reward.getAddress()]),
-    ).to.not.be.reverted;
+    await expect(gauge.getReward(deployer.address, [reward.getAddress()])).to.not.be.reverted;
+    await expect(gauge.connect(user).getReward(user.address, [reward.getAddress()])).to.not.be
+      .reverted;
 
     deployerBal = (await reward.balanceOf(deployer.address)) - deployerBal;
 
@@ -543,8 +433,7 @@ describe("Gauge", function () {
 
     let earned = await gauge.earned(reward.getAddress(), deployer.address);
     let bal = await reward.balanceOf(deployer.address);
-    await expect(gauge.getReward(deployer.address, [reward.getAddress()])).to
-      .not.be.reverted;
+    await expect(gauge.getReward(deployer.address, [reward.getAddress()])).to.not.be.reverted;
     let balAfter = await reward.balanceOf(deployer.address);
     bal = balAfter - bal;
     expect(earned).equal(bal);
@@ -553,8 +442,7 @@ describe("Gauge", function () {
 
     earned = await gauge.earned(rewardTwo.getAddress(), deployer.address);
     bal = await rewardTwo.balanceOf(deployer.address);
-    await expect(gauge.getReward(deployer.address, [rewardTwo.getAddress()])).to
-      .not.be.reverted;
+    await expect(gauge.getReward(deployer.address, [rewardTwo.getAddress()])).to.not.be.reverted;
     balAfter = await rewardTwo.balanceOf(deployer.address);
     bal = balAfter - bal;
     console.log(bal);
@@ -581,20 +469,15 @@ describe("Gauge", function () {
     const derivedBalance = derived + adjusted;
 
     expect(await gauge.derivedBalance(deployer.address)).equal(derivedBalance);
-    expect(await gauge.derivedSupplyPerReward(reward.getAddress())).equal(
-      derivedBalance,
-    );
+    expect(await gauge.derivedSupplyPerReward(reward.getAddress())).equal(derivedBalance);
 
-    expect(await gauge.derivedSupplyPerReward(rewardTwo.getAddress())).equal(
-      derivedBalance,
-    );
+    expect(await gauge.derivedSupplyPerReward(rewardTwo.getAddress())).equal(derivedBalance);
 
     await time.increase(604800);
 
     let earned = await gauge.earned(reward.getAddress(), deployer.address);
     let bal = await reward.balanceOf(deployer.address);
-    await expect(gauge.getReward(deployer.address, [reward.getAddress()])).to
-      .not.be.reverted;
+    await expect(gauge.getReward(deployer.address, [reward.getAddress()])).to.not.be.reverted;
     let balAfter = await reward.balanceOf(deployer.address);
     bal = balAfter - bal;
     expect(earned).equal(bal);
@@ -603,8 +486,7 @@ describe("Gauge", function () {
 
     earned = await gauge.earned(rewardTwo.getAddress(), deployer.address);
     bal = await rewardTwo.balanceOf(deployer.address);
-    await expect(gauge.getReward(deployer.address, [rewardTwo.getAddress()])).to
-      .not.be.reverted;
+    await expect(gauge.getReward(deployer.address, [rewardTwo.getAddress()])).to.not.be.reverted;
     balAfter = await rewardTwo.balanceOf(deployer.address);
     bal = balAfter - bal;
     console.log(bal);
@@ -621,10 +503,7 @@ describe("Gauge", function () {
     ]);
     await gauge
       .connect(user)
-      ["deposit(uint256,uint256,address[])"](one, 2, [
-        reward.getAddress(),
-        rewardTwo.getAddress(),
-      ]);
+      ["deposit(uint256,uint256,address[])"](one, 2, [reward.getAddress(), rewardTwo.getAddress()]);
     await gauge.notifyRewardAmount(reward.getAddress(), one);
     await gauge.notifyRewardAmount(rewardTwo.getAddress(), one);
 
@@ -650,21 +529,15 @@ describe("Gauge", function () {
       derivedBalance + userDerivedBalance,
     );
 
-    expect(await gauge.getRegisteredRewards(deployer.address)).contains(
-      reward.getAddress(),
-    );
+    expect(await gauge.getRegisteredRewards(deployer.address)).contains(reward.getAddress());
 
     expect(await gauge.getRegisteredRewards(deployer.address)).contains(
       await rewardTwo.getAddress(),
     );
 
-    expect(await gauge.getRegisteredRewards(user.address)).contains(
-      reward.getAddress(),
-    );
+    expect(await gauge.getRegisteredRewards(user.address)).contains(reward.getAddress());
 
-    expect(await gauge.getRegisteredRewards(user.address)).contains(
-      await rewardTwo.getAddress(),
-    );
+    expect(await gauge.getRegisteredRewards(user.address)).contains(await rewardTwo.getAddress());
 
     let bal = await reward.balanceOf(deployer.address);
 
@@ -672,18 +545,14 @@ describe("Gauge", function () {
     bal = (await reward.balanceOf(deployer.address)) - bal;
 
     await time.increase(604800);
-    let deployerEarned = await gauge.earned(
-      reward.getAddress(),
-      deployer.address,
-    );
+    let deployerEarned = await gauge.earned(reward.getAddress(), deployer.address);
     let userEarned = await gauge.earned(reward.getAddress(), user.address);
     let deployerBalBefore = await reward.balanceOf(deployer.address);
     let userBalBefore = await reward.balanceOf(user.address);
     console.log(deployerEarned, userEarned);
     await gauge.getReward(deployer.address, [reward.getAddress()]);
     await gauge.connect(user).getReward(user.address, [reward.getAddress()]);
-    let deployerBal =
-      (await reward.balanceOf(deployer.address)) - deployerBalBefore;
+    let deployerBal = (await reward.balanceOf(deployer.address)) - deployerBalBefore;
     let userBal = (await reward.balanceOf(user.address)) - userBalBefore;
     expect(deployerEarned).equal(deployerBal);
     expect(userEarned).equal(userBal);
@@ -708,9 +577,7 @@ describe("Gauge", function () {
 
   it("Should not receive rewards if not in reward pool", async function () {
     const one = ethers.parseEther("1");
-    await gauge["deposit(uint256,uint256,address[])"](one, 1, [
-      reward.getAddress(),
-    ]);
+    await gauge["deposit(uint256,uint256,address[])"](one, 1, [reward.getAddress()]);
     await gauge.notifyRewardAmount(reward.getAddress(), one);
     await gauge.notifyRewardAmount(rewardTwo.getAddress(), one);
 
@@ -718,15 +585,10 @@ describe("Gauge", function () {
 
     await time.increase(604800);
 
-    expect(await gauge.earned(rewardTwo.getAddress(), deployer.address)).equal(
-      0,
-    );
+    expect(await gauge.earned(rewardTwo.getAddress(), deployer.address)).equal(0);
     let bal = await reward.balanceOf(deployer.address);
     let balTwo = await rewardTwo.balanceOf(deployer.address);
-    await gauge.getReward(deployer.address, [
-      reward.getAddress(),
-      rewardTwo.getAddress(),
-    ]);
+    await gauge.getReward(deployer.address, [reward.getAddress(), rewardTwo.getAddress()]);
     bal = (await reward.balanceOf(deployer.address)) - bal;
     balTwo = (await rewardTwo.balanceOf(deployer.address)) - balTwo;
     expect(bal).lessThanOrEqual(one);
@@ -742,10 +604,7 @@ describe("Gauge", function () {
     ]);
     await gauge
       .connect(user)
-      ["deposit(uint256,uint256,address[])"](one, 2, [
-        reward.getAddress(),
-        rewardTwo.getAddress(),
-      ]);
+      ["deposit(uint256,uint256,address[])"](one, 2, [reward.getAddress(), rewardTwo.getAddress()]);
     await gauge.notifyRewardAmount(reward.getAddress(), one);
     await gauge.notifyRewardAmount(rewardTwo.getAddress(), one);
 
@@ -757,13 +616,9 @@ describe("Gauge", function () {
     let bal = await rewardTwo.balanceOf(deployer.address);
     await gauge.getReward(deployer.address, [rewardTwo.getAddress()]);
     bal = (await rewardTwo.balanceOf(deployer.address)) - bal;
-    expect(await gauge.earned(rewardTwo.getAddress(), deployer.address)).equal(
-      0,
-    );
+    expect(await gauge.earned(rewardTwo.getAddress(), deployer.address)).equal(0);
     await time.increase(3600);
-    expect(await gauge.earned(rewardTwo.getAddress(), deployer.address)).equal(
-      0,
-    );
+    expect(await gauge.earned(rewardTwo.getAddress(), deployer.address)).equal(0);
     bal = await rewardTwo.balanceOf(deployer.address);
     await gauge.getReward(deployer.address, [rewardTwo.getAddress()]);
     bal = (await rewardTwo.balanceOf(deployer.address)) - bal;
@@ -772,22 +627,15 @@ describe("Gauge", function () {
 
   it("Should start earning when joining a reward pool", async function () {
     const one = ethers.parseEther("1");
-    await gauge["deposit(uint256,uint256,address[])"](one, 1, [
-      reward.getAddress(),
-    ]);
+    await gauge["deposit(uint256,uint256,address[])"](one, 1, [reward.getAddress()]);
     await gauge
       .connect(user)
-      ["deposit(uint256,uint256,address[])"](one, 2, [
-        reward.getAddress(),
-        rewardTwo.getAddress(),
-      ]);
+      ["deposit(uint256,uint256,address[])"](one, 2, [reward.getAddress(), rewardTwo.getAddress()]);
     await gauge.notifyRewardAmount(reward.getAddress(), one);
     await gauge.notifyRewardAmount(rewardTwo.getAddress(), one);
 
     await time.increase(3600);
-    expect(await gauge.earned(rewardTwo.getAddress(), deployer.address)).equal(
-      0,
-    );
+    expect(await gauge.earned(rewardTwo.getAddress(), deployer.address)).equal(0);
     let bal = await rewardTwo.balanceOf(deployer.address);
     await gauge.getReward(deployer.address, [rewardTwo.getAddress()]);
     bal = (await rewardTwo.balanceOf(deployer.address)) - bal;
@@ -797,10 +645,7 @@ describe("Gauge", function () {
     await time.increase(604800);
     let earned = await gauge.earned(rewardTwo.getAddress(), deployer.address);
     bal = await rewardTwo.balanceOf(deployer.address);
-    await gauge.getReward(deployer.address, [
-      reward.getAddress(),
-      rewardTwo.getAddress(),
-    ]);
+    await gauge.getReward(deployer.address, [reward.getAddress(), rewardTwo.getAddress()]);
     bal = (await rewardTwo.balanceOf(deployer.address)) - bal;
     console.log(bal);
     expect(earned).equal(bal);
@@ -809,15 +654,10 @@ describe("Gauge", function () {
 
   it("Should not allow users to withdraw more than they have", async function () {
     const one = ethers.parseEther("1");
-    await gauge["deposit(uint256,uint256,address[])"](one, 1, [
-      reward.getAddress(),
-    ]);
+    await gauge["deposit(uint256,uint256,address[])"](one, 1, [reward.getAddress()]);
     await gauge
       .connect(user)
-      ["deposit(uint256,uint256,address[])"](one, 2, [
-        reward.getAddress(),
-        rewardTwo.getAddress(),
-      ]);
+      ["deposit(uint256,uint256,address[])"](one, 2, [reward.getAddress(), rewardTwo.getAddress()]);
     await gauge.notifyRewardAmount(reward.getAddress(), one);
     await gauge.notifyRewardAmount(rewardTwo.getAddress(), one);
 
@@ -826,46 +666,30 @@ describe("Gauge", function () {
 
   it("Should not allow users to take other users rewards", async function () {
     const one = ethers.parseEther("1");
-    await gauge["deposit(uint256,uint256,address[])"](one, 1, [
-      reward.getAddress(),
-    ]);
+    await gauge["deposit(uint256,uint256,address[])"](one, 1, [reward.getAddress()]);
     await gauge
       .connect(user)
-      ["deposit(uint256,uint256,address[])"](one, 2, [
-        reward.getAddress(),
-        rewardTwo.getAddress(),
-      ]);
+      ["deposit(uint256,uint256,address[])"](one, 2, [reward.getAddress(), rewardTwo.getAddress()]);
     await gauge.notifyRewardAmount(reward.getAddress(), one);
     await gauge.notifyRewardAmount(rewardTwo.getAddress(), one);
 
-    await expect(
-      gauge.getReward(user.address, [
-        reward.getAddress(),
-        rewardTwo.getAddress(),
-      ]),
-    ).to.be.reverted;
+    await expect(gauge.getReward(user.address, [reward.getAddress(), rewardTwo.getAddress()])).to.be
+      .reverted;
   });
 
   it("Should allow voter to claim rewards for users", async function () {
     const one = ethers.parseEther("1");
-    await gauge["deposit(uint256,uint256,address[])"](one, 1, [
-      reward.getAddress(),
-    ]);
+    await gauge["deposit(uint256,uint256,address[])"](one, 1, [reward.getAddress()]);
     await gauge
       .connect(user)
-      ["deposit(uint256,uint256,address[])"](one, 2, [
-        reward.getAddress(),
-        rewardTwo.getAddress(),
-      ]);
+      ["deposit(uint256,uint256,address[])"](one, 2, [reward.getAddress(), rewardTwo.getAddress()]);
     await gauge.notifyRewardAmount(reward.getAddress(), one);
     await gauge.notifyRewardAmount(rewardTwo.getAddress(), one);
 
     let _voter = await ethers.getImpersonatedSigner(await voter.getAddress());
     await setBalance(await voter.getAddress(), ethers.MaxUint256);
     await expect(
-      gauge
-        .connect(_voter)
-        .getReward(user.address, [reward.getAddress(), rewardTwo.getAddress()]),
+      gauge.connect(_voter).getReward(user.address, [reward.getAddress(), rewardTwo.getAddress()]),
     ).to.not.be.reverted;
   });
 
@@ -883,10 +707,7 @@ describe("Gauge", function () {
     ]);
     await gauge
       .connect(user)
-      ["deposit(uint256,uint256,address[])"](one, 2, [
-        reward.getAddress(),
-        rewardTwo.getAddress(),
-      ]);
+      ["deposit(uint256,uint256,address[])"](one, 2, [reward.getAddress(), rewardTwo.getAddress()]);
 
     console.log(await gauge.earned(reward.getAddress(), deployer.address));
     console.log(await gauge.earned(rewardTwo.getAddress(), deployer.address));
@@ -894,16 +715,10 @@ describe("Gauge", function () {
     console.log(await gauge.earned(rewardTwo.getAddress(), user.address));
 
     await time.increase(604800);
+    await expect(gauge.getReward(deployer.address, [reward.getAddress(), rewardTwo.getAddress()]))
+      .to.not.be.reverted;
     await expect(
-      gauge.getReward(deployer.address, [
-        reward.getAddress(),
-        rewardTwo.getAddress(),
-      ]),
-    ).to.not.be.reverted;
-    await expect(
-      gauge
-        .connect(user)
-        .getReward(user.address, [reward.getAddress(), rewardTwo.getAddress()]),
+      gauge.connect(user).getReward(user.address, [reward.getAddress(), rewardTwo.getAddress()]),
     ).to.not.be.reverted;
   });
 
@@ -916,10 +731,7 @@ describe("Gauge", function () {
     ]);
     await gauge
       .connect(user)
-      ["deposit(uint256,uint256,address[])"](one, 2, [
-        reward.getAddress(),
-        rewardTwo.getAddress(),
-      ]);
+      ["deposit(uint256,uint256,address[])"](one, 2, [reward.getAddress(), rewardTwo.getAddress()]);
 
     await gauge.notifyRewardAmount(reward.getAddress(), one);
     await gauge.notifyRewardAmount(rewardTwo.getAddress(), one);
@@ -931,19 +743,12 @@ describe("Gauge", function () {
     let userBalTwo = await rewardTwo.balanceOf(user.address);
 
     for (let i = 0; i <= 7; i++) {
-      expect(
-        await gauge.getReward(deployer.address, [
-          reward.getAddress(),
-          rewardTwo.getAddress(),
-        ]),
-      ).to.not.be.reverted;
+      expect(await gauge.getReward(deployer.address, [reward.getAddress(), rewardTwo.getAddress()]))
+        .to.not.be.reverted;
       expect(
         await gauge
           .connect(user)
-          .getReward(user.address, [
-            reward.getAddress(),
-            rewardTwo.getAddress(),
-          ]),
+          .getReward(user.address, [reward.getAddress(), rewardTwo.getAddress()]),
       ).to.not.be.reverted;
       await time.increase(86400);
     }
@@ -964,10 +769,7 @@ describe("Gauge", function () {
     ]);
     await gauge
       .connect(user)
-      ["deposit(uint256,uint256,address[])"](one, 2, [
-        reward.getAddress(),
-        rewardTwo.getAddress(),
-      ]);
+      ["deposit(uint256,uint256,address[])"](one, 2, [reward.getAddress(), rewardTwo.getAddress()]);
 
     await gauge.notifyRewardAmount(reward.getAddress(), one);
     await gauge.notifyRewardAmount(rewardTwo.getAddress(), one);
@@ -982,19 +784,12 @@ describe("Gauge", function () {
       expect(await gauge.withdrawAll()).to.not.be.reverted;
       expect(await gauge.connect(user).withdrawAll()).to.not.be.reverted;
 
-      expect(
-        await gauge.getReward(deployer.address, [
-          reward.getAddress(),
-          rewardTwo.getAddress(),
-        ]),
-      ).to.not.be.reverted;
+      expect(await gauge.getReward(deployer.address, [reward.getAddress(), rewardTwo.getAddress()]))
+        .to.not.be.reverted;
       expect(
         await gauge
           .connect(user)
-          .getReward(user.address, [
-            reward.getAddress(),
-            rewardTwo.getAddress(),
-          ]),
+          .getReward(user.address, [reward.getAddress(), rewardTwo.getAddress()]),
       ).to.not.be.reverted;
 
       expect(await gauge.depositAll(1)).to.not.be.reverted;
@@ -1031,9 +826,7 @@ describe("Gauge", function () {
 
     await gauge.exitRewardPool(reward.getAddress());
 
-    expect(await gauge.getRegisteredRewards(deployer.address)).to.not.contain(
-      reward.getAddress(),
-    );
+    expect(await gauge.getRegisteredRewards(deployer.address)).to.not.contain(reward.getAddress());
 
     await gauge.withdrawAll();
 
@@ -1056,16 +849,12 @@ describe("Gauge", function () {
     const adjusted = (((one * one) / (one + one)) * 60n) / 100n;
     const derivedBalance = derived + adjusted;
     expect(await gauge.derivedBalance(deployer.address)).equal(derivedBalance);
-    expect(await gauge.derivedSupplyPerReward(reward.getAddress())).equal(
-      derivedBalance,
-    );
+    expect(await gauge.derivedSupplyPerReward(reward.getAddress())).equal(derivedBalance);
     expect(await gauge.getRegisteredRewards(deployer.address)).to.have.members([
       await reward.getAddress(),
       await rewardTwo.getAddress(),
     ]);
 
-    expect(await gauge.derivedSupplyPerReward(rewardTwo.getAddress())).equal(
-      derivedBalance,
-    );
+    expect(await gauge.derivedSupplyPerReward(rewardTwo.getAddress())).equal(derivedBalance);
   });
 });

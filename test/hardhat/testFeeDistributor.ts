@@ -36,26 +36,11 @@ describe("FeeDistributor", function () {
     await c.minter.initiateEpochZero();
 
     [deployer, user1, user2, user3] = await ethers.getSigners();
-    await c.shadow.approve(
-      c.votingEscrow.getAddress(),
-      ethers.MaxUint256,
-    );
+    await c.shadow.approve(c.votingEscrow.getAddress(), ethers.MaxUint256);
 
-    await c.votingEscrow.createLockFor(
-      e(100e3),
-      await c.votingEscrow.MAXTIME(),
-      user1.address,
-    );
-    await c.votingEscrow.createLockFor(
-      e(100e3),
-      await c.votingEscrow.MAXTIME(),
-      user2.address,
-    );
-    await c.votingEscrow.createLockFor(
-      e(100e3),
-      await c.votingEscrow.MAXTIME(),
-      user3.address,
-    );
+    await c.votingEscrow.createLockFor(e(100e3), await c.votingEscrow.MAXTIME(), user1.address);
+    await c.votingEscrow.createLockFor(e(100e3), await c.votingEscrow.MAXTIME(), user2.address);
+    await c.votingEscrow.createLockFor(e(100e3), await c.votingEscrow.MAXTIME(), user3.address);
 
     user3TokenId = await c.votingEscrow.latestTokenId();
     user2TokenId = user3TokenId - 1n;
@@ -82,13 +67,7 @@ describe("FeeDistributor", function () {
     }
 
     const pools = [
-      [
-        c.shadow.getAddress(),
-        c.weth.getAddress(),
-        false,
-        e(10e6),
-        e(100),
-      ],
+      [c.shadow.getAddress(), c.weth.getAddress(), false, e(10e6), e(100)],
       [c.usdc.getAddress(), c.weth.getAddress(), false, e(150000), e(100)],
       [c.usdc.getAddress(), c.deus.getAddress(), false, e(100000), e(2000)],
       [c.usdc.getAddress(), c.usdt.getAddress(), true, e(1e6), e(1e6)],
@@ -129,37 +108,19 @@ describe("FeeDistributor", function () {
       await c.weth.getAddress(),
       false,
     );
-    const weth_usdc = await getPair(
-      c,
-      await c.usdc.getAddress(),
-      await c.weth.getAddress(),
-      false,
-    );
-    const usdc_usdt = await getPair(
-      c,
-      await c.usdc.getAddress(),
-      await c.usdt.getAddress(),
-      true,
-    );
+    const weth_usdc = await getPair(c, await c.usdc.getAddress(), await c.weth.getAddress(), false);
+    const usdc_usdt = await getPair(c, await c.usdc.getAddress(), await c.usdt.getAddress(), true);
     const pairs = [ram_weth, weth_usdc, usdc_usdt];
 
     // user1 votes for ram_weth and weth_usdc equally
     await c.voter
       .connect(user1)
-      .vote(
-        user1TokenId,
-        [ram_weth.pair.getAddress(), weth_usdc.pair.getAddress()],
-        [500, 500],
-      );
+      .vote(user1TokenId, [ram_weth.pair.getAddress(), weth_usdc.pair.getAddress()], [500, 500]);
 
     // user2 votes for weth_usdc and usdc_usdt equally
     await c.voter
       .connect(user2)
-      .vote(
-        user2TokenId,
-        [weth_usdc.pair.getAddress(), usdc_usdt.pair.getAddress()],
-        [500, 500],
-      );
+      .vote(user2TokenId, [weth_usdc.pair.getAddress(), usdc_usdt.pair.getAddress()], [500, 500]);
 
     await generateSwapFee(c);
 
@@ -176,10 +137,7 @@ describe("FeeDistributor", function () {
 
     // users should be able to claim their rewards
     tokens = [c.shadow, c.weth, c.usdc, c.wbtc];
-    balances = await getBalances(
-      await user1.getAddress(),
-      tokens as any as ERC20[],
-    );
+    balances = await getBalances(await user1.getAddress(), tokens as any as ERC20[]);
     await c.voter.connect(user1).claimIncentives(
       pairs.map((o) => o.feeDistributor.getAddress()),
       [
@@ -189,17 +147,10 @@ describe("FeeDistributor", function () {
       ],
       user1TokenId,
     );
-    await expectBalanceIncrease(
-      await user1.getAddress(),
-      tokens as any as ERC20[],
-      balances,
-    );
+    await expectBalanceIncrease(await user1.getAddress(), tokens as any as ERC20[], balances);
 
     tokens = [c.weth, c.usdc, c.usdt, c.wbtc];
-    balances = await getBalances(
-      await user2.getAddress(),
-      tokens as any as ERC20[],
-    );
+    balances = await getBalances(await user2.getAddress(), tokens as any as ERC20[]);
     await c.voter.connect(user2).claimIncentives(
       pairs.map((o) => o.feeDistributor.getAddress()),
       [
@@ -209,11 +160,7 @@ describe("FeeDistributor", function () {
       ],
       user2TokenId,
     );
-    await expectBalanceIncrease(
-      await user2.getAddress(),
-      tokens as any as ERC20[],
-      balances,
-    );
+    await expectBalanceIncrease(await user2.getAddress(), tokens as any as ERC20[], balances);
 
     // user1 changes his votes multiple times
     await c.voter.connect(user1).poke(user1TokenId);
@@ -224,14 +171,8 @@ describe("FeeDistributor", function () {
       .vote(user1TokenId, [usdc_usdt.pair.getAddress()], [1000]);
     await c.voter
       .connect(user1)
-      .vote(
-        user1TokenId,
-        [weth_usdc.pair.getAddress(), usdc_usdt.pair.getAddress()],
-        [500, 500],
-      );
-    await c.voter
-      .connect(user1)
-      .vote(user1TokenId, [usdc_usdt.pair.getAddress()], [1000]);
+      .vote(user1TokenId, [weth_usdc.pair.getAddress(), usdc_usdt.pair.getAddress()], [500, 500]);
+    await c.voter.connect(user1).vote(user1TokenId, [usdc_usdt.pair.getAddress()], [1000]);
 
     // user2 votes for all pairs
     await c.voter.connect(user2).vote(
@@ -263,10 +204,7 @@ describe("FeeDistributor", function () {
     // users should be able to claim their rewards
     // user1
     tokens = [c.usdc, c.usdt, c.deus];
-    balances = await getBalances(
-      await user1.getAddress(),
-      tokens as any as ERC20[],
-    );
+    balances = await getBalances(await user1.getAddress(), tokens as any as ERC20[]);
     await c.voter
       .connect(user1)
       .claimIncentives(
@@ -274,17 +212,10 @@ describe("FeeDistributor", function () {
         [tokens.map((o) => o.getAddress())],
         user1TokenId,
       );
-    await expectBalanceIncrease(
-      await user1.getAddress(),
-      tokens as any as ERC20[],
-      balances,
-    );
+    await expectBalanceIncrease(await user1.getAddress(), tokens as any as ERC20[], balances);
     // user2
     tokens = [c.shadow, c.weth, c.usdc, c.usdt, c.deus];
-    balances = await getBalances(
-      await user2.getAddress(),
-      tokens as any as ERC20[],
-    );
+    balances = await getBalances(await user2.getAddress(), tokens as any as ERC20[]);
     await c.voter.connect(user2).claimIncentives(
       pairs.map((o) => o.feeDistributor.getAddress()),
       [
@@ -294,17 +225,10 @@ describe("FeeDistributor", function () {
       ],
       user2TokenId,
     );
-    await expectBalanceIncrease(
-      await user2.getAddress(),
-      tokens as any as ERC20[],
-      balances,
-    );
+    await expectBalanceIncrease(await user2.getAddress(), tokens as any as ERC20[], balances);
     // user3
     tokens = [c.shadow, c.weth, c.usdc, c.usdt, c.deus];
-    balances = await getBalances(
-      await user3.getAddress(),
-      tokens as any as ERC20[],
-    );
+    balances = await getBalances(await user3.getAddress(), tokens as any as ERC20[]);
     await c.voter.connect(user3).claimIncentives(
       pairs.map((o) => o.feeDistributor.getAddress()),
       [
@@ -314,11 +238,7 @@ describe("FeeDistributor", function () {
       ],
       user3TokenId,
     );
-    await expectBalanceIncrease(
-      await user3.getAddress(),
-      tokens as any as ERC20[],
-      balances,
-    );
+    await expectBalanceIncrease(await user3.getAddress(), tokens as any as ERC20[], balances);
 
     // all fee distributors balance of all tokens should be zero
     tokens = [c.shadow, c.weth, c.usdc, c.usdt, c.wbtc, c.weth];
@@ -327,9 +247,7 @@ describe("FeeDistributor", function () {
         await pair.feeDistributor.getAddress(),
         tokens as any as ERC20[],
       );
-      Object.values(balances).forEach((balance) =>
-        expect(balance).closeTo(0, 10),
-      );
+      Object.values(balances).forEach((balance) => expect(balance).closeTo(0, 10));
     }
   });
 });

@@ -29,60 +29,34 @@ describe("Platform", function () {
   });
 
   it("Should not have any issues with v1", async function () {
-    expect(await c.shadow.balanceOf(deployer.getAddress())).equal(
-      ethers.parseEther("100000000"),
-    );
+    expect(await c.shadow.balanceOf(deployer.getAddress())).equal(ethers.parseEther("100000000"));
 
-    await expect(
-      await c.pairFactory.createPair(
-        c.shadow.getAddress(),
-        c.weth.getAddress(),
-        false,
-      ),
-    ).to.not.be.reverted;
+    await expect(await c.pairFactory.createPair(c.shadow.getAddress(), c.weth.getAddress(), false))
+      .to.not.be.reverted;
 
     pair = await ethers.getContractAt(
       "Pair",
-      await c.pairFactory.getPair(
-        c.shadow.getAddress(),
-        c.weth.getAddress(),
-        false,
-      ),
+      await c.pairFactory.getPair(c.shadow.getAddress(), c.weth.getAddress(), false),
     );
 
     await expect(c.voter.createGauge(pair.getAddress())).to.not.be.reverted;
 
-    gauge = await ethers.getContractAt(
-      "Gauge",
-      await c.voter.gauges(pair.getAddress()),
-    );
+    gauge = await ethers.getContractAt("Gauge", await c.voter.gauges(pair.getAddress()));
 
     feeDistributor = await ethers.getContractAt(
       "FeeDistributor",
       await c.voter.feeDistributors(gauge.getAddress()),
     );
 
-    await c.shadow.approve(
-      c.votingEscrow.getAddress(),
-      ethers.MaxUint256,
-    );
+    await c.shadow.approve(c.votingEscrow.getAddress(), ethers.MaxUint256);
 
-    await c.shadow
-      .connect(user)
-      .approve(c.votingEscrow.getAddress(), ethers.MaxUint256);
+    await c.shadow.connect(user).approve(c.votingEscrow.getAddress(), ethers.MaxUint256);
 
-    await c.shadow
-      .connect(user2)
-      .approve(c.votingEscrow.getAddress(), ethers.MaxUint256);
+    await c.shadow.connect(user2).approve(c.votingEscrow.getAddress(), ethers.MaxUint256);
 
-    await c.shadow
-      .connect(user3)
-      .approve(c.votingEscrow.getAddress(), ethers.MaxUint256);
+    await c.shadow.connect(user3).approve(c.votingEscrow.getAddress(), ethers.MaxUint256);
 
-    await c.votingEscrow.createLock(
-      ethers.parseEther("1"),
-      await c.votingEscrow.MAXTIME(),
-    );
+    await c.votingEscrow.createLock(ethers.parseEther("1"), await c.votingEscrow.MAXTIME());
 
     await c.votingEscrow.createLockFor(
       ethers.parseEther("1"),
@@ -108,15 +82,9 @@ describe("Platform", function () {
     await c.minter.updatePeriod();
 
     await c.voter.vote(1, [pair.getAddress()], [ethers.parseEther("1")]);
-    await c.voter
-      .connect(user)
-      .vote(2, [pair.getAddress()], [ethers.parseEther("1")]);
-    await c.voter
-      .connect(user2)
-      .vote(3, [pair.getAddress()], [ethers.parseEther("1")]);
-    await c.voter
-      .connect(user3)
-      .vote(4, [pair.getAddress()], [ethers.parseEther("1")]);
+    await c.voter.connect(user).vote(2, [pair.getAddress()], [ethers.parseEther("1")]);
+    await c.voter.connect(user2).vote(3, [pair.getAddress()], [ethers.parseEther("1")]);
+    await c.voter.connect(user3).vote(4, [pair.getAddress()], [ethers.parseEther("1")]);
 
     await c.shadow.approve(c.router.getAddress(), ethers.MaxUint256);
     await c.weth.approve(c.router.getAddress(), ethers.MaxUint256);
@@ -175,9 +143,7 @@ describe("Platform", function () {
 
     await c.voter.distribute(gauge.getAddress());
 
-    expect(await c.shadow.balanceOf(feeDistributor.getAddress())).equal(
-      cleoBal,
-    );
+    expect(await c.shadow.balanceOf(feeDistributor.getAddress())).equal(cleoBal);
     expect(await c.weth.balanceOf(feeDistributor.getAddress())).equal(wethBal);
 
     let total =
@@ -186,10 +152,8 @@ describe("Platform", function () {
     let rps = total / 604800n;
     await time.increase(1);
     let earned =
-      (await gauge.earned(
-        c.shadow.getAddress(),
-        deployer.getAddress(),
-      )) + (await gauge.earned(c.xShadow.getAddress(), deployer.getAddress()));
+      (await gauge.earned(c.shadow.getAddress(), deployer.getAddress())) +
+      (await gauge.earned(c.xShadow.getAddress(), deployer.getAddress()));
     expect(earned).lessThanOrEqual(rps); // small rounding diff is acceptable, as long as not too far
 
     cleoBal = await c.shadow.balanceOf(pairFees);
@@ -223,46 +187,24 @@ describe("Platform", function () {
       wethBal = _wethBal;
     }
 
-    let feeDistBal0 = await c.shadow.balanceOf(
-      feeDistributor.getAddress(),
-    );
+    let feeDistBal0 = await c.shadow.balanceOf(feeDistributor.getAddress());
     let feeDistBal1 = await c.weth.balanceOf(feeDistributor.getAddress());
 
-    const _pairFees = (await ethers.getContractAt(
-      "PairFees",
-      pairFees,
-    )) as PairFees;
+    const _pairFees = (await ethers.getContractAt("PairFees", pairFees)) as PairFees;
 
     // tests with _pairFees.claimFeesFor(), and pair.claimFees() passed
     await gauge.claimFees();
-    expect(
-      (await c.shadow.balanceOf(feeDistributor.getAddress())) -
-        feeDistBal0,
-    ).equal(cleoBal);
+    expect((await c.shadow.balanceOf(feeDistributor.getAddress())) - feeDistBal0).equal(cleoBal);
 
-    expect(
-      (await c.weth.balanceOf(feeDistributor.getAddress())) - feeDistBal1,
-    ).equal(wethBal);
+    expect((await c.weth.balanceOf(feeDistributor.getAddress())) - feeDistBal1).equal(wethBal);
 
-    await feeDistributor.getReward(1, [
-      c.shadow.getAddress(),
-      c.weth.getAddress(),
-    ]);
-    await feeDistributor
-      .connect(user)
-      .getReward(2, [c.shadow.getAddress(), c.weth.getAddress()]);
-    await feeDistributor
-      .connect(user2)
-      .getReward(3, [c.shadow.getAddress(), c.weth.getAddress()]);
-    await feeDistributor
-      .connect(user3)
-      .getReward(4, [c.shadow.getAddress(), c.weth.getAddress()]);
+    await feeDistributor.getReward(1, [c.shadow.getAddress(), c.weth.getAddress()]);
+    await feeDistributor.connect(user).getReward(2, [c.shadow.getAddress(), c.weth.getAddress()]);
+    await feeDistributor.connect(user2).getReward(3, [c.shadow.getAddress(), c.weth.getAddress()]);
+    await feeDistributor.connect(user3).getReward(4, [c.shadow.getAddress(), c.weth.getAddress()]);
 
     await c.usdc.approve(feeDistributor.getAddress(), ethers.MaxUint256);
-    await feeDistributor.incentivize(
-      c.usdc.getAddress(),
-      ethers.parseUnits("100", 6),
-    );
+    await feeDistributor.incentivize(c.usdc.getAddress(), ethers.parseUnits("100", 6));
 
     for (let i = 1; i < 5; i++) {
       await c.voter.poke(i);
@@ -275,9 +217,7 @@ describe("Platform", function () {
 
   it("Should have no issues with v2 pairs", async function () {
     await c.factory.setFeeProtocol(6);
-    expect(await c.nfpManager.votingEscrow()).equal(
-      c.votingEscrow.getAddress(),
-    );
+    expect(await c.nfpManager.votingEscrow()).equal(c.votingEscrow.getAddress());
     await c.factory.createPool(
       c.shadow.getAddress(),
       c.weth.getAddress(),
@@ -285,10 +225,7 @@ describe("Platform", function () {
       79228162514264337593543950336n,
     );
 
-    await c.shadow.approve(
-      c.nfpManager.getAddress(),
-      ethers.MaxUint256,
-    );
+    await c.shadow.approve(c.nfpManager.getAddress(), ethers.MaxUint256);
     await c.weth.approve(c.nfpManager.getAddress(), ethers.MaxUint256);
 
     const [tokenA, tokenB] =
@@ -317,11 +254,7 @@ describe("Platform", function () {
       "ClPool",
       await c.factory.getPool(position.token0, position.token1, position.fee),
     );
-    await c.voter.createCLGauge(
-      c.shadow.getAddress(),
-      c.weth.getAddress(),
-      10000,
-    );
+    await c.voter.createCLGauge(c.shadow.getAddress(), c.weth.getAddress(), 10000);
     const v2Gauge = await ethers.getContractAt(
       "GaugeV2",
       await c.voter.gauges(v2Pool.getAddress()),
@@ -334,15 +267,9 @@ describe("Platform", function () {
     await expect(c.nfpManager.switchAttachment(1, 1)).to.not.be.reverted;
 
     await c.voter.vote(1, [v2Pool.getAddress()], [ethers.parseEther("1")]);
-    await c.voter
-      .connect(user)
-      .vote(2, [v2Pool.getAddress()], [ethers.parseEther("1")]);
-    await c.voter
-      .connect(user2)
-      .vote(3, [v2Pool.getAddress()], [ethers.parseEther("1")]);
-    await c.voter
-      .connect(user3)
-      .vote(4, [v2Pool.getAddress()], [ethers.parseEther("1")]);
+    await c.voter.connect(user).vote(2, [v2Pool.getAddress()], [ethers.parseEther("1")]);
+    await c.voter.connect(user2).vote(3, [v2Pool.getAddress()], [ethers.parseEther("1")]);
+    await c.voter.connect(user3).vote(4, [v2Pool.getAddress()], [ethers.parseEther("1")]);
 
     let swapParams0: ISwapRouter.ExactInputSingleParamsStruct;
     swapParams0 = {
@@ -368,10 +295,7 @@ describe("Platform", function () {
       sqrtPriceLimitX96: 0,
     };
 
-    await c.shadow.approve(
-      c.swapRouter.getAddress(),
-      ethers.MaxUint256,
-    );
+    await c.shadow.approve(c.swapRouter.getAddress(), ethers.MaxUint256);
     await c.weth.approve(c.swapRouter.getAddress(), ethers.MaxUint256);
 
     for (let i = 0; i < 5; i++) {
@@ -387,24 +311,19 @@ describe("Platform", function () {
 
     await c.nfpManager.switchAttachment(1, 1);
 
-    await expect(c.feeCollector.collectProtocolFees(v2Pool.getAddress())).to.not
-      .be.reverted;
+    await expect(c.feeCollector.collectProtocolFees(v2Pool.getAddress())).to.not.be.reverted;
 
     let period = await v2FeeDist.getPeriod();
-    expect(
-      await v2FeeDist.rewardSupply(period, c.shadow.getAddress()),
-    ).greaterThan(0);
+    expect(await v2FeeDist.rewardSupply(period, c.shadow.getAddress())).greaterThan(0);
 
-    expect(
-      await v2FeeDist.rewardSupply(period, c.weth.getAddress()),
-    ).greaterThan(0);
+    expect(await v2FeeDist.rewardSupply(period, c.weth.getAddress())).greaterThan(0);
 
     console.log(await c.shadow.balanceOf(v2Gauge.getAddress()));
 
     await time.increase(604800);
-    expect(
-      await v2Gauge.earned(c.shadow.getAddress(), 1),
-    ).lessThanOrEqual(await c.shadow.balanceOf(v2Gauge.getAddress()));
+    expect(await v2Gauge.earned(c.shadow.getAddress(), 1)).lessThanOrEqual(
+      await c.shadow.balanceOf(v2Gauge.getAddress()),
+    );
 
     console.log(await v2Gauge.positionInfo(1));
   });

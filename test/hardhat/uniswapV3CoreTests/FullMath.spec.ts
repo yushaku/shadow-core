@@ -28,33 +28,20 @@ describe("FullMath", () => {
       await expect(fullMath.mulDiv(Q128, Q128, 1)).to.be.reverted;
     });
     it("reverts on overflow with all max inputs", async () => {
-      await expect(
-        fullMath.mulDiv(
-          ethers.MaxUint256,
-          ethers.MaxUint256,
-          ethers.MaxUint256 - 1n
-        )
-      ).to.be.reverted;
+      await expect(fullMath.mulDiv(ethers.MaxUint256, ethers.MaxUint256, ethers.MaxUint256 - 1n)).to
+        .be.reverted;
     });
 
     it("all max inputs", async () => {
-      expect(
-        await fullMath.mulDiv(
-          ethers.MaxUint256,
-          ethers.MaxUint256,
-          ethers.MaxUint256
-        )
-      ).to.eq(ethers.MaxUint256);
+      expect(await fullMath.mulDiv(ethers.MaxUint256, ethers.MaxUint256, ethers.MaxUint256)).to.eq(
+        ethers.MaxUint256,
+      );
     });
 
     it("accurate without phantom overflow", async () => {
       const result = Q128 / 3n;
       expect(
-        await fullMath.mulDiv(
-          Q128,
-          /*0.5=*/ (50n * Q128) / 100n,
-          /*1.5=*/ (150n * Q128) / 100n
-        )
+        await fullMath.mulDiv(Q128, /*0.5=*/ (50n * Q128) / 100n, /*1.5=*/ (150n * Q128) / 100n),
       ).to.eq(result);
     });
 
@@ -65,9 +52,7 @@ describe("FullMath", () => {
 
     it("accurate with phantom overflow and repeating decimal", async () => {
       const result = (1n * Q128) / 3n;
-      expect(await fullMath.mulDiv(Q128, 1000n * Q128, 3000n * Q128)).to.eq(
-        result
-      );
+      expect(await fullMath.mulDiv(Q128, 1000n * Q128, 3000n * Q128)).to.eq(result);
     });
   });
 
@@ -83,11 +68,7 @@ describe("FullMath", () => {
     });
     it("reverts on overflow with all max inputs", async () => {
       await expect(
-        fullMath.mulDivRoundingUp(
-          ethers.MaxUint256,
-          ethers.MaxUint256,
-          ethers.MaxUint256 - 1n
-        )
+        fullMath.mulDivRoundingUp(ethers.MaxUint256, ethers.MaxUint256, ethers.MaxUint256 - 1n),
       ).to.be.reverted;
     });
 
@@ -96,8 +77,8 @@ describe("FullMath", () => {
         fullMath.mulDivRoundingUp(
           "535006138814359",
           "432862656469423142931042426214547535783388063929571229938474969",
-          "2"
-        )
+          "2",
+        ),
       ).to.be.reverted;
     });
 
@@ -106,18 +87,14 @@ describe("FullMath", () => {
         fullMath.mulDivRoundingUp(
           "115792089237316195423570985008687907853269984659341747863450311749907997002549",
           "115792089237316195423570985008687907853269984659341747863450311749907997002550",
-          "115792089237316195423570985008687907853269984653042931687443039491902864365164"
-        )
+          "115792089237316195423570985008687907853269984653042931687443039491902864365164",
+        ),
       ).to.be.reverted;
     });
 
     it("all max inputs", async () => {
       expect(
-        await fullMath.mulDivRoundingUp(
-          ethers.MaxUint256,
-          ethers.MaxUint256,
-          ethers.MaxUint256
-        )
+        await fullMath.mulDivRoundingUp(ethers.MaxUint256, ethers.MaxUint256, ethers.MaxUint256),
       ).to.eq(ethers.MaxUint256);
     });
 
@@ -127,32 +104,25 @@ describe("FullMath", () => {
         await fullMath.mulDivRoundingUp(
           Q128,
           /*0.5=*/ (50n * Q128) / 100n,
-          /*1.5=*/ (150n * Q128) / 100n
-        )
+          /*1.5=*/ (150n * Q128) / 100n,
+        ),
       ).to.eq(result);
     });
 
     it("accurate with phantom overflow", async () => {
       const result = (4375n * Q128) / 1000n;
-      expect(
-        await fullMath.mulDivRoundingUp(Q128, 35n * Q128, 8n * Q128)
-      ).to.eq(result);
+      expect(await fullMath.mulDivRoundingUp(Q128, 35n * Q128, 8n * Q128)).to.eq(result);
     });
 
     it("accurate with phantom overflow and repeating decimal", async () => {
       const result = (1n * Q128) / 3n + 1n;
-      expect(
-        await fullMath.mulDivRoundingUp(Q128, 1000n * Q128, 3000n * Q128)
-      ).to.eq(result);
+      expect(await fullMath.mulDivRoundingUp(Q128, 1000n * Q128, 3000n * Q128)).to.eq(result);
     });
   });
 
   function pseudoRandomBigNumber() {
     return BigInt(
-      new Decimal(ethers.MaxUint256.toString())
-        .mul(Math.random().toString())
-        .round()
-        .toString()
+      new Decimal(ethers.MaxUint256.toString()).mul(Math.random().toString()).round().toString(),
     );
   }
 
@@ -196,11 +166,9 @@ describe("FullMath", () => {
           await expect(ceiled).to.be.reverted;
         } else {
           expect(await floored).to.eq((x * y) / d);
-          expect(await ceiled).to.eq(
-            (x * y) / d + ((x * y) % d > 0n ? 1n : 0n)
-          );
+          expect(await ceiled).to.eq((x * y) / d + ((x * y) % d > 0n ? 1n : 0n));
         }
-      })
+      }),
     );
   });
 });

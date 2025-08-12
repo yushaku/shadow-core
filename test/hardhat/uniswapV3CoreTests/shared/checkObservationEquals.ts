@@ -20,21 +20,19 @@ export default function checkObservationEquals(
     secondsPerLiquidityCumulativeX128: BigNumberish;
     initialized: boolean;
     blockTimestamp: bigint;
-  }
+  },
 ) {
   expect(
     {
       initialized,
       blockTimestamp,
       tickCumulative: tickCumulative.toString(),
-      secondsPerLiquidityCumulativeX128:
-        secondsPerLiquidityCumulativeX128.toString(),
+      secondsPerLiquidityCumulativeX128: secondsPerLiquidityCumulativeX128.toString(),
     },
-    `observation is equivalent`
+    `observation is equivalent`,
   ).to.deep.eq({
     ...expected,
     tickCumulative: expected.tickCumulative.toString(),
-    secondsPerLiquidityCumulativeX128:
-      expected.secondsPerLiquidityCumulativeX128.toString(),
+    secondsPerLiquidityCumulativeX128: expected.secondsPerLiquidityCumulativeX128.toString(),
   });
 }

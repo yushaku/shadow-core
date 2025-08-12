@@ -6,12 +6,17 @@ import {Pair} from "../../contracts/Pair.sol";
 import {PairFactory} from "../../contracts/factories/PairFactory.sol";
 import {IPairCallee} from "../../contracts/interfaces/IPairCallee.sol";
 import {IPair} from "../../contracts/interfaces/IPair.sol";
-import {MockERC20} from "forge-std/mocks/MockERC20.sol";
+import {MockERC20} from "./mocks/MockERC20.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {console} from "forge-std/console.sol";
 
 contract MockCallee is IPairCallee {
-    function hook(address sender, uint256 amount0Out, uint256 amount1Out, bytes calldata data) external {
+    function hook(
+        address sender,
+        uint256 amount0Out,
+        uint256 amount1Out,
+        bytes calldata data
+    ) external {
         // Mock implementation for testing callbacks
     }
 }
@@ -27,8 +32,12 @@ contract PairTest is TestBase {
         super.setUp();
 
         // Deploy factory and callee
-        pairFactory =
-            new PairFactory(address(mockVoter), address(TREASURY), address(accessHub), address(feeRecipientFactory));
+        pairFactory = new PairFactory(
+            address(mockVoter),
+            address(TREASURY),
+            address(accessHub),
+            address(feeRecipientFactory)
+        );
         callee = new MockCallee();
 
         // Sort tokens based on address
@@ -41,7 +50,9 @@ contract PairTest is TestBase {
         }
 
         // Create pair through factory
-        pair = Pair(pairFactory.createPair(address(token0), address(token1), false));
+        pair = Pair(
+            pairFactory.createPair(address(token0), address(token1), false)
+        );
 
         // Mint initial tokens to users
         deal(address(token0Sorted), alice, 100e18);
@@ -52,7 +63,11 @@ contract PairTest is TestBase {
 
     function test_initialize() public view {
         // Step 1: Verify factory address is set correctly
-        assertEq(pair.factory(), address(pairFactory), "Factory address mismatch");
+        assertEq(
+            pair.factory(),
+            address(pairFactory),
+            "Factory address mismatch"
+        );
 
         // Step 2: Verify token0 is set correctly
         assertEq(pair.token0(), address(token0Sorted), "Token0 mismatch");
@@ -77,7 +92,11 @@ contract PairTest is TestBase {
 
         // Step 5: Verify liquidity tokens were minted
         assertGt(liquidity, 0, "No liquidity minted");
-        assertEq(pair.balanceOf(alice), liquidity, "Liquidity balance mismatch");
+        assertEq(
+            pair.balanceOf(alice),
+            liquidity,
+            "Liquidity balance mismatch"
+        );
     }
 
     function test_burn() public {
@@ -127,7 +146,11 @@ contract PairTest is TestBase {
         uint256 balanceAfter = token1Sorted.balanceOf(bob);
 
         // Step 7: Verify swap was successful
-        assertGt(balanceAfter, balanceBefore, "Swap did not increase token1Sorted balance");
+        assertGt(
+            balanceAfter,
+            balanceBefore,
+            "Swap did not increase token1Sorted balance"
+        );
     }
 
     function test_syncBasic() public {
@@ -142,19 +165,35 @@ contract PairTest is TestBase {
         token1Sorted.transfer(address(pair), 2e18);
 
         // Step 3: Get reserves before sync
-        (uint112 reserve0Before, uint112 reserve1Before,) = pair.getReserves();
+        (uint112 reserve0Before, uint112 reserve1Before, ) = pair.getReserves();
 
         // Step 4: Call sync
         pair.sync();
 
         // Step 5: Get reserves after sync
-        (uint112 reserve0After, uint112 reserve1After,) = pair.getReserves();
+        (uint112 reserve0After, uint112 reserve1After, ) = pair.getReserves();
 
         // Step 6: Verify reserves are updated to match current balances
-        assertGt(reserve0After, reserve0Before, "Reserve0 did not increase after sync");
-        assertGt(reserve1After, reserve1Before, "Reserve1 did not increase after sync");
-        assertEq(reserve0After, token0Sorted.balanceOf(address(pair)), "Reserve0 does not match token0Sorted balance");
-        assertEq(reserve1After, token1Sorted.balanceOf(address(pair)), "Reserve1 does not match token1Sorted balance");
+        assertGt(
+            reserve0After,
+            reserve0Before,
+            "Reserve0 did not increase after sync"
+        );
+        assertGt(
+            reserve1After,
+            reserve1Before,
+            "Reserve1 did not increase after sync"
+        );
+        assertEq(
+            reserve0After,
+            token0Sorted.balanceOf(address(pair)),
+            "Reserve0 does not match token0Sorted balance"
+        );
+        assertEq(
+            reserve1After,
+            token1Sorted.balanceOf(address(pair)),
+            "Reserve1 does not match token1Sorted balance"
+        );
     }
 
     function test_syncAfterSwap() public {
@@ -172,7 +211,7 @@ contract PairTest is TestBase {
         vm.stopPrank();
 
         // Step 3: Get reserves before sync
-        (uint112 reserve0Before, uint112 reserve1Before,) = pair.getReserves();
+        (uint112 reserve0Before, uint112 reserve1Before, ) = pair.getReserves();
 
         // Step 4: Force additional imbalance as alice
         vm.startPrank(alice);
@@ -183,13 +222,29 @@ contract PairTest is TestBase {
         pair.sync();
 
         // Step 6: Get reserves after sync
-        (uint112 reserve0After, uint112 reserve1After,) = pair.getReserves();
+        (uint112 reserve0After, uint112 reserve1After, ) = pair.getReserves();
 
         // Step 7: Verify reserves are updated correctly
-        assertGt(reserve0After, reserve0Before, "Reserve0 did not increase after sync");
-        assertEq(reserve1After, reserve1Before, "Reserve1 changed unexpectedly");
-        assertEq(reserve0After, token0Sorted.balanceOf(address(pair)), "Reserve0 does not match token0Sorted balance");
-        assertEq(reserve1After, token1Sorted.balanceOf(address(pair)), "Reserve1 does not match token1Sorted balance");
+        assertGt(
+            reserve0After,
+            reserve0Before,
+            "Reserve0 did not increase after sync"
+        );
+        assertEq(
+            reserve1After,
+            reserve1Before,
+            "Reserve1 changed unexpectedly"
+        );
+        assertEq(
+            reserve0After,
+            token0Sorted.balanceOf(address(pair)),
+            "Reserve0 does not match token0Sorted balance"
+        );
+        assertEq(
+            reserve1After,
+            token1Sorted.balanceOf(address(pair)),
+            "Reserve1 does not match token1Sorted balance"
+        );
     }
 
     function test_skimBasic() public {
@@ -210,17 +265,25 @@ contract PairTest is TestBase {
         // Step 4: Store initial balances of recipient and pair reserves before skim
         uint256 balance0Before = token0Sorted.balanceOf(bob);
         uint256 balance1Before = token1Sorted.balanceOf(bob);
-        (uint112 reserve0, uint112 reserve1,) = pair.getReserves();
+        (uint112 reserve0, uint112 reserve1, ) = pair.getReserves();
 
         // Step 5: Call skim to transfer excess tokens to recipient
         pair.skim(bob);
 
         // Step 6: Verify excess tokens were correctly transferred to recipient
-        assertEq(token0Sorted.balanceOf(bob), balance0Before + 1e18, "Incorrect token0Sorted skim amount");
-        assertEq(token1Sorted.balanceOf(bob), balance1Before + 2e18, "Incorrect token1Sorted skim amount");
+        assertEq(
+            token0Sorted.balanceOf(bob),
+            balance0Before + 1e18,
+            "Incorrect token0Sorted skim amount"
+        );
+        assertEq(
+            token1Sorted.balanceOf(bob),
+            balance1Before + 2e18,
+            "Incorrect token1Sorted skim amount"
+        );
 
         // Step 7: Verify pair reserves remained unchanged after skim
-        (uint112 reserve0After, uint112 reserve1After,) = pair.getReserves();
+        (uint112 reserve0After, uint112 reserve1After, ) = pair.getReserves();
         assertEq(reserve0After, reserve0, "Reserve0 changed after skim");
         assertEq(reserve1After, reserve1, "Reserve1 changed after skim");
     }
@@ -245,17 +308,25 @@ contract PairTest is TestBase {
         // Step 4: Store initial balances and reserves before skim
         uint256 balance0Before = token0Sorted.balanceOf(bob);
         uint256 balance1Before = token1Sorted.balanceOf(bob);
-        (uint112 reserve0, uint112 reserve1,) = pair.getReserves();
+        (uint112 reserve0, uint112 reserve1, ) = pair.getReserves();
 
         // Step 5: Execute skim operation to recipient
         pair.skim(bob);
 
         // Step 6: Verify accumulated excess tokens were transferred correctly
-        assertEq(token0Sorted.balanceOf(bob), balance0Before + 1e18, "Incorrect token0Sorted amount skimmed");
-        assertEq(token1Sorted.balanceOf(bob), balance1Before + 1e18, "Incorrect token1Sorted amount skimmed");
+        assertEq(
+            token0Sorted.balanceOf(bob),
+            balance0Before + 1e18,
+            "Incorrect token0Sorted amount skimmed"
+        );
+        assertEq(
+            token1Sorted.balanceOf(bob),
+            balance1Before + 1e18,
+            "Incorrect token1Sorted amount skimmed"
+        );
 
         // Step 7: Verify pair reserves remained unchanged
-        (uint112 reserve0After, uint112 reserve1After,) = pair.getReserves();
+        (uint112 reserve0After, uint112 reserve1After, ) = pair.getReserves();
         assertEq(reserve0After, reserve0, "Reserve0 changed after skim");
         assertEq(reserve1After, reserve1, "Reserve1 changed after skim");
     }
@@ -294,8 +365,16 @@ contract PairTest is TestBase {
         pair.skim(bob);
 
         // Step 5: Verify no token transfers occurred
-        assertEq(token0Sorted.balanceOf(bob), balance0Before, "Token0 balance changed when no excess");
-        assertEq(token1Sorted.balanceOf(bob), balance1Before, "Token1 balance changed when no excess");
+        assertEq(
+            token0Sorted.balanceOf(bob),
+            balance0Before,
+            "Token0 balance changed when no excess"
+        );
+        assertEq(
+            token1Sorted.balanceOf(bob),
+            balance1Before,
+            "Token1 balance changed when no excess"
+        );
     }
 
     function test_setFeeRecipient() public {
@@ -304,7 +383,11 @@ contract PairTest is TestBase {
         pair.setFeeRecipient(address(feeRecipient));
 
         // Step 2: Verify fee recipient was set correctly
-        assertEq(pair.feeRecipient(), address(feeRecipient), "Fee recipient not set correctly");
+        assertEq(
+            pair.feeRecipient(),
+            address(feeRecipient),
+            "Fee recipient not set correctly"
+        );
     }
 
     function test_revertSetFeeRecipientUnauthorized() public {
@@ -375,7 +458,11 @@ contract PairTest is TestBase {
 
         // Step 4: Verify last observation timestamp
         Pair.Observation memory lastObs = pair.lastObservation();
-        assertGt(lastObs.timestamp, 0, "Last observation timestamp must be greater than 0");
+        assertGt(
+            lastObs.timestamp,
+            0,
+            "Last observation timestamp must be greater than 0"
+        );
     }
 
     function test_currentCumulativePrices() public {
@@ -389,18 +476,35 @@ contract PairTest is TestBase {
         vm.warp(block.timestamp + 3600);
 
         // Step 3: Get current cumulative prices
-        (uint256 reserve0Cumulative, uint256 reserve1Cumulative, uint256 blockTimestamp) =
-            pair.currentCumulativePrices();
+        (
+            uint256 reserve0Cumulative,
+            uint256 reserve1Cumulative,
+            uint256 blockTimestamp
+        ) = pair.currentCumulativePrices();
 
         // Step 4: Verify cumulative prices and timestamp
-        assertGt(reserve0Cumulative, 0, "Reserve0 cumulative must be greater than 0");
-        assertGt(reserve1Cumulative, 0, "Reserve1 cumulative must be greater than 0");
+        assertGt(
+            reserve0Cumulative,
+            0,
+            "Reserve0 cumulative must be greater than 0"
+        );
+        assertGt(
+            reserve1Cumulative,
+            0,
+            "Reserve1 cumulative must be greater than 0"
+        );
         assertEq(blockTimestamp, block.timestamp, "Block timestamp mismatch");
     }
 
     function test_stablePair() public {
         // Step 1: Create stable pair
-        Pair stablePair = Pair(pairFactory.createPair(address(token0Sorted), address(token1Sorted), true));
+        Pair stablePair = Pair(
+            pairFactory.createPair(
+                address(token0Sorted),
+                address(token1Sorted),
+                true
+            )
+        );
 
         // Step 2: Add initial liquidity
         vm.startPrank(alice);
@@ -425,10 +529,18 @@ contract PairTest is TestBase {
         uint256 liquidity = pair.mint(alice);
 
         // Step 4: Verify minimum liquidity was sent to dead address
-        assertEq(pair.balanceOf(address(0xdead)), 1000, "Minimum liquidity not sent to dead address");
+        assertEq(
+            pair.balanceOf(address(0xdead)),
+            1000,
+            "Minimum liquidity not sent to dead address"
+        );
 
         // Step 5: Verify liquidity was properly minted to alice
-        assertEq(pair.balanceOf(alice), liquidity, "Liquidity not properly minted to alice");
+        assertEq(
+            pair.balanceOf(alice),
+            liquidity,
+            "Liquidity not properly minted to alice"
+        );
 
         // Step 6: Verify total supply matches expected amount
         assertEq(pair.totalSupply(), liquidity + 1000, "Total supply mismatch");
@@ -447,7 +559,12 @@ contract PairTest is TestBase {
         uint256 additionalLiquidity = pair.mint(alice);
 
         // Step 3: Verify additional liquidity is proportional to initial amount
-        assertApproxEqAbs(additionalLiquidity, initialLiquidity / 2, 1000, "Additional liquidity not proportional");
+        assertApproxEqAbs(
+            additionalLiquidity,
+            initialLiquidity / 2,
+            1000,
+            "Additional liquidity not proportional"
+        );
     }
 
     function test_mintWithImbalancedRatio() public {
@@ -463,12 +580,15 @@ contract PairTest is TestBase {
         uint256 liquidityMinted = pair.mint(alice);
 
         // Step 3: Get current reserves
-        (uint112 reserve0, uint112 reserve1,) = pair.getReserves();
+        (uint112 reserve0, uint112 reserve1, ) = pair.getReserves();
 
         // Step 4: Verify minted amount based on lower ratio
         assertEq(
             liquidityMinted,
-            Math.min((5e18 * pair.totalSupply()) / reserve0, (3e18 * pair.totalSupply()) / reserve1),
+            Math.min(
+                (5e18 * pair.totalSupply()) / reserve0,
+                (3e18 * pair.totalSupply()) / reserve1
+            ),
             "Incorrect liquidity minted for imbalanced ratio"
         );
     }
@@ -505,7 +625,13 @@ contract PairTest is TestBase {
 
     function test_mintStablePair() public {
         // Step 1: Create stable pair
-        Pair stablePair = Pair(pairFactory.createPair(address(token0Sorted), address(token1Sorted), true));
+        Pair stablePair = Pair(
+            pairFactory.createPair(
+                address(token0Sorted),
+                address(token1Sorted),
+                true
+            )
+        );
 
         // Step 2: Start as alice
         vm.startPrank(alice);
@@ -517,7 +643,11 @@ contract PairTest is TestBase {
 
         // Step 4: Verify minting was successful
         assertGt(liquidity, 0, "Liquidity should be greater than 0");
-        assertEq(stablePair.balanceOf(alice), liquidity, "Alice's balance should equal minted liquidity");
+        assertEq(
+            stablePair.balanceOf(alice),
+            liquidity,
+            "Alice's balance should equal minted liquidity"
+        );
     }
 
     function test_revertMintWithZeroLiquidity() public {
@@ -534,7 +664,13 @@ contract PairTest is TestBase {
 
     function test_revertMintStablePairImbalanced() public {
         // Step 1: Create stable pair
-        Pair stablePair = Pair(pairFactory.createPair(address(token0Sorted), address(token1Sorted), true));
+        Pair stablePair = Pair(
+            pairFactory.createPair(
+                address(token0Sorted),
+                address(token1Sorted),
+                true
+            )
+        );
 
         // Step 2: Start as alice
         vm.startPrank(alice);
@@ -560,7 +696,11 @@ contract PairTest is TestBase {
         uint256 liquidity = pair.mint(bob);
 
         // Step 4: Verify recipient balances
-        assertEq(pair.balanceOf(bob), liquidity, "Bob's balance should equal minted liquidity");
+        assertEq(
+            pair.balanceOf(bob),
+            liquidity,
+            "Bob's balance should equal minted liquidity"
+        );
         assertEq(pair.balanceOf(alice), 0, "Alice's balance should be 0");
     }
 
@@ -580,11 +720,24 @@ contract PairTest is TestBase {
         vm.stopPrank();
 
         // Step 3: Verify proportional liquidity distribution
-        assertApproxEqAbs(bobLiquidity, aliceLiquidity / 2, 1000, "Bob's liquidity should be half of Alice's");
         assertApproxEqAbs(
-            pair.balanceOf(alice), aliceLiquidity, 1000, "Alice's balance should equal her minted liquidity"
+            bobLiquidity,
+            aliceLiquidity / 2,
+            1000,
+            "Bob's liquidity should be half of Alice's"
         );
-        assertApproxEqAbs(pair.balanceOf(bob), bobLiquidity, 1000, "Bob's balance should equal his minted liquidity");
+        assertApproxEqAbs(
+            pair.balanceOf(alice),
+            aliceLiquidity,
+            1000,
+            "Alice's balance should equal her minted liquidity"
+        );
+        assertApproxEqAbs(
+            pair.balanceOf(bob),
+            bobLiquidity,
+            1000,
+            "Bob's balance should equal his minted liquidity"
+        );
     }
 
     function test_burnInitialLiquidity() public {
@@ -605,9 +758,21 @@ contract PairTest is TestBase {
         // Step 4: Verify burn results
         assertGt(amount0, 0, "Amount0 should be greater than 0");
         assertGt(amount1, 0, "Amount1 should be greater than 0");
-        assertEq(token0Sorted.balanceOf(alice), balance0Before + amount0, "Incorrect token0Sorted balance after burn");
-        assertEq(token1Sorted.balanceOf(alice), balance1Before + amount1, "Incorrect token1Sorted balance after burn");
-        assertEq(pair.balanceOf(alice), 0, "LP token balance should be 0 after burn");
+        assertEq(
+            token0Sorted.balanceOf(alice),
+            balance0Before + amount0,
+            "Incorrect token0Sorted balance after burn"
+        );
+        assertEq(
+            token1Sorted.balanceOf(alice),
+            balance1Before + amount1,
+            "Incorrect token1Sorted balance after burn"
+        );
+        assertEq(
+            pair.balanceOf(alice),
+            0,
+            "LP token balance should be 0 after burn"
+        );
     }
 
     function test_burnPartialLiquidity() public {
@@ -627,14 +792,35 @@ contract PairTest is TestBase {
         (uint256 amount0, uint256 amount1) = pair.burn(alice);
 
         // Step 4: Verify results
-        assertApproxEqAbs(amount0, 5e18, 1000, "Should receive half of initial token0Sorted"); // Half of initial
-        assertApproxEqAbs(amount1, 5e18, 1000, "Should receive half of initial token1Sorted"); // Half of initial
-        assertApproxEqAbs(pair.balanceOf(alice), halfLiquidity, 1000, "Should have half of initial LP tokens remaining");
         assertApproxEqAbs(
-            token0Sorted.balanceOf(alice), balance0Before + amount0, 1000, "Incorrect token0Sorted balance after burn"
+            amount0,
+            5e18,
+            1000,
+            "Should receive half of initial token0Sorted"
+        ); // Half of initial
+        assertApproxEqAbs(
+            amount1,
+            5e18,
+            1000,
+            "Should receive half of initial token1Sorted"
+        ); // Half of initial
+        assertApproxEqAbs(
+            pair.balanceOf(alice),
+            halfLiquidity,
+            1000,
+            "Should have half of initial LP tokens remaining"
         );
         assertApproxEqAbs(
-            token1Sorted.balanceOf(alice), balance1Before + amount1, 1000, "Incorrect token1Sorted balance after burn"
+            token0Sorted.balanceOf(alice),
+            balance0Before + amount0,
+            1000,
+            "Incorrect token0Sorted balance after burn"
+        );
+        assertApproxEqAbs(
+            token1Sorted.balanceOf(alice),
+            balance1Before + amount1,
+            1000,
+            "Incorrect token1Sorted balance after burn"
         );
     }
 
@@ -667,13 +853,29 @@ contract PairTest is TestBase {
         // Step 5: Execute burn and verify results
         (uint256 amount0, uint256 amount1) = pair.burn(alice);
 
-        assertApproxEqAbs(amount0, 10e18, 2000, "Should receive more than initial token0Sorted due to fees");
-        assertApproxEqAbs(amount1, 10.1e18, 2000, "Should receive less than initial token1Sorted due to swap");
         assertApproxEqAbs(
-            token0Sorted.balanceOf(alice), balance0Before + amount0, 1000, "Incorrect token0Sorted balance after burn"
+            amount0,
+            10e18,
+            2000,
+            "Should receive more than initial token0Sorted due to fees"
         );
         assertApproxEqAbs(
-            token1Sorted.balanceOf(alice), balance1Before + amount1, 1000, "Incorrect token1Sorted balance after burn"
+            amount1,
+            10.1e18,
+            2000,
+            "Should receive less than initial token1Sorted due to swap"
+        );
+        assertApproxEqAbs(
+            token0Sorted.balanceOf(alice),
+            balance0Before + amount0,
+            1000,
+            "Incorrect token0Sorted balance after burn"
+        );
+        assertApproxEqAbs(
+            token1Sorted.balanceOf(alice),
+            balance1Before + amount1,
+            1000,
+            "Incorrect token1Sorted balance after burn"
         );
     }
 
@@ -693,18 +895,36 @@ contract PairTest is TestBase {
         (uint256 amount0, uint256 amount1) = pair.burn(bob);
 
         assertEq(
-            token0Sorted.balanceOf(bob), balance0Before + amount0, "Bob's token0Sorted balance incorrect after burn"
+            token0Sorted.balanceOf(bob),
+            balance0Before + amount0,
+            "Bob's token0Sorted balance incorrect after burn"
         );
         assertEq(
-            token1Sorted.balanceOf(bob), balance1Before + amount1, "Bob's token1Sorted balance incorrect after burn"
+            token1Sorted.balanceOf(bob),
+            balance1Before + amount1,
+            "Bob's token1Sorted balance incorrect after burn"
         );
-        assertEq(token0Sorted.balanceOf(alice), 90e18, "Alice's token0Sorted balance incorrect after burn"); // Initial 100e18 - 10e18
-        assertEq(token1Sorted.balanceOf(alice), 90e18, "Alice's token1Sorted balance incorrect after burn"); // Initial 100e18 - 10e18
+        assertEq(
+            token0Sorted.balanceOf(alice),
+            90e18,
+            "Alice's token0Sorted balance incorrect after burn"
+        ); // Initial 100e18 - 10e18
+        assertEq(
+            token1Sorted.balanceOf(alice),
+            90e18,
+            "Alice's token1Sorted balance incorrect after burn"
+        ); // Initial 100e18 - 10e18
     }
 
     function test_burnStablePair() public {
         // Step 1: Create stable pair
-        Pair stablePair = Pair(pairFactory.createPair(address(token0Sorted), address(token1Sorted), true));
+        Pair stablePair = Pair(
+            pairFactory.createPair(
+                address(token0Sorted),
+                address(token1Sorted),
+                true
+            )
+        );
 
         // Step 2: Add initial liquidity
         vm.startPrank(alice);
@@ -720,8 +940,18 @@ contract PairTest is TestBase {
         // Step 4: Execute burn and verify results
         (uint256 amount0, uint256 amount1) = stablePair.burn(alice);
 
-        assertApproxEqAbs(amount0, 10e18, 1000, "Incorrect amount of token0Sorted returned from burn");
-        assertApproxEqAbs(amount1, 10e18, 1000, "Incorrect amount of token1Sorted returned from burn");
+        assertApproxEqAbs(
+            amount0,
+            10e18,
+            1000,
+            "Incorrect amount of token0Sorted returned from burn"
+        );
+        assertApproxEqAbs(
+            amount1,
+            10e18,
+            1000,
+            "Incorrect amount of token1Sorted returned from burn"
+        );
         assertApproxEqAbs(
             token0Sorted.balanceOf(alice),
             balance0Before + amount0,
@@ -756,20 +986,36 @@ contract PairTest is TestBase {
         uint256 liquidity = pair.mint(alice);
 
         // Step 2: Get reserves before burn
-        (uint112 reserve0Before, uint112 reserve1Before,) = pair.getReserves();
+        (uint112 reserve0Before, uint112 reserve1Before, ) = pair.getReserves();
 
         // Step 3: Burn all liquidity
         pair.transfer(address(pair), liquidity);
         pair.burn(alice);
 
         // Step 4: Get reserves after burn
-        (uint112 reserve0After, uint112 reserve1After,) = pair.getReserves();
+        (uint112 reserve0After, uint112 reserve1After, ) = pair.getReserves();
 
         // Step 5: Verify reserves were updated correctly
-        assertLt(reserve0After, reserve0Before, "Reserve0 should decrease after burn");
-        assertLt(reserve1After, reserve1Before, "Reserve1 should decrease after burn");
-        assertEq(reserve0After, 1000, "Reserve0 should equal MINIMUM_LIQUIDITY"); // Only MINIMUM_LIQUIDITY remaining
-        assertEq(reserve1After, 1000, "Reserve1 should equal MINIMUM_LIQUIDITY"); // Only MINIMUM_LIQUIDITY remaining
+        assertLt(
+            reserve0After,
+            reserve0Before,
+            "Reserve0 should decrease after burn"
+        );
+        assertLt(
+            reserve1After,
+            reserve1Before,
+            "Reserve1 should decrease after burn"
+        );
+        assertEq(
+            reserve0After,
+            1000,
+            "Reserve0 should equal MINIMUM_LIQUIDITY"
+        ); // Only MINIMUM_LIQUIDITY remaining
+        assertEq(
+            reserve1After,
+            1000,
+            "Reserve1 should equal MINIMUM_LIQUIDITY"
+        ); // Only MINIMUM_LIQUIDITY remaining
     }
 
     function test_swapToken0ForToken1() public {
@@ -790,7 +1036,11 @@ contract PairTest is TestBase {
         pair.swap(0, 0.9e18, bob, "");
         uint256 balance1After = token1Sorted.balanceOf(bob);
 
-        assertEq(balance1After - balance1Before, 0.9e18, "Incorrect token1Sorted amount received from swap");
+        assertEq(
+            balance1After - balance1Before,
+            0.9e18,
+            "Incorrect token1Sorted amount received from swap"
+        );
     }
 
     function test_swapToken1ForToken0() public {
@@ -811,7 +1061,11 @@ contract PairTest is TestBase {
         pair.swap(0.9e18, 0, bob, "");
         uint256 balance0After = token0Sorted.balanceOf(bob);
 
-        assertEq(balance0After - balance0Before, 0.9e18, "Incorrect token0Sorted amount received from swap");
+        assertEq(
+            balance0After - balance0Before,
+            0.9e18,
+            "Incorrect token0Sorted amount received from swap"
+        );
     }
 
     function test_swapWithFees() public {
@@ -838,10 +1092,16 @@ contract PairTest is TestBase {
         uint256 balance1After = token1Sorted.balanceOf(bob);
 
         // Step 4: Verify results including fees
-        assertEq(balance1After - balance1Before, 0.9e18, "Incorrect token1Sorted amount received from swap with fees");
-        (uint112 reserve0,,) = pair.getReserves();
+        assertEq(
+            balance1After - balance1Before,
+            0.9e18,
+            "Incorrect token1Sorted amount received from swap with fees"
+        );
+        (uint112 reserve0, , ) = pair.getReserves();
         assertGt(
-            reserve0, 10e18 + swapAmount - ((swapAmount * 3000) / 1_000_000), "Reserve0 should reflect fee deduction"
+            reserve0,
+            10e18 + swapAmount - ((swapAmount * 3000) / 1_000_000),
+            "Reserve0 should reflect fee deduction"
         );
     }
 
@@ -854,15 +1114,23 @@ contract PairTest is TestBase {
         vm.stopPrank();
 
         // Step 2: Deploy mock callee contract and fund it with tokens
-        MockCalleeWithCallback mockCalleeWithCallback =
-            new MockCalleeWithCallback(address(token0Sorted), address(token1Sorted));
+        MockCalleeWithCallback mockCalleeWithCallback = new MockCalleeWithCallback(
+                address(token0Sorted),
+                address(token1Sorted)
+            );
         deal(address(token0Sorted), address(mockCalleeWithCallback), 1e18);
 
         // Step 3: Prepare and execute swap with callback
         bytes memory data = abi.encode("callback data");
         vm.expectEmit(true, true, true, true);
         emit MockCalleeWithCallback.Log("hook", address(pair), 0, 0.9e18, data);
-        mockCalleeWithCallback.initiateSwap(address(pair), 1e18, 0, 0.9e18, data);
+        mockCalleeWithCallback.initiateSwap(
+            address(pair),
+            1e18,
+            0,
+            0.9e18,
+            data
+        );
 
         // Step 4: Verify token balances after swap
         assertEq(
@@ -874,7 +1142,13 @@ contract PairTest is TestBase {
 
     function test_swapStablePair() public {
         // Step 1: Create and setup stable pair
-        Pair stablePair = Pair(pairFactory.createPair(address(token0Sorted), address(token1Sorted), true));
+        Pair stablePair = Pair(
+            pairFactory.createPair(
+                address(token0Sorted),
+                address(token1Sorted),
+                true
+            )
+        );
 
         // Step 2: Add initial liquidity
         vm.startPrank(alice);
@@ -892,7 +1166,11 @@ contract PairTest is TestBase {
         uint256 balance1After = token1Sorted.balanceOf(bob);
 
         // Step 4: Verify swap with stable curve
-        assertEq(balance1After - balance1Before, 0.9e18, "Incorrect token1Sorted amount received from stable pair swap");
+        assertEq(
+            balance1After - balance1Before,
+            0.9e18,
+            "Incorrect token1Sorted amount received from stable pair swap"
+        );
     }
 
     function test_revertSwapInsufficientOutputAmount() public {
@@ -986,7 +1264,11 @@ contract PairTest is TestBase {
         uint256 kLastAfter = pair.kLast();
 
         // Step 4: Verify no fees were minted
-        assertEq(kLastAfter, kLastBefore, "kLast should not change when no fee recipient is set");
+        assertEq(
+            kLastAfter,
+            kLastBefore,
+            "kLast should not change when no fee recipient is set"
+        );
     }
 
     function test_mintFeeWithFeeRecipient() public {
@@ -1015,7 +1297,9 @@ contract PairTest is TestBase {
         vm.stopPrank();
 
         // Step 5: Get balances before minting fees
-        uint256 feeRecipientBalanceBefore = pair.balanceOf(address(feeRecipient));
+        uint256 feeRecipientBalanceBefore = pair.balanceOf(
+            address(feeRecipient)
+        );
         uint256 kLastBefore = pair.kLast();
 
         // Step 6: Mint fees and verify
@@ -1025,12 +1309,22 @@ contract PairTest is TestBase {
             feeRecipientBalanceBefore,
             "Fee recipient balance should increase after minting fees"
         );
-        assertGt(pair.kLast(), kLastBefore, "kLast should increase after minting fees");
+        assertGt(
+            pair.kLast(),
+            kLastBefore,
+            "kLast should increase after minting fees"
+        );
     }
 
     function test_mintFeeStablePair() public {
         // Step 1: Create and setup stable pair
-        Pair stablePair = Pair(pairFactory.createPair(address(token0Sorted), address(token1Sorted), true));
+        Pair stablePair = Pair(
+            pairFactory.createPair(
+                address(token0Sorted),
+                address(token1Sorted),
+                true
+            )
+        );
 
         // Step 2: Add initial liquidity
         vm.startPrank(alice);
@@ -1059,7 +1353,9 @@ contract PairTest is TestBase {
         vm.stopPrank();
 
         // Step 6: Record balances before minting fees
-        uint256 feeRecipientBalanceBefore = stablePair.balanceOf(address(feeRecipient));
+        uint256 feeRecipientBalanceBefore = stablePair.balanceOf(
+            address(feeRecipient)
+        );
         uint256 kLastBefore = stablePair.kLast();
         stablePair.mintFee();
 
@@ -1069,7 +1365,11 @@ contract PairTest is TestBase {
             feeRecipientBalanceBefore,
             "Fee recipient balance should increase after minting fees in stable pair"
         );
-        assertGt(stablePair.kLast(), kLastBefore, "kLast should increase after minting fees in stable pair");
+        assertGt(
+            stablePair.kLast(),
+            kLastBefore,
+            "kLast should increase after minting fees in stable pair"
+        );
     }
 
     function test_mintFeeMultipleSwaps() public {
@@ -1100,11 +1400,14 @@ contract PairTest is TestBase {
         vm.stopPrank();
 
         // Step 4: Get balances and mint fees
-        uint256 feeRecipientBalanceBefore = pair.balanceOf(address(feeRecipient));
+        uint256 feeRecipientBalanceBefore = pair.balanceOf(
+            address(feeRecipient)
+        );
         pair.mintFee();
 
         // Step 5: Verify accumulated fees
-        uint256 feesMinted = pair.balanceOf(address(feeRecipient)) - feeRecipientBalanceBefore;
+        uint256 feesMinted = pair.balanceOf(address(feeRecipient)) -
+            feeRecipientBalanceBefore;
         assertGt(feesMinted, 0, "Fees should be minted after multiple swaps");
     }
 
@@ -1138,7 +1441,9 @@ contract PairTest is TestBase {
         vm.stopPrank();
 
         // Step 6: Record balance before removing liquidity
-        uint256 feeRecipientBalanceBefore = pair.balanceOf(address(feeRecipient));
+        uint256 feeRecipientBalanceBefore = pair.balanceOf(
+            address(feeRecipient)
+        );
 
         // Step 7: Remove partial liquidity
         vm.startPrank(alice);
@@ -1162,7 +1467,13 @@ contract MockCalleeWithCallback is TestBase {
         token1 = MockERC20(_token1);
     }
 
-    event Log(string message, address pair, uint256 amount0Out, uint256 amount1Out, bytes data);
+    event Log(
+        string message,
+        address pair,
+        uint256 amount0Out,
+        uint256 amount1Out,
+        bytes data
+    );
 
     function initiateSwap(
         address _pair,
@@ -1178,7 +1489,12 @@ contract MockCalleeWithCallback is TestBase {
     }
 
     // Implement callback from pair contract
-    function hook(address sender, uint256 amount0Out, uint256 amount1Out, bytes calldata data) external {
+    function hook(
+        address sender,
+        uint256 amount0Out,
+        uint256 amount1Out,
+        bytes calldata data
+    ) external {
         emit Log("hook", msg.sender, amount0Out, amount1Out, data);
     }
 }

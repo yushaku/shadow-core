@@ -22,10 +22,7 @@ describe("Minter", function () {
 
   it("Should mint emission and growth correctly", async function () {
     const minter = c.minter;
-    await c.shadow.approve(
-      c.votingEscrow.getAddress(),
-      ethers.MaxUint256,
-    );
+    await c.shadow.approve(c.votingEscrow.getAddress(), ethers.MaxUint256);
     await c.votingEscrow.createLock(e(10), await c.votingEscrow.MAXTIME());
 
     await minter.initiateEpochZero();

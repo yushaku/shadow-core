@@ -26,9 +26,7 @@ describe("BitMath", () => {
     });
     it("all powers of 2", async () => {
       const results = await Promise.all(
-        [...Array(255)].map((_, i) =>
-          bitMath.mostSignificantBit(2n ** BigInt(i))
-        )
+        [...Array(255)].map((_, i) => bitMath.mostSignificantBit(2n ** BigInt(i))),
       );
       expect(results).to.deep.eq([...Array(255)].map((_, i) => i));
     });
@@ -40,14 +38,10 @@ describe("BitMath", () => {
       await snapshotGasCost(bitMath.getGasCostOfMostSignificantBit(3568n));
     });
     it("gas cost of max uint128", async () => {
-      await snapshotGasCost(
-        bitMath.getGasCostOfMostSignificantBit(2n ** 128n - 1n)
-      );
+      await snapshotGasCost(bitMath.getGasCostOfMostSignificantBit(2n ** 128n - 1n));
     });
     it("gas cost of max uint256", async () => {
-      await snapshotGasCost(
-        bitMath.getGasCostOfMostSignificantBit(2n ** 128n - 1n)
-      );
+      await snapshotGasCost(bitMath.getGasCostOfMostSignificantBit(2n ** 128n - 1n));
     });
   });
 
@@ -63,9 +57,7 @@ describe("BitMath", () => {
     });
     it("all powers of 2", async () => {
       const results = await Promise.all(
-        [...Array(255)].map((_, i) =>
-          bitMath.leastSignificantBit(2n ** BigInt(i))
-        )
+        [...Array(255)].map((_, i) => bitMath.leastSignificantBit(2n ** BigInt(i))),
       );
       expect(results).to.deep.eq([...Array(255)].map((_, i) => i));
     });
@@ -77,14 +69,10 @@ describe("BitMath", () => {
       await snapshotGasCost(bitMath.getGasCostOfLeastSignificantBit(3568n));
     });
     it("gas cost of max uint128", async () => {
-      await snapshotGasCost(
-        bitMath.getGasCostOfLeastSignificantBit(2n ** 128n - 1n)
-      );
+      await snapshotGasCost(bitMath.getGasCostOfLeastSignificantBit(2n ** 128n - 1n));
     });
     it("gas cost of max uint256", async () => {
-      await snapshotGasCost(
-        bitMath.getGasCostOfLeastSignificantBit(2n ** 256n - 1n)
-      );
+      await snapshotGasCost(bitMath.getGasCostOfLeastSignificantBit(2n ** 256n - 1n));
     });
   });
 });

@@ -5,12 +5,7 @@ import { ClPoolFactory } from "../../typechain-types";
 import { expect } from "./shared/expect";
 import snapshotGasCost from "./shared/snapshotGasCost";
 
-import {
-  encodePriceSqrt,
-  FeeAmount,
-  getCreate2Address,
-  TICK_SPACINGS,
-} from "./shared/utilities";
+import { encodePriceSqrt, FeeAmount, getCreate2Address, TICK_SPACINGS } from "./shared/utilities";
 import { testDeploy } from "../../../utils/testDeployment";
 
 const TEST_ADDRESSES: [string, string] = [
@@ -43,7 +38,7 @@ describe("ClPoolFactory", () => {
 
   it("factory bytecode size", async () => {
     expect(
-      ((await ethers.provider.getCode(factory.getAddress())).length - 2) / 2
+      ((await ethers.provider.getCode(factory.getAddress())).length - 2) / 2,
     ).to.matchSnapshot();
   });
 
@@ -52,88 +47,67 @@ describe("ClPoolFactory", () => {
       TEST_ADDRESSES[0],
       TEST_ADDRESSES[1],
       FeeAmount.MEDIUM,
-      encodePriceSqrt(1n, 1n).toString()
+      encodePriceSqrt(1n, 1n).toString(),
     );
     const poolAddress = getCreate2Address(
       await factory.getAddress(),
       TEST_ADDRESSES,
       FeeAmount.MEDIUM,
-      poolBytecode
+      poolBytecode,
     );
-    expect(
-      ((await ethers.provider.getCode(poolAddress)).length - 2) / 2
-    ).to.matchSnapshot();
+    expect(((await ethers.provider.getCode(poolAddress)).length - 2) / 2).to.matchSnapshot();
   });
 
   it("initial enabled fee amounts", async () => {
-    expect(await factory.feeAmountTickSpacing(FeeAmount.LOW)).to.eq(
-      TICK_SPACINGS[FeeAmount.LOW]
-    );
+    expect(await factory.feeAmountTickSpacing(FeeAmount.LOW)).to.eq(TICK_SPACINGS[FeeAmount.LOW]);
     expect(await factory.feeAmountTickSpacing(FeeAmount.MEDIUM)).to.eq(
-      TICK_SPACINGS[FeeAmount.MEDIUM]
+      TICK_SPACINGS[FeeAmount.MEDIUM],
     );
-    expect(await factory.feeAmountTickSpacing(FeeAmount.HIGH)).to.eq(
-      TICK_SPACINGS[FeeAmount.HIGH]
-    );
+    expect(await factory.feeAmountTickSpacing(FeeAmount.HIGH)).to.eq(TICK_SPACINGS[FeeAmount.HIGH]);
   });
 
   async function createAndCheckPool(
     tokens: [string, string],
     feeAmount: FeeAmount,
-    tickSpacing: number = TICK_SPACINGS[feeAmount]
+    tickSpacing: number = TICK_SPACINGS[feeAmount],
   ) {
     const create2Address = getCreate2Address(
       await factory.getAddress(),
       tokens,
       feeAmount,
-      poolBytecode
+      poolBytecode,
     );
     const create = factory.createPool(
       tokens[0],
       tokens[1],
       feeAmount,
-      encodePriceSqrt(1n, 1n).toString()
+      encodePriceSqrt(1n, 1n).toString(),
     );
 
     await expect(create)
       .to.emit(factory, "PoolCreated")
-      .withArgs(
-        TEST_ADDRESSES[0],
-        TEST_ADDRESSES[1],
-        feeAmount,
-        tickSpacing,
-        create2Address
-      );
+      .withArgs(TEST_ADDRESSES[0], TEST_ADDRESSES[1], feeAmount, tickSpacing, create2Address);
 
     await expect(
-      factory.createPool(
-        tokens[0],
-        tokens[1],
-        feeAmount,
-        encodePriceSqrt(1n, 1n).toString()
-      )
+      factory.createPool(tokens[0], tokens[1], feeAmount, encodePriceSqrt(1n, 1n).toString()),
     ).to.be.reverted;
     await expect(
       factory.createPool(
         tokens[1],
         tokens[0],
         BigInt(feeAmount),
-        encodePriceSqrt(1n, 1n).toString()
-      )
+        encodePriceSqrt(1n, 1n).toString(),
+      ),
     ).to.be.reverted;
-    expect(
-      await factory.getPool(tokens[0], tokens[1], feeAmount),
-      "getPool in order"
-    ).to.eq(create2Address);
-    expect(
-      await factory.getPool(tokens[1], tokens[0], feeAmount),
-      "getPool in reverse"
-    ).to.eq(create2Address);
+    expect(await factory.getPool(tokens[0], tokens[1], feeAmount), "getPool in order").to.eq(
+      create2Address,
+    );
+    expect(await factory.getPool(tokens[1], tokens[0], feeAmount), "getPool in reverse").to.eq(
+      create2Address,
+    );
 
     const pool = await ethers.getContractAt("ClPool", create2Address);
-    expect(await pool.factory(), "pool factory address").to.eq(
-      await factory.getAddress()
-    );
+    expect(await pool.factory(), "pool factory address").to.eq(await factory.getAddress());
     expect(await pool.token0(), "pool token0").to.eq(TEST_ADDRESSES[0]);
     expect(await pool.token1(), "pool token1").to.eq(TEST_ADDRESSES[1]);
     expect(await pool.fee(), "pool fee").to.eq(feeAmount);
@@ -153,10 +127,7 @@ describe("ClPoolFactory", () => {
     });
 
     it("succeeds if tokens are passed in reverse", async () => {
-      await createAndCheckPool(
-        [TEST_ADDRESSES[1], TEST_ADDRESSES[0]],
-        FeeAmount.MEDIUM
-      );
+      await createAndCheckPool([TEST_ADDRESSES[1], TEST_ADDRESSES[0]], FeeAmount.MEDIUM);
     });
 
     it("fails if token a == token b", async () => {
@@ -165,8 +136,8 @@ describe("ClPoolFactory", () => {
           TEST_ADDRESSES[0],
           TEST_ADDRESSES[0],
           FeeAmount.LOW,
-          encodePriceSqrt(1n, 1n).toString()
-        )
+          encodePriceSqrt(1n, 1n).toString(),
+        ),
       ).to.be.reverted;
     });
 
@@ -176,24 +147,24 @@ describe("ClPoolFactory", () => {
           TEST_ADDRESSES[0],
           ethers.ZeroAddress,
           FeeAmount.LOW,
-          encodePriceSqrt(1n, 1n).toString()
-        )
+          encodePriceSqrt(1n, 1n).toString(),
+        ),
       ).to.be.reverted;
       await expect(
         factory.createPool(
           ethers.ZeroAddress,
           TEST_ADDRESSES[0],
           FeeAmount.LOW,
-          encodePriceSqrt(1n, 1n).toString()
-        )
+          encodePriceSqrt(1n, 1n).toString(),
+        ),
       ).to.be.reverted;
       await expect(
         factory.createPool(
           ethers.ZeroAddress,
           ethers.ZeroAddress,
           FeeAmount.LOW,
-          encodePriceSqrt(1n, 1n).toString()
-        )
+          encodePriceSqrt(1n, 1n).toString(),
+        ),
       ).to.be.revertedWith("IT");
     });
 
@@ -203,8 +174,8 @@ describe("ClPoolFactory", () => {
           TEST_ADDRESSES[0],
           TEST_ADDRESSES[1],
           250,
-          encodePriceSqrt(1n, 1n).toString()
-        )
+          encodePriceSqrt(1n, 1n).toString(),
+        ),
       ).to.be.reverted;
     });
 
@@ -214,16 +185,15 @@ describe("ClPoolFactory", () => {
           TEST_ADDRESSES[0],
           TEST_ADDRESSES[1],
           FeeAmount.MEDIUM,
-          encodePriceSqrt(1n, 1n).toString()
-        )
+          encodePriceSqrt(1n, 1n).toString(),
+        ),
       );
     });
   });
 
   describe("#setOwner", () => {
     it("fails if caller is not owner", async () => {
-      await expect(factory.connect(other).setOwner(wallet.address)).to.be
-        .reverted;
+      await expect(factory.connect(other).setOwner(wallet.address)).to.be.reverted;
     });
 
     it("updates owner", async () => {
@@ -245,8 +215,7 @@ describe("ClPoolFactory", () => {
 
   describe("#enableFeeAmount", () => {
     it("fails if caller is not owner", async () => {
-      await expect(factory.connect(other).enableFeeAmount(100, 2)).to.be
-        .reverted;
+      await expect(factory.connect(other).enableFeeAmount(100, 2)).to.be.reverted;
     });
     it("fails if fee is too great", async () => {
       await expect(factory.enableFeeAmount(1000000, 10)).to.be.reverted;
@@ -276,7 +245,7 @@ describe("ClPoolFactory", () => {
         [TEST_ADDRESSES[0], TEST_ADDRESSES[1]],
         //@ts-ignore:  Argument of type '250' is not assignable to parameter of type 'FeeAmount'.
         250,
-        15
+        15,
       );
     });
   });

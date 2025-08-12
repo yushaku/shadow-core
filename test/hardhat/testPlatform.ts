@@ -28,24 +28,13 @@ describe("Platform", function () {
     [deployer, lper, voter, lpBriber, voteBriber] = await ethers.getSigners();
 
     // create pair
-    await c.pairFactory.createPair(
-      c.shadow.getAddress(),
-      c.weth.getAddress(),
-      false,
-    );
+    await c.pairFactory.createPair(c.shadow.getAddress(), c.weth.getAddress(), false);
     pair = await ethers.getContractAt(
       "Pair",
-      await c.pairFactory.getPair(
-        c.shadow.getAddress(),
-        c.weth.getAddress(),
-        false,
-      ),
+      await c.pairFactory.getPair(c.shadow.getAddress(), c.weth.getAddress(), false),
     );
     await c.voter.createGauge(pair.getAddress());
-    gauge = await ethers.getContractAt(
-      "Gauge",
-      await c.voter.gauges(pair.getAddress()),
-    );
+    gauge = await ethers.getContractAt("Gauge", await c.voter.gauges(pair.getAddress()));
     feeDistributor = await ethers.getContractAt(
       "FeeDistributor",
       await c.voter.feeDistributors(gauge.getAddress()),
@@ -76,10 +65,7 @@ describe("Platform", function () {
 
     const lpBalance = await pair.balanceOf(deployer.getAddress());
     await pair.connect(deployer).transfer(lper.getAddress(), lpBalance);
-    expect(
-      await pair.balanceOf(lper.getAddress()),
-      "lper should have some LP",
-    ).to.gt(0);
+    expect(await pair.balanceOf(lper.getAddress()), "lper should have some LP").to.gt(0);
 
     // deposit into gauge
     await pair.connect(lper).approve(gauge.getAddress(), ethers.MaxUint256);
@@ -88,27 +74,15 @@ describe("Platform", function () {
 
   async function initVoter() {
     // get some shadow
-    await setERC20Balance(
-      await c.shadow.getAddress(),
-      voter.address,
-      e(1),
-    );
-    console.log(
-      "Shadow balance:",
-      await c.shadow.balanceOf(voter.address),
-    );
+    await setERC20Balance(await c.shadow.getAddress(), voter.address, e(1));
+    console.log("Shadow balance:", await c.shadow.balanceOf(voter.address));
 
     // lock shadow
-    await c.shadow
-      .connect(voter)
-      .approve(c.votingEscrow.getAddress(), ethers.MaxUint256);
+    await c.shadow.connect(voter).approve(c.votingEscrow.getAddress(), ethers.MaxUint256);
     const tokenId = (await c.votingEscrow.connect(voter).latestTokenId()) + 1n;
     await c.votingEscrow
       .connect(voter)
-      .createLock(
-        await c.shadow.balanceOf(voter.address),
-        await c.votingEscrow.MAXTIME(),
-      );
+      .createLock(await c.shadow.balanceOf(voter.address), await c.votingEscrow.MAXTIME());
 
     return tokenId;
   }
@@ -155,9 +129,7 @@ describe("Platform", function () {
     await feeDistributor
       .connect(voter)
       .getReward(tokenId, [c.shadow.getAddress(), c.weth.getAddress()]);
-    expect(balances.shadow).eq(
-      await c.shadow.balanceOf(voter.address),
-    );
+    expect(balances.shadow).eq(await c.shadow.balanceOf(voter.address));
     expect(balances.weth).eq(await c.weth.balanceOf(voter.address));
 
     // go to next epoch
@@ -168,24 +140,14 @@ describe("Platform", function () {
 
     // distribute emissions
     await c.voter.distribute(gauge.getAddress());
-    expect(
-      await c.shadow.balanceOf(gauge.getAddress()),
-      "gauge should have some rewards",
-    ).gt(0);
+    expect(await c.shadow.balanceOf(gauge.getAddress()), "gauge should have some rewards").gt(0);
 
     // lper should claim emission
     balances = {
       shadow: await c.shadow.balanceOf(lper.address),
     };
-    await gauge
-      .connect(lper)
-      .getReward(lper.address, [
-        c.shadow.getAddress(),
-        c.weth.getAddress(),
-      ]);
-    expect(balances.shadow).lessThan(
-      await c.shadow.balanceOf(lper.address),
-    );
+    await gauge.connect(lper).getReward(lper.address, [c.shadow.getAddress(), c.weth.getAddress()]);
+    expect(balances.shadow).lessThan(await c.shadow.balanceOf(lper.address));
 
     // perform a few swaps
     await c.router.swapExactTokensForTokensSimple(

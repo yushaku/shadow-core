@@ -25,9 +25,7 @@ describe("LiquidityMath", () => {
       expect(await liquidityMath.addDelta(1, 1)).to.eq(2);
     });
     it("2**128-15 + 15 overflows", async () => {
-      await expect(
-        liquidityMath.addDelta(2n ** 128n - 15n, 15n)
-      ).to.be.revertedWith("LA");
+      await expect(liquidityMath.addDelta(2n ** 128n - 15n, 15n)).to.be.revertedWith("LA");
     });
     it("0 + -1 underflows", async () => {
       await expect(liquidityMath.addDelta(0, -1)).to.be.revertedWith("LS");

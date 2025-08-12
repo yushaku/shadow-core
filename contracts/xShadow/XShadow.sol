@@ -14,45 +14,25 @@ import {IVoteModule} from "../interfaces/IVoteModule.sol";
 
 contract XShadow is ERC20, IXShadow, Pausable {
     using EnumerableSet for EnumerableSet.AddressSet;
-
-    /** Addresses */
-
-    /// @inheritdoc IXShadow
-    address public operator;
-
-    /// @inheritdoc IXShadow
-    address public immutable MINTER;
-    /// @inheritdoc IXShadow
-    address public immutable ACCESS_HUB;
-
-    /// @inheritdoc IXShadow
-    address public immutable VOTE_MODULE;
-
-    /// @dev IERC20 declaration of Shadow
-    IERC20 public immutable SHADOW;
-    /// @dev declare IVoter
-    IVoter public immutable VOTER;
-
-    /// @dev stores the addresses that are exempt from transfer limitations when transferring out
-    EnumerableSet.AddressSet exempt;
-    /// @dev stores the addresses that are exempt from transfer limitations when transferring to them
-    EnumerableSet.AddressSet exemptTo;
-
-    /// @inheritdoc IXShadow
-    uint256 public lastDistributedPeriod;
-    /// @inheritdoc IXShadow
-    uint256 public pendingRebase;
-
-    /// @inheritdoc IXShadow
     uint256 public constant BASIS = 10_000;
-    /// @inheritdoc IXShadow
     uint256 public constant SLASHING_PENALTY = 5000;
-    /// @inheritdoc IXShadow
     uint256 public constant MIN_VEST = 14 days;
-    /// @inheritdoc IXShadow
     uint256 public constant MAX_VEST = 180 days;
 
-    /// @inheritdoc IXShadow
+    address public immutable MINTER;
+    address public immutable ACCESS_HUB;
+    address public immutable VOTE_MODULE;
+    IERC20 public immutable SHADOW;
+    IVoter public immutable VOTER;
+
+    address public operator;
+
+    EnumerableSet.AddressSet exempt;
+    EnumerableSet.AddressSet exemptTo;
+
+    uint256 public lastDistributedPeriod;
+    uint256 public pendingRebase;
+
     mapping(address => VestPosition[]) public vestInfo;
 
     modifier onlyGovernance() {
@@ -86,11 +66,10 @@ contract XShadow is ERC20, IXShadow, Pausable {
         lastDistributedPeriod = IVoter(_voter).getPeriod();
     }
 
-    /// @inheritdoc IXShadow
     function pause() external onlyGovernance {
         _pause();
     }
-    /// @inheritdoc IXShadow
+
     function unpause() external onlyGovernance {
         _unpause();
     }
@@ -142,7 +121,6 @@ contract XShadow is ERC20, IXShadow, Pausable {
     // General use functions
     /*****************************************************************/
 
-    /// @inheritdoc IXShadow
     function convertEmissionsToken(uint256 _amount) external whenNotPaused {
         /// @dev ensure the _amount is > 0
         require(_amount != 0, ZERO());
@@ -154,7 +132,6 @@ contract XShadow is ERC20, IXShadow, Pausable {
         emit Converted(msg.sender, _amount);
     }
 
-    /// @inheritdoc IXShadow
     function rebase() external whenNotPaused {
         /// @dev gate to minter and call it on epoch flips
         require(msg.sender == MINTER, NOT_MINTER());
@@ -181,7 +158,6 @@ contract XShadow is ERC20, IXShadow, Pausable {
         }
     }
 
-    /// @inheritdoc IXShadow
     function exit(
         uint256 _amount
     ) external whenNotPaused returns (uint256 _exitedAmount) {
@@ -204,7 +180,6 @@ contract XShadow is ERC20, IXShadow, Pausable {
         return exitAmount;
     }
 
-    /// @inheritdoc IXShadow
     function createVest(uint256 _amount) external whenNotPaused {
         /// @dev ensure not 0
         require(_amount != 0, ZERO());
@@ -224,7 +199,6 @@ contract XShadow is ERC20, IXShadow, Pausable {
         emit NewVest(msg.sender, vestLength, _amount);
     }
 
-    /// @inheritdoc IXShadow
     function exitVest(uint256 _vestID) external whenNotPaused {
         VestPosition storage _vest = vestInfo[msg.sender][_vestID];
         require(_vest.amount != 0, NO_VEST());
@@ -268,17 +242,16 @@ contract XShadow is ERC20, IXShadow, Pausable {
     }
 
     /*****************************************************************/
-    // Permissioned functions, timelock/operator gated
+    // Permissions functions,
+    // timelock/operator gated
     /*****************************************************************/
 
-    /// @inheritdoc IXShadow
     function operatorRedeem(uint256 _amount) external onlyGovernance {
         _burn(operator, _amount);
         SHADOW.transfer(operator, _amount);
         emit XShadowRedeemed(address(this), _amount);
     }
 
-    /// @inheritdoc IXShadow
     function rescueTrappedTokens(
         address[] calldata _tokens,
         uint256[] calldata _amounts
@@ -290,7 +263,6 @@ contract XShadow is ERC20, IXShadow, Pausable {
         }
     }
 
-    /// @inheritdoc IXShadow
     function migrateOperator(address _operator) external onlyGovernance {
         /// @dev ensure operator is different
         require(operator != _operator, NO_CHANGE());
@@ -298,7 +270,6 @@ contract XShadow is ERC20, IXShadow, Pausable {
         operator = _operator;
     }
 
-    /// @inheritdoc IXShadow
     function setExemption(
         address[] calldata _exemptee,
         bool[] calldata _exempt
@@ -315,18 +286,19 @@ contract XShadow is ERC20, IXShadow, Pausable {
         }
     }
 
-    /// @inheritdoc IXShadow
     function setExemptionTo(
         address[] calldata _exemptee,
         bool[] calldata _exempt
     ) external onlyGovernance {
         /// @dev ensure arrays of same length
         require(_exemptee.length == _exempt.length, ARRAY_LENGTHS());
+
         /// @dev loop through all and attempt add/remove based on status
         for (uint256 i = 0; i < _exempt.length; ++i) {
             bool success = _exempt[i]
                 ? exemptTo.add(_exemptee[i])
                 : exemptTo.remove(_exemptee[i]);
+
             /// @dev emit : (who, status, success)
             emit Exemption(_exemptee[i], _exempt[i], success);
         }
@@ -336,21 +308,17 @@ contract XShadow is ERC20, IXShadow, Pausable {
     // Getter functions
     /*****************************************************************/
 
-    /// @inheritdoc IXShadow
+    /// @dev simply returns the balance of the underlying
     function getBalanceResiding() public view returns (uint256 _amount) {
-        /// @dev simply returns the balance of the underlying
         return SHADOW.balanceOf(address(this));
     }
 
-    /// @inheritdoc IXShadow
     function usersTotalVests(
         address _who
     ) public view returns (uint256 _length) {
-        /// @dev returns the length of vests
         return vestInfo[_who].length;
     }
 
-    /// @inheritdoc IXShadow
     function getVestInfo(
         address _who,
         uint256 _vestID
@@ -358,12 +326,10 @@ contract XShadow is ERC20, IXShadow, Pausable {
         return vestInfo[_who][_vestID];
     }
 
-    /// @inheritdoc IXShadow
     function isExempt(address _who) external view returns (bool _exempt) {
         return exempt.contains(_who);
     }
 
-    /// @inheritdoc IXShadow
     function shadow() external view returns (address) {
         return address(SHADOW);
     }

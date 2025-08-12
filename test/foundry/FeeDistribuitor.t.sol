@@ -3,7 +3,7 @@ pragma solidity ^0.8.26;
 
 import {TestBase} from "./TestBase.sol";
 import {FeeDistributor} from "../../contracts/FeeDistributor.sol";
-import {MockERC20} from "forge-std/mocks/MockERC20.sol";
+import {MockERC20} from "./mocks/MockERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {console} from "forge-std/console.sol";
 
@@ -13,10 +13,24 @@ contract FeeDistributorTest is TestBase {
 
     event Deposit(address indexed owner, uint256 amount);
     event Withdraw(address indexed owner, uint256 amount);
-    event NotifyReward(address indexed from, address indexed token, uint256 amount, uint256 period);
-    event VotesIncentivized(address indexed from, address indexed token, uint256 amount, uint256 period);
+    event NotifyReward(
+        address indexed from,
+        address indexed token,
+        uint256 amount,
+        uint256 period
+    );
+    event VotesIncentivized(
+        address indexed from,
+        address indexed token,
+        uint256 amount,
+        uint256 period
+    );
     event ClaimRewards(
-        uint256 indexed period, address indexed owner, address indexed receiver, address token, uint256 amount
+        uint256 indexed period,
+        address indexed owner,
+        address indexed receiver,
+        address token,
+        uint256 amount
     );
     event RewardsRemoved(address indexed token);
 
@@ -27,8 +41,15 @@ contract FeeDistributorTest is TestBase {
         // Deploy FeeDistributor
         vm.prank(address(mockVoter));
         // Mock launcherPlugin call on mockVoter to return mock address
-        vm.mockCall(address(mockVoter), abi.encodeWithSignature("launcherPlugin()"), abi.encode(mockLauncherPlugin));
-        feeDistributor = new FeeDistributor(address(mockVoter), address(feeRecipient));
+        vm.mockCall(
+            address(mockVoter),
+            abi.encodeWithSignature("launcherPlugin()"),
+            abi.encode(mockLauncherPlugin)
+        );
+        feeDistributor = new FeeDistributor(
+            address(mockVoter),
+            address(feeRecipient)
+        );
 
         // Setup initial token balances
         deal(address(token0), alice, INITIAL_SUPPLY);
@@ -43,9 +64,21 @@ contract FeeDistributorTest is TestBase {
     }
 
     function test_initialization() public view {
-        assertEq(address(feeDistributor.voter()), address(mockVoter), "voter address mismatch");
-        assertEq(address(feeDistributor.feeRecipient()), address(feeRecipient), "feeRecipient address mismatch");
-        assertEq(feeDistributor.firstPeriod(), feeDistributor.getPeriod(), "firstPeriod mismatch");
+        assertEq(
+            address(feeDistributor.voter()),
+            address(mockVoter),
+            "voter address mismatch"
+        );
+        assertEq(
+            address(feeDistributor.feeRecipient()),
+            address(feeRecipient),
+            "feeRecipient address mismatch"
+        );
+        assertEq(
+            feeDistributor.firstPeriod(),
+            feeDistributor.getPeriod(),
+            "firstPeriod mismatch"
+        );
     }
 
     function testFuzz_deposit(uint256 amount) public {
@@ -55,8 +88,16 @@ contract FeeDistributorTest is TestBase {
         feeDistributor._deposit(amount, alice);
         vm.stopPrank();
 
-        assertEq(feeDistributor.balanceOf(alice), amount, "Incorrect balance after deposit");
-        assertEq(feeDistributor.votes(feeDistributor.getPeriod() + 1), amount, "Incorrect votes after deposit");
+        assertEq(
+            feeDistributor.balanceOf(alice),
+            amount,
+            "Incorrect balance after deposit"
+        );
+        assertEq(
+            feeDistributor.votes(feeDistributor.getPeriod() + 1),
+            amount,
+            "Incorrect votes after deposit"
+        );
     }
 
     function test_onlyVoterCanDeposit() public {
@@ -78,8 +119,16 @@ contract FeeDistributorTest is TestBase {
         vm.stopPrank();
 
         // Check that alice's token balance is restored after withdrawal
-        assertEq(feeDistributor.balanceOf(alice), 0, "Balance not zero after withdraw");
-        assertEq(feeDistributor.votes(feeDistributor.getPeriod() + 1), 0, "Votes not zero after withdraw");
+        assertEq(
+            feeDistributor.balanceOf(alice),
+            0,
+            "Balance not zero after withdraw"
+        );
+        assertEq(
+            feeDistributor.votes(feeDistributor.getPeriod() + 1),
+            0,
+            "Votes not zero after withdraw"
+        );
     }
 
     function test_onlyVoterCanWithdraw() public {
@@ -99,14 +148,23 @@ contract FeeDistributorTest is TestBase {
 
         // Need to add launcher plugin mocks here
         vm.mockCall(
-            address(mockLauncherPlugin), abi.encodeWithSignature("feeDistToPool(address)"), abi.encode(address(0))
+            address(mockLauncherPlugin),
+            abi.encodeWithSignature("feeDistToPool(address)"),
+            abi.encode(address(0))
         );
         vm.mockCall(
-            address(mockLauncherPlugin), abi.encodeWithSignature("launcherPluginEnabled(address)"), abi.encode(false)
+            address(mockLauncherPlugin),
+            abi.encodeWithSignature("launcherPluginEnabled(address)"),
+            abi.encode(false)
         );
 
         vm.expectEmit(true, true, false, true);
-        emit NotifyReward(address(feeRecipient), address(token0), amount, nextPeriod);
+        emit NotifyReward(
+            address(feeRecipient),
+            address(token0),
+            amount,
+            nextPeriod
+        );
         feeDistributor.notifyRewardAmount(address(token0), amount);
         vm.stopPrank();
 
@@ -154,10 +212,14 @@ contract FeeDistributorTest is TestBase {
 
         // Mock launcher plugin calls to disable launcher functionality
         vm.mockCall(
-            address(mockLauncherPlugin), abi.encodeWithSignature("feeDistToPool(address)"), abi.encode(address(0))
+            address(mockLauncherPlugin),
+            abi.encodeWithSignature("feeDistToPool(address)"),
+            abi.encode(address(0))
         );
         vm.mockCall(
-            address(mockLauncherPlugin), abi.encodeWithSignature("launcherPluginEnabled(address)"), abi.encode(false)
+            address(mockLauncherPlugin),
+            abi.encodeWithSignature("launcherPluginEnabled(address)"),
+            abi.encode(false)
         );
 
         // Setup reward
@@ -191,10 +253,14 @@ contract FeeDistributorTest is TestBase {
 
         // Mock launcher plugin calls to disable launcher functionality
         vm.mockCall(
-            address(mockLauncherPlugin), abi.encodeWithSignature("feeDistToPool(address)"), abi.encode(address(0))
+            address(mockLauncherPlugin),
+            abi.encodeWithSignature("feeDistToPool(address)"),
+            abi.encode(address(0))
         );
         vm.mockCall(
-            address(mockLauncherPlugin), abi.encodeWithSignature("launcherPluginEnabled(address)"), abi.encode(false)
+            address(mockLauncherPlugin),
+            abi.encodeWithSignature("launcherPluginEnabled(address)"),
+            abi.encode(false)
         );
 
         // Setup reward
@@ -215,8 +281,16 @@ contract FeeDistributorTest is TestBase {
         feeDistributor.getReward(alice, tokens);
         uint256 balanceAfter = IERC20(address(token0)).balanceOf(alice);
 
-        assertEq(balanceAfter - balanceBefore, rewardAmount, "Incorrect balance after claim");
-        assertEq(feeDistributor.earned(address(token0), alice), 0, "Incorrect earned after claim");
+        assertEq(
+            balanceAfter - balanceBefore,
+            rewardAmount,
+            "Incorrect balance after claim"
+        );
+        assertEq(
+            feeDistributor.earned(address(token0), alice),
+            0,
+            "Incorrect earned after claim"
+        );
     }
 
     function test_getRewardForOwner() public {
@@ -229,10 +303,14 @@ contract FeeDistributorTest is TestBase {
 
         // Mock launcher plugin calls to disable launcher functionality
         vm.mockCall(
-            address(mockLauncherPlugin), abi.encodeWithSignature("feeDistToPool(address)"), abi.encode(address(0))
+            address(mockLauncherPlugin),
+            abi.encodeWithSignature("feeDistToPool(address)"),
+            abi.encode(address(0))
         );
         vm.mockCall(
-            address(mockLauncherPlugin), abi.encodeWithSignature("launcherPluginEnabled(address)"), abi.encode(false)
+            address(mockLauncherPlugin),
+            abi.encodeWithSignature("launcherPluginEnabled(address)"),
+            abi.encode(false)
         );
 
         // Setup reward
@@ -263,10 +341,14 @@ contract FeeDistributorTest is TestBase {
 
         // Mock launcher plugin calls to disable launcher functionality
         vm.mockCall(
-            address(mockLauncherPlugin), abi.encodeWithSignature("feeDistToPool(address)"), abi.encode(address(0))
+            address(mockLauncherPlugin),
+            abi.encodeWithSignature("feeDistToPool(address)"),
+            abi.encode(address(0))
         );
         vm.mockCall(
-            address(mockLauncherPlugin), abi.encodeWithSignature("launcherPluginEnabled(address)"), abi.encode(false)
+            address(mockLauncherPlugin),
+            abi.encodeWithSignature("launcherPluginEnabled(address)"),
+            abi.encode(false)
         );
 
         // Setup reward
@@ -285,12 +367,20 @@ contract FeeDistributorTest is TestBase {
 
         // Check earned amount is still correct
         uint256 earned = feeDistributor.earned(address(token0), alice);
-        assertEq(earned, rewardAmount, "Should still show correct earned amount after token removed");
+        assertEq(
+            earned,
+            rewardAmount,
+            "Should still show correct earned amount after token removed"
+        );
 
         // Mock vote module call to allow alice to claim
         vm.mockCall(
             address(mockVoteModule),
-            abi.encodeWithSignature("isAdminFor(address,address)", alice, alice),
+            abi.encodeWithSignature(
+                "isAdminFor(address,address)",
+                alice,
+                alice
+            ),
             abi.encode(true)
         );
 
@@ -304,7 +394,9 @@ contract FeeDistributorTest is TestBase {
 
         // Verify rewards were received
         assertEq(
-            balanceAfter - balanceBefore, rewardAmount, "Should still be able to claim rewards after token removed"
+            balanceAfter - balanceBefore,
+            rewardAmount,
+            "Should still be able to claim rewards after token removed"
         );
     }
 
@@ -327,13 +419,22 @@ contract FeeDistributorTest is TestBase {
         deal(address(token0), address(feeRecipient), rewardAmount);
         IERC20(address(token0)).approve(address(feeDistributor), rewardAmount);
         vm.mockCall(
-            address(mockLauncherPlugin), abi.encodeWithSignature("feeDistToPool(address)"), abi.encode(address(0))
+            address(mockLauncherPlugin),
+            abi.encodeWithSignature("feeDistToPool(address)"),
+            abi.encode(address(0))
         );
         vm.mockCall(
-            address(mockLauncherPlugin), abi.encodeWithSignature("launcherPluginEnabled(address)"), abi.encode(false)
+            address(mockLauncherPlugin),
+            abi.encodeWithSignature("launcherPluginEnabled(address)"),
+            abi.encode(false)
         );
         vm.expectEmit(true, true, false, true);
-        emit NotifyReward(address(feeRecipient), address(token0), rewardAmount, feeDistributor.getPeriod() + 1);
+        emit NotifyReward(
+            address(feeRecipient),
+            address(token0),
+            rewardAmount,
+            feeDistributor.getPeriod() + 1
+        );
         feeDistributor.notifyRewardAmount(address(token0), rewardAmount);
         vm.stopPrank();
 
@@ -344,7 +445,11 @@ contract FeeDistributorTest is TestBase {
         // Calculate expected rewards
         // Since there is only one user with all votes, they should receive all rewards
         uint256 expectedReward = rewardAmount;
-        assertEq(earned, expectedReward, "Earned rewards should equal total reward amount");
+        assertEq(
+            earned,
+            expectedReward,
+            "Earned rewards should equal total reward amount"
+        );
     }
 
     function test_earnedWithLauncherPlugin() public {
@@ -364,12 +469,20 @@ contract FeeDistributorTest is TestBase {
 
         // Mock launcher plugin to return true and set values
         vm.mockCall(
-            address(mockLauncherPlugin), abi.encodeWithSignature("feeDistToPool(address)"), abi.encode(address(0))
+            address(mockLauncherPlugin),
+            abi.encodeWithSignature("feeDistToPool(address)"),
+            abi.encode(address(0))
         );
         vm.mockCall(
-            address(mockLauncherPlugin), abi.encodeWithSignature("launcherPluginEnabled(address)"), abi.encode(true)
+            address(mockLauncherPlugin),
+            abi.encodeWithSignature("launcherPluginEnabled(address)"),
+            abi.encode(true)
         );
-        vm.mockCall(address(mockLauncherPlugin), abi.encodeWithSignature("values(address)"), abi.encode(take, treasury));
+        vm.mockCall(
+            address(mockLauncherPlugin),
+            abi.encodeWithSignature("values(address)"),
+            abi.encode(take, treasury)
+        );
 
         feeDistributor.notifyRewardAmount(address(token0), rewardAmount);
         vm.stopPrank();
@@ -384,10 +497,18 @@ contract FeeDistributorTest is TestBase {
         uint256 treasuryAmount = (rewardAmount * take) / 10_000; // 20% to treasury
         uint256 expectedReward = rewardAmount - treasuryAmount; // Remaining 80% to user
 
-        assertEq(earned, expectedReward, "Earned rewards should equal 80% of total reward amount");
+        assertEq(
+            earned,
+            expectedReward,
+            "Earned rewards should equal 80% of total reward amount"
+        );
         // Verify treasury received its share
         uint256 treasuryBalance = IERC20(address(token0)).balanceOf(treasury);
-        assertEq(treasuryBalance, treasuryAmount, "Treasury should have received 20% of rewards");
+        assertEq(
+            treasuryBalance,
+            treasuryAmount,
+            "Treasury should have received 20% of rewards"
+        );
     }
 
     function test_notifyRewardWithZeroTake() public {
@@ -407,12 +528,20 @@ contract FeeDistributorTest is TestBase {
 
         // Mock launcher plugin to return true and set values
         vm.mockCall(
-            address(mockLauncherPlugin), abi.encodeWithSignature("feeDistToPool(address)"), abi.encode(address(0))
+            address(mockLauncherPlugin),
+            abi.encodeWithSignature("feeDistToPool(address)"),
+            abi.encode(address(0))
         );
         vm.mockCall(
-            address(mockLauncherPlugin), abi.encodeWithSignature("launcherPluginEnabled(address)"), abi.encode(true)
+            address(mockLauncherPlugin),
+            abi.encodeWithSignature("launcherPluginEnabled(address)"),
+            abi.encode(true)
         );
-        vm.mockCall(address(mockLauncherPlugin), abi.encodeWithSignature("values(address)"), abi.encode(take, treasury));
+        vm.mockCall(
+            address(mockLauncherPlugin),
+            abi.encodeWithSignature("values(address)"),
+            abi.encode(take, treasury)
+        );
 
         feeDistributor.notifyRewardAmount(address(token0), rewardAmount);
         vm.stopPrank();
@@ -423,10 +552,18 @@ contract FeeDistributorTest is TestBase {
         uint256 earned = feeDistributor.earned(address(token0), alice);
 
         // With 0% take, user should get 100% of rewards
-        assertEq(earned, rewardAmount, "Earned rewards should equal 100% of total reward amount");
+        assertEq(
+            earned,
+            rewardAmount,
+            "Earned rewards should equal 100% of total reward amount"
+        );
         // Verify treasury received nothing
         uint256 treasuryBalance = IERC20(address(token0)).balanceOf(treasury);
-        assertEq(treasuryBalance, 0, "Treasury should have received 0% of rewards");
+        assertEq(
+            treasuryBalance,
+            0,
+            "Treasury should have received 0% of rewards"
+        );
     }
 
     function test_notifyRewardWithFullTake() public {
@@ -446,12 +583,20 @@ contract FeeDistributorTest is TestBase {
 
         // Mock launcher plugin to return true and set values
         vm.mockCall(
-            address(mockLauncherPlugin), abi.encodeWithSignature("feeDistToPool(address)"), abi.encode(address(0))
+            address(mockLauncherPlugin),
+            abi.encodeWithSignature("feeDistToPool(address)"),
+            abi.encode(address(0))
         );
         vm.mockCall(
-            address(mockLauncherPlugin), abi.encodeWithSignature("launcherPluginEnabled(address)"), abi.encode(true)
+            address(mockLauncherPlugin),
+            abi.encodeWithSignature("launcherPluginEnabled(address)"),
+            abi.encode(true)
         );
-        vm.mockCall(address(mockLauncherPlugin), abi.encodeWithSignature("values(address)"), abi.encode(take, treasury));
+        vm.mockCall(
+            address(mockLauncherPlugin),
+            abi.encodeWithSignature("values(address)"),
+            abi.encode(take, treasury)
+        );
 
         feeDistributor.notifyRewardAmount(address(token0), rewardAmount);
         vm.stopPrank();
@@ -462,10 +607,18 @@ contract FeeDistributorTest is TestBase {
         uint256 earned = feeDistributor.earned(address(token0), alice);
 
         // With 100% take, user should get 0% of rewards
-        assertEq(earned, 0, "Earned rewards should equal 0% of total reward amount");
+        assertEq(
+            earned,
+            0,
+            "Earned rewards should equal 0% of total reward amount"
+        );
         // Verify treasury received everything
         uint256 treasuryBalance = IERC20(address(token0)).balanceOf(treasury);
-        assertEq(treasuryBalance, rewardAmount, "Treasury should have received 100% of rewards");
+        assertEq(
+            treasuryBalance,
+            rewardAmount,
+            "Treasury should have received 100% of rewards"
+        );
     }
 
     function test_notifyRewardWithTransferTaxToken() public {
@@ -482,7 +635,11 @@ contract FeeDistributorTest is TestBase {
         taxToken.initialize("Tax Token", "TAX", 18);
 
         // Mock voter whitelist call for tax token
-        vm.mockCall(address(mockVoter), abi.encodeWithSignature("isWhitelisted(address)"), abi.encode(true));
+        vm.mockCall(
+            address(mockVoter),
+            abi.encodeWithSignature("isWhitelisted(address)"),
+            abi.encode(true)
+        );
 
         // Setup reward with tax token
         vm.startPrank(address(feeRecipient));
@@ -491,10 +648,14 @@ contract FeeDistributorTest is TestBase {
 
         // Mock plugin calls, will skip it
         vm.mockCall(
-            address(mockLauncherPlugin), abi.encodeWithSignature("launcherPluginEnabled(address)"), abi.encode(false)
+            address(mockLauncherPlugin),
+            abi.encodeWithSignature("launcherPluginEnabled(address)"),
+            abi.encode(false)
         );
         vm.mockCall(
-            address(mockLauncherPlugin), abi.encodeWithSignature("feeDistToPool(address)"), abi.encode(address(0))
+            address(mockLauncherPlugin),
+            abi.encodeWithSignature("feeDistToPool(address)"),
+            abi.encode(address(0))
         );
 
         feeDistributor.notifyRewardAmount(address(taxToken), rewardAmount);
@@ -507,7 +668,11 @@ contract FeeDistributorTest is TestBase {
         uint256 afterTaxAmount = rewardAmount - (rewardAmount * 100) / 10000; // 1% tax
 
         // User should get the after-tax amount since that's what actually arrived
-        assertEq(earned, afterTaxAmount, "Earned rewards should equal post-tax amount");
+        assertEq(
+            earned,
+            afterTaxAmount,
+            "Earned rewards should equal post-tax amount"
+        );
         // Verify we're looking at the next period's rewards
         assertEq(
             feeDistributor.rewardSupply(initialPeriod + 1, address(taxToken)),
@@ -517,13 +682,20 @@ contract FeeDistributorTest is TestBase {
 
         // Verify the rewardSupply tracks the actual received amount
         assertEq(
-            feeDistributor.rewardSupply(feeDistributor.getPeriod(), address(taxToken)),
+            feeDistributor.rewardSupply(
+                feeDistributor.getPeriod(),
+                address(taxToken)
+            ),
             afterTaxAmount,
             "Reward supply should equal post-tax amount"
         );
     }
 
-    function testFuzz_multipleUsersRewards(uint256 deposit1, uint256 deposit2, uint256 rewardAmount) public {
+    function testFuzz_multipleUsersRewards(
+        uint256 deposit1,
+        uint256 deposit2,
+        uint256 rewardAmount
+    ) public {
         // Bound inputs to reasonable values
         deposit1 = bound(deposit1, 0.5e18, type(uint112).max / 2);
         deposit2 = bound(deposit2, 0.5e18, type(uint112).max / 2);
@@ -537,10 +709,14 @@ contract FeeDistributorTest is TestBase {
 
         // Mock launcher plugin calls to disable launcher functionality
         vm.mockCall(
-            address(mockLauncherPlugin), abi.encodeWithSignature("feeDistToPool(address)"), abi.encode(address(0))
+            address(mockLauncherPlugin),
+            abi.encodeWithSignature("feeDistToPool(address)"),
+            abi.encode(address(0))
         );
         vm.mockCall(
-            address(mockLauncherPlugin), abi.encodeWithSignature("launcherPluginEnabled(address)"), abi.encode(false)
+            address(mockLauncherPlugin),
+            abi.encodeWithSignature("launcherPluginEnabled(address)"),
+            abi.encode(false)
         );
 
         // Setup reward
@@ -562,15 +738,35 @@ contract FeeDistributorTest is TestBase {
 
         // We do this because the fuzzer sometimes generates values that are too small to be compared with assertApproxEqRel and 1% relative error
         if (earnedAlice < 1e5) {
-            assertApproxEqAbs(earnedAlice, expectedRewardAlice, 1000, "Alice's earned rewards do not match expected");
+            assertApproxEqAbs(
+                earnedAlice,
+                expectedRewardAlice,
+                1000,
+                "Alice's earned rewards do not match expected"
+            );
         } else {
-            assertApproxEqRel(earnedAlice, expectedRewardAlice, 0.01e18, "Alice's earned rewards do not match expected");
+            assertApproxEqRel(
+                earnedAlice,
+                expectedRewardAlice,
+                0.01e18,
+                "Alice's earned rewards do not match expected"
+            );
         }
 
         if (earnedBob < 1e5) {
-            assertApproxEqAbs(earnedBob, expectedRewardBob, 1000, "Bob's earned rewards do not match expected");
+            assertApproxEqAbs(
+                earnedBob,
+                expectedRewardBob,
+                1000,
+                "Bob's earned rewards do not match expected"
+            );
         } else {
-            assertApproxEqRel(earnedBob, expectedRewardBob, 0.01e18, "Bob's earned rewards do not match expected");
+            assertApproxEqRel(
+                earnedBob,
+                expectedRewardBob,
+                0.01e18,
+                "Bob's earned rewards do not match expected"
+            );
         }
 
         // Test actual reward claims
@@ -581,11 +777,17 @@ contract FeeDistributorTest is TestBase {
         // Mock vote module calls to allow alice and bob to claim their own rewards
         vm.mockCall(
             address(mockVoteModule),
-            abi.encodeWithSignature("isAdminFor(address,address)", alice, alice),
+            abi.encodeWithSignature(
+                "isAdminFor(address,address)",
+                alice,
+                alice
+            ),
             abi.encode(true)
         );
         vm.mockCall(
-            address(mockVoteModule), abi.encodeWithSignature("isAdminFor(address,address)", bob, bob), abi.encode(true)
+            address(mockVoteModule),
+            abi.encodeWithSignature("isAdminFor(address,address)", bob, bob),
+            abi.encode(true)
         );
 
         vm.prank(alice);
@@ -598,14 +800,27 @@ contract FeeDistributorTest is TestBase {
         uint256 bobBalanceAfter = IERC20(address(token0)).balanceOf(bob);
 
         // Verify actual received amounts match earned amounts
-        assertEq(aliceBalanceAfter - aliceBalanceBefore, earnedAlice, "Alice did not receive correct reward amount");
-        assertEq(bobBalanceAfter - bobBalanceBefore, earnedBob, "Bob did not receive correct reward amount");
+        assertEq(
+            aliceBalanceAfter - aliceBalanceBefore,
+            earnedAlice,
+            "Alice did not receive correct reward amount"
+        );
+        assertEq(
+            bobBalanceAfter - bobBalanceBefore,
+            earnedBob,
+            "Bob did not receive correct reward amount"
+        );
     }
 
     function test_revertFutureClaimPeriod() public {
         // Setup initial deposits
         uint256 deposit = 1e18;
-        _dealAndApprove(address(shadow), alice, deposit, address(feeDistributor));
+        _dealAndApprove(
+            address(shadow),
+            alice,
+            deposit,
+            address(feeDistributor)
+        );
         vm.prank(address(mockVoter));
         feeDistributor._deposit(deposit, alice);
 
@@ -615,16 +830,27 @@ contract FeeDistributorTest is TestBase {
         // Try to claim for a future period
         vm.mockCall(
             address(mockVoteModule),
-            abi.encodeWithSignature("isAdminFor(address,address)", alice, alice),
+            abi.encodeWithSignature(
+                "isAdminFor(address,address)",
+                alice,
+                alice
+            ),
             abi.encode(true)
         );
 
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSignature("NOT_FINALIZED()"));
-        feeDistributor.getPeriodReward(currentPeriod + 1, alice, address(token0));
+        feeDistributor.getPeriodReward(
+            currentPeriod + 1,
+            alice,
+            address(token0)
+        );
     }
 
-    function testFuzz_rewardsWithSixDecimals(uint256 deposit, uint256 rewardAmount) public {
+    function testFuzz_rewardsWithSixDecimals(
+        uint256 deposit,
+        uint256 rewardAmount
+    ) public {
         vm.assume(deposit > 0 && deposit < 1_000_000e18);
         vm.assume(rewardAmount > 0 && rewardAmount < 1_000_000e18);
 
@@ -632,7 +858,12 @@ contract FeeDistributorTest is TestBase {
         mockVoter.whitelist(address(token6Decimals));
 
         // Setup initial deposits
-        _dealAndApprove(address(shadow), alice, deposit, address(feeDistributor));
+        _dealAndApprove(
+            address(shadow),
+            alice,
+            deposit,
+            address(feeDistributor)
+        );
         vm.prank(address(mockVoter));
         feeDistributor._deposit(deposit, alice);
 
@@ -640,17 +871,27 @@ contract FeeDistributorTest is TestBase {
         uint256 period = feeDistributor.getPeriod();
 
         vm.mockCall(
-            address(mockLauncherPlugin), abi.encodeWithSignature("feeDistToPool(address)"), abi.encode(address(0))
+            address(mockLauncherPlugin),
+            abi.encodeWithSignature("feeDistToPool(address)"),
+            abi.encode(address(0))
         );
         vm.mockCall(
-            address(mockLauncherPlugin), abi.encodeWithSignature("launcherPluginEnabled(address)"), abi.encode(false)
+            address(mockLauncherPlugin),
+            abi.encodeWithSignature("launcherPluginEnabled(address)"),
+            abi.encode(false)
         );
 
         // Setup reward
         vm.startPrank(address(feeRecipient));
         deal(address(token6Decimals), address(feeRecipient), rewardAmount);
-        IERC20(address(token6Decimals)).approve(address(feeDistributor), rewardAmount);
-        feeDistributor.notifyRewardAmount(address(token6Decimals), rewardAmount);
+        IERC20(address(token6Decimals)).approve(
+            address(feeDistributor),
+            rewardAmount
+        );
+        feeDistributor.notifyRewardAmount(
+            address(token6Decimals),
+            rewardAmount
+        );
         vm.stopPrank();
 
         // Move forward by 1 week
@@ -660,15 +901,26 @@ contract FeeDistributorTest is TestBase {
         uint256 expectedReward = rewardAmount; // Since alice is the only depositor, she gets all rewards
         uint256 earned = feeDistributor.earned(address(token6Decimals), alice);
 
-        assertApproxEqRel(earned, expectedReward, 0.01e18, "Alice's earned rewards do not match expected");
+        assertApproxEqRel(
+            earned,
+            expectedReward,
+            0.01e18,
+            "Alice's earned rewards do not match expected"
+        );
 
         // Store balance before claiming
-        uint256 aliceBalanceBefore = IERC20(address(token6Decimals)).balanceOf(alice);
+        uint256 aliceBalanceBefore = IERC20(address(token6Decimals)).balanceOf(
+            alice
+        );
         period = feeDistributor.getPeriod();
         // Mock vote module call to allow alice to claim
         vm.mockCall(
             address(mockVoteModule),
-            abi.encodeWithSignature("isAdminFor(address,address)", alice, alice),
+            abi.encodeWithSignature(
+                "isAdminFor(address,address)",
+                alice,
+                alice
+            ),
             abi.encode(true)
         );
 
@@ -676,15 +928,23 @@ contract FeeDistributorTest is TestBase {
         vm.prank(alice);
         feeDistributor.getPeriodReward(period, alice, address(token6Decimals));
 
-        uint256 aliceBalanceAfter = IERC20(address(token6Decimals)).balanceOf(alice);
+        uint256 aliceBalanceAfter = IERC20(address(token6Decimals)).balanceOf(
+            alice
+        );
 
         // Verify actual received amount matches earned amount
-        assertEq(aliceBalanceAfter - aliceBalanceBefore, earned, "Alice did not receive correct reward amount");
+        assertEq(
+            aliceBalanceAfter - aliceBalanceBefore,
+            earned,
+            "Alice did not receive correct reward amount"
+        );
     }
 
-    function testFuzz_combineNotifyAndIncentivize(uint256 deposit, uint256 notifyAmount, uint256 incentiveAmount)
-        public
-    {
+    function testFuzz_combineNotifyAndIncentivize(
+        uint256 deposit,
+        uint256 notifyAmount,
+        uint256 incentiveAmount
+    ) public {
         // Bound inputs to reasonable values
         deposit = bound(deposit, 1e18, type(uint112).max);
         notifyAmount = bound(notifyAmount, 1e18, type(uint112).max);
@@ -696,10 +956,14 @@ contract FeeDistributorTest is TestBase {
 
         // Mock launcher plugin calls to disable launcher functionality
         vm.mockCall(
-            address(mockLauncherPlugin), abi.encodeWithSignature("feeDistToPool(address)"), abi.encode(address(0))
+            address(mockLauncherPlugin),
+            abi.encodeWithSignature("feeDistToPool(address)"),
+            abi.encode(address(0))
         );
         vm.mockCall(
-            address(mockLauncherPlugin), abi.encodeWithSignature("launcherPluginEnabled(address)"), abi.encode(false)
+            address(mockLauncherPlugin),
+            abi.encodeWithSignature("launcherPluginEnabled(address)"),
+            abi.encode(false)
         );
 
         // Setup notify reward
@@ -712,7 +976,10 @@ contract FeeDistributorTest is TestBase {
         // Setup incentive
         vm.startPrank(alice);
         deal(address(token0), alice, incentiveAmount);
-        IERC20(address(token0)).approve(address(feeDistributor), incentiveAmount);
+        IERC20(address(token0)).approve(
+            address(feeDistributor),
+            incentiveAmount
+        );
         feeDistributor.incentivize(address(token0), incentiveAmount);
         vm.stopPrank();
 
@@ -724,7 +991,11 @@ contract FeeDistributorTest is TestBase {
         uint256 earned = feeDistributor.earned(address(token0), alice);
 
         // Since alice is the only depositor, she should get all rewards
-        assertEq(earned, totalExpectedReward, "Earned rewards should equal combined rewards");
+        assertEq(
+            earned,
+            totalExpectedReward,
+            "Earned rewards should equal combined rewards"
+        );
 
         // Test actual reward claim
         uint256 period = feeDistributor.getPeriod();
@@ -733,7 +1004,11 @@ contract FeeDistributorTest is TestBase {
         // Mock vote module call to allow alice to claim
         vm.mockCall(
             address(mockVoteModule),
-            abi.encodeWithSignature("isAdminFor(address,address)", alice, alice),
+            abi.encodeWithSignature(
+                "isAdminFor(address,address)",
+                alice,
+                alice
+            ),
             abi.encode(true)
         );
 
@@ -745,7 +1020,11 @@ contract FeeDistributorTest is TestBase {
         uint256 actualReward = balanceAfter - balanceBefore;
 
         // Verify actual received amount matches earned amount
-        assertEq(actualReward, earned, "Claimed amount should match earned amount");
+        assertEq(
+            actualReward,
+            earned,
+            "Claimed amount should match earned amount"
+        );
 
         // Verify reward supply was correctly tracked
         assertEq(
@@ -766,10 +1045,14 @@ contract FeeDistributorTest is TestBase {
 
         // Mock launcher plugin calls to disable launcher functionality
         vm.mockCall(
-            address(mockLauncherPlugin), abi.encodeWithSignature("feeDistToPool(address)"), abi.encode(address(0))
+            address(mockLauncherPlugin),
+            abi.encodeWithSignature("feeDistToPool(address)"),
+            abi.encode(address(0))
         );
         vm.mockCall(
-            address(mockLauncherPlugin), abi.encodeWithSignature("launcherPluginEnabled(address)"), abi.encode(false)
+            address(mockLauncherPlugin),
+            abi.encodeWithSignature("launcherPluginEnabled(address)"),
+            abi.encode(false)
         );
 
         // Setup initial reward at start of period
@@ -785,7 +1068,10 @@ contract FeeDistributorTest is TestBase {
         // Add incentive in middle of period
         vm.startPrank(alice);
         deal(address(token0), alice, midPeriodIncentive);
-        IERC20(address(token0)).approve(address(feeDistributor), midPeriodIncentive);
+        IERC20(address(token0)).approve(
+            address(feeDistributor),
+            midPeriodIncentive
+        );
         feeDistributor.incentivize(address(token0), midPeriodIncentive);
         vm.stopPrank();
 
@@ -797,7 +1083,11 @@ contract FeeDistributorTest is TestBase {
         uint256 earned = feeDistributor.earned(address(token0), alice);
 
         // Since alice is the only depositor, she should get all rewards
-        assertEq(earned, totalExpectedReward, "Earned rewards should equal combined rewards");
+        assertEq(
+            earned,
+            totalExpectedReward,
+            "Earned rewards should equal combined rewards"
+        );
 
         // Test actual reward claim
         uint256 period = feeDistributor.getPeriod();
@@ -806,7 +1096,11 @@ contract FeeDistributorTest is TestBase {
         // Mock vote module call to allow alice to claim
         vm.mockCall(
             address(mockVoteModule),
-            abi.encodeWithSignature("isAdminFor(address,address)", alice, alice),
+            abi.encodeWithSignature(
+                "isAdminFor(address,address)",
+                alice,
+                alice
+            ),
             abi.encode(true)
         );
 
@@ -818,7 +1112,11 @@ contract FeeDistributorTest is TestBase {
         uint256 actualReward = balanceAfter - balanceBefore;
 
         // Verify actual received amount matches earned amount
-        assertEq(actualReward, earned, "Claimed amount should match earned amount");
+        assertEq(
+            actualReward,
+            earned,
+            "Claimed amount should match earned amount"
+        );
 
         // Verify reward supply was correctly tracked
         assertEq(
@@ -828,7 +1126,11 @@ contract FeeDistributorTest is TestBase {
         );
 
         // Verify that rewards for next period are zero
-        assertEq(feeDistributor.rewardSupply(period + 1, address(token0)), 0, "Next period should have no rewards");
+        assertEq(
+            feeDistributor.rewardSupply(period + 1, address(token0)),
+            0,
+            "Next period should have no rewards"
+        );
     }
 
     function test_concrete() public {
@@ -873,7 +1175,11 @@ contract FeeDistributorTest is TestBase {
         vm.warp(block.timestamp + 5 days);
 
         uint256 earned = feeDistributor.earned(address(token0), alice);
-        assertEq(earned, incentive1 + incentive2 + incentive3, "Should earn all incentives regardless of timing");
+        assertEq(
+            earned,
+            incentive1 + incentive2 + incentive3,
+            "Should earn all incentives regardless of timing"
+        );
     }
 
     function test_claimMultipleSkippedPeriods() public {
@@ -890,7 +1196,9 @@ contract FeeDistributorTest is TestBase {
 
             // Mock launcher plugin calls to disable launcher functionality
             vm.mockCall(
-                address(mockLauncherPlugin), abi.encodeWithSignature("feeDistToPool(address)"), abi.encode(address(0))
+                address(mockLauncherPlugin),
+                abi.encodeWithSignature("feeDistToPool(address)"),
+                abi.encode(address(0))
             );
             vm.mockCall(
                 address(mockLauncherPlugin),
@@ -900,7 +1208,10 @@ contract FeeDistributorTest is TestBase {
 
             vm.startPrank(address(feeRecipient));
             deal(address(token0), address(feeRecipient), rewardAmount);
-            IERC20(address(token0)).approve(address(feeDistributor), rewardAmount);
+            IERC20(address(token0)).approve(
+                address(feeDistributor),
+                rewardAmount
+            );
             feeDistributor.notifyRewardAmount(address(token0), rewardAmount);
             vm.stopPrank();
             // Move to next period
@@ -911,7 +1222,11 @@ contract FeeDistributorTest is TestBase {
         // Mock vote module call to allow alice to claim
         vm.mockCall(
             address(mockVoteModule),
-            abi.encodeWithSignature("isAdminFor(address,address)", alice, alice),
+            abi.encodeWithSignature(
+                "isAdminFor(address,address)",
+                alice,
+                alice
+            ),
             abi.encode(true)
         );
 
@@ -924,7 +1239,11 @@ contract FeeDistributorTest is TestBase {
             feeDistributor.getPeriodReward(i, alice, address(token0));
 
             uint256 balanceAfter = IERC20(address(token0)).balanceOf(alice);
-            assertEq(balanceAfter - balanceBefore, rewardAmount, "Should receive full reward amount for period");
+            assertEq(
+                balanceAfter - balanceBefore,
+                rewardAmount,
+                "Should receive full reward amount for period"
+            );
         }
     }
 
@@ -945,14 +1264,21 @@ contract FeeDistributorTest is TestBase {
         // Multiple notifications in same period
         vm.startPrank(address(feeRecipient));
         deal(address(token0), address(feeRecipient), reward1 + reward2);
-        IERC20(address(token0)).approve(address(feeDistributor), reward1 + reward2);
+        IERC20(address(token0)).approve(
+            address(feeDistributor),
+            reward1 + reward2
+        );
 
         // Mock launcher plugin calls to disable launcher functionality
         vm.mockCall(
-            address(mockLauncherPlugin), abi.encodeWithSignature("feeDistToPool(address)"), abi.encode(address(0))
+            address(mockLauncherPlugin),
+            abi.encodeWithSignature("feeDistToPool(address)"),
+            abi.encode(address(0))
         );
         vm.mockCall(
-            address(mockLauncherPlugin), abi.encodeWithSignature("launcherPluginEnabled(address)"), abi.encode(false)
+            address(mockLauncherPlugin),
+            abi.encodeWithSignature("launcherPluginEnabled(address)"),
+            abi.encode(false)
         );
         feeDistributor.notifyRewardAmount(address(token0), reward1);
         feeDistributor.notifyRewardAmount(address(token0), reward2);
@@ -962,7 +1288,11 @@ contract FeeDistributorTest is TestBase {
         vm.warp(block.timestamp + 1 weeks);
 
         uint256 earned = feeDistributor.earned(address(token0), alice);
-        assertEq(earned, reward1 + reward2, "Should earn combined rewards from multiple notifications");
+        assertEq(
+            earned,
+            reward1 + reward2,
+            "Should earn combined rewards from multiple notifications"
+        );
     }
 
     function test_multipleDepositsInSamePeriod() public {
@@ -996,7 +1326,11 @@ contract FeeDistributorTest is TestBase {
         vm.stopPrank();
 
         uint256 nextPeriod = feeDistributor.getPeriod() + 1;
-        assertEq(feeDistributor.userVotes(nextPeriod, alice), 150e18, "Votes should reflect multiple withdrawals");
+        assertEq(
+            feeDistributor.userVotes(nextPeriod, alice),
+            150e18,
+            "Votes should reflect multiple withdrawals"
+        );
     }
 }
 
@@ -1004,14 +1338,21 @@ contract TaxToken is MockERC20 {
     uint256 public constant TAX_RATE = 100; // 1% tax
     uint256 public constant TAX_DENOMINATOR = 10_000;
 
-    function transfer(address to, uint256 amount) public override returns (bool) {
+    function transfer(
+        address to,
+        uint256 amount
+    ) public override returns (bool) {
         uint256 tax = (amount * TAX_RATE) / TAX_DENOMINATOR;
         uint256 amountAfterTax = amount - tax;
         super.transfer(address(this), tax);
         return super.transfer(to, amountAfterTax);
     }
 
-    function transferFrom(address from, address to, uint256 amount) public override returns (bool) {
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    ) public override returns (bool) {
         uint256 tax = (amount * TAX_RATE) / TAX_DENOMINATOR;
         uint256 amountAfterTax = amount - tax;
         super.transferFrom(from, address(this), tax);

@@ -4,7 +4,7 @@ import {
   Wallet,
   ContractTransactionResponse,
   ContractTransactionReceipt,
-  LogDescription
+  LogDescription,
 } from "ethers";
 import { ethers } from "hardhat";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
@@ -19,10 +19,7 @@ import {
 } from "../../typechain-types";
 import { expect } from "../uniswapV3CoreTests/shared/expect";
 import { poolFixture } from "../uniswapV3CoreTests/shared/fixtures";
-import {
-  formatPrice,
-  formatTokenAmount,
-} from "../uniswapV3CoreTests/shared/format";
+import { formatPrice, formatTokenAmount } from "../uniswapV3CoreTests/shared/format";
 import {
   createPoolFunctions,
   encodePriceSqrt,
@@ -149,15 +146,9 @@ async function executeSwap(
     }
   } else {
     if (testCase.zeroForOne) {
-      swap = await poolFunctions.swapToLowerPrice(
-        testCase.sqrtPriceLimit,
-        SWAP_RECIPIENT_ADDRESS,
-      );
+      swap = await poolFunctions.swapToLowerPrice(testCase.sqrtPriceLimit, SWAP_RECIPIENT_ADDRESS);
     } else {
-      swap = await poolFunctions.swapToHigherPrice(
-        testCase.sqrtPriceLimit,
-        SWAP_RECIPIENT_ADDRESS,
-      );
+      swap = await poolFunctions.swapToHigherPrice(testCase.sqrtPriceLimit, SWAP_RECIPIENT_ADDRESS);
     }
   }
   return swap;
@@ -193,8 +184,7 @@ const TEST_POOLS: PoolTestCase[] = [
     ],
   },
   {
-    description:
-      "medium fee, 1:1 price, additional liquidity around current price",
+    description: "medium fee, 1:1 price, additional liquidity around current price",
     feeAmount: FeeAmount.MEDIUM,
     tickSpacing: TICK_SPACINGS[FeeAmount.MEDIUM],
     startingPrice: BigInt(encodePriceSqrt(1n, 1n).toString()),
@@ -289,8 +279,7 @@ describe("GaugeV2 tests", () => {
   });
 
   const poolCase: PoolTestCase = {
-    description:
-      "medium fee, 1:1 price, additional liquidity around current price",
+    description: "medium fee, 1:1 price, additional liquidity around current price",
     feeAmount: FeeAmount.MEDIUM,
     tickSpacing: TICK_SPACINGS[FeeAmount.MEDIUM],
     startingPrice: BigInt(encodePriceSqrt(1n, 1n).toString()),
@@ -369,13 +358,8 @@ describe("GaugeV2 tests", () => {
         swapTargetCallee: swapTarget,
         c,
       } = await loadFixture(poolFixture);
-      const pool = await createNormalPool(
-        poolCase.feeAmount,
-        poolCase.startingPrice,
-      );
-      const { gauge, feeDistributor } = await createGauge(
-        await pool.getAddress(),
-      );
+      const pool = await createNormalPool(poolCase.feeAmount, poolCase.startingPrice);
+      const { gauge, feeDistributor } = await createGauge(await pool.getAddress());
       const poolFunctions = createPoolFunctions({
         swapTarget,
         token0,
@@ -395,7 +379,7 @@ describe("GaugeV2 tests", () => {
           position.liquidity,
         );
         const mintReceipt = (await tx.wait()) as ContractTransactionReceipt;
-        let parsedEvents:LogDescription[] = [];
+        let parsedEvents: LogDescription[] = [];
 
         if (mintReceipt.logs) {
           for (let log of mintReceipt.logs) {
@@ -476,15 +460,11 @@ describe("GaugeV2 tests", () => {
     async function compareSnapshot(period: BigNumberish) {
       const results = [];
       const liquidity = ethers.utils.formatEther(await pool.liquidity());
-      const boostedLiquidity = ethers.utils.formatEther(
-        await pool.boostedLiquidity(),
-      );
+      const boostedLiquidity = ethers.utils.formatEther(await pool.boostedLiquidity());
 
       results.push({ liquidity, boostedLiquidity });
       for (const position of poolCase.positions) {
-        const earned = await gauge[
-          "periodEarned(uint256,address,address,uint256,int24,int24)"
-        ](
+        const earned = await gauge["periodEarned(uint256,address,address,uint256,int24,int24)"](
           period,
           token0.address,
           wallet.address,
@@ -539,9 +519,7 @@ describe("GaugeV2 tests", () => {
     let veNftTokenId: BigNumber;
 
     let positionInfo: Awaited<ReturnType<MockTimeClPool["positions"]>>;
-    let boostInfo: Awaited<
-      ReturnType<MockTimeClPool["boostInfos(uint256,bytes32)"]>
-    >;
+    let boostInfo: Awaited<ReturnType<MockTimeClPool["boostInfos(uint256,bytes32)"]>>;
     let positionPeriodSecondsInRange: Awaited<
       ReturnType<MockTimeClPool["positionPeriodSecondsInRange"]>
     >;
@@ -551,10 +529,7 @@ describe("GaugeV2 tests", () => {
     async function setUpRewards() {
       // set up rewards, each unboosted second is 1e18
       await token0.approve(gauge.address, ethers.constants.MaxUint256);
-      await gauge.notifyRewardAmount(
-        token0.address,
-        expandTo18Decimals(WEEK / 0.4),
-      );
+      await gauge.notifyRewardAmount(token0.address, expandTo18Decimals(WEEK / 0.4));
     }
 
     before("load fixture", async () => {
@@ -665,50 +640,40 @@ describe("GaugeV2 tests", () => {
     });
 
     describe("test boosted", () => {
-      before(
-        "advance period to middle of week, make lock, attach lock",
-        async () => {
-          const lastTime = await pool.time();
-          const oldPeriod = lastTime.div(WEEK);
-          const newPeriod = oldPeriod.add(1);
-          const delta = newPeriod
-            .mul(WEEK)
-            .sub(lastTime)
-            .add(WEEK / 2);
+      before("advance period to middle of week, make lock, attach lock", async () => {
+        const lastTime = await pool.time();
+        const oldPeriod = lastTime.div(WEEK);
+        const newPeriod = oldPeriod.add(1);
+        const delta = newPeriod
+          .mul(WEEK)
+          .sub(lastTime)
+          .add(WEEK / 2);
 
-          await pool.advanceTime(delta);
+        await pool.advanceTime(delta);
 
-          // get some shadow and lock it
-          await setERC20Balance(
-            c.shadow.address,
-            wallet.address,
-            expandTo18Decimals(1000),
-          );
+        // get some shadow and lock it
+        await setERC20Balance(c.shadow.address, wallet.address, expandTo18Decimals(1000));
 
-          await c.shadow.approve(c.votingEscrow.address, MAX_UINT);
-          veNftTokenId = await c.votingEscrow.callStatic.createLock(
-            expandTo18Decimals(1000),
-            86400 * 365 * 4,
-          );
-          await c.votingEscrow.createLock(
-            expandTo18Decimals(1000),
-            86400 * 365 * 4,
-          );
+        await c.shadow.approve(c.votingEscrow.address, MAX_UINT);
+        veNftTokenId = await c.votingEscrow.callStatic.createLock(
+          expandTo18Decimals(1000),
+          86400 * 365 * 4,
+        );
+        await c.votingEscrow.createLock(expandTo18Decimals(1000), 86400 * 365 * 4);
 
-          // make some swaps to write to pool
-          for (const swap of writingSwaps) {
-            await executeSwap(pool, swap, poolFunctions);
-          }
+        // make some swaps to write to pool
+        for (const swap of writingSwaps) {
+          await executeSwap(pool, swap, poolFunctions);
+        }
 
-          // attach the veRA to NFPs
-          for (const nfp of nfps) {
-            await c.nfpManager.switchAttachment(nfp.tokenId, veNftTokenId);
-          }
+        // attach the veRA to NFPs
+        for (const nfp of nfps) {
+          await c.nfpManager.switchAttachment(nfp.tokenId, veNftTokenId);
+        }
 
-          // notify rewards for the new week
-          await setUpRewards();
-        },
-      );
+        // notify rewards for the new week
+        await setUpRewards();
+      });
 
       for (const testCase of poolCase.swapTests!) {
         it(swapCaseToDescription(testCase), async () => {
@@ -722,12 +687,9 @@ describe("GaugeV2 tests", () => {
           const period = (await pool.time()).div(WEEK);
           console.log(period);
 
-          const [liquidity, boostedLiquidity, attachedVeNftId] =
-            await gauge.positionInfo(1);
+          const [liquidity, boostedLiquidity, attachedVeNftId] = await gauge.positionInfo(1);
 
-          expect(attachedVeNftId, "gauge reporting the wrong veNftTokenId").eq(
-            veNftTokenId,
-          );
+          expect(attachedVeNftId, "gauge reporting the wrong veNftTokenId").eq(veNftTokenId);
 
           const _positionHash = positionHash(
             c.nfpManager.address,
@@ -736,10 +698,7 @@ describe("GaugeV2 tests", () => {
             poolCase.positions[0].tickUpper,
           );
 
-          const boostInfo = await pool["boostInfos(uint256,bytes32)"](
-            period,
-            _positionHash,
-          );
+          const boostInfo = await pool["boostInfos(uint256,bytes32)"](period, _positionHash);
 
           expect(boostInfo.boostAmount).to.eq(
             BigNumber.from(poolCase.positions[0].liquidity).mul(3).div(2),
@@ -788,9 +747,7 @@ describe("GaugeV2 tests", () => {
 
           const balanceBefore = await token0.balanceOf(wallet.address);
 
-          await gauge["getReward(uint256,address[])"](nfp.tokenId, [
-            token0.address,
-          ]);
+          await gauge["getReward(uint256,address[])"](nfp.tokenId, [token0.address]);
 
           const balanceAfter = await token0.balanceOf(wallet.address);
 
@@ -817,9 +774,7 @@ describe("GaugeV2 tests", () => {
             ),
           ).eq(0, "period earned should be 0 after claiming");
 
-          await gauge["getReward(uint256,address[])"](nfp.tokenId, [
-            token0.address,
-          ]);
+          await gauge["getReward(uint256,address[])"](nfp.tokenId, [token0.address]);
 
           expect(await token0.balanceOf(wallet.address)).eq(
             balanceAfter,

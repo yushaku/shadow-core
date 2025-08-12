@@ -6,7 +6,7 @@ import {XShadow} from "../../../contracts/xShadow/XShadow.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {IXShadow} from "../../../contracts/interfaces/IXShadow.sol";
 import {IVoteModule} from "../../../contracts/interfaces/IVoteModule.sol";
-import {MockERC20} from "forge-std/mocks/MockERC20.sol";
+import {MockERC20} from "../mocks/MockERC20.sol";
 import {console} from "forge-std/console.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {stdError} from "forge-std/Test.sol";
@@ -20,11 +20,23 @@ contract XShadowTest is TestBase {
         mockOperator = makeAddr("operator");
 
         // Mock voter's voteModule call
-        vm.mockCall(address(mockVoter), abi.encodeWithSignature("voteModule()"), abi.encode(address(mockVoteModule)));
+        vm.mockCall(
+            address(mockVoter),
+            abi.encodeWithSignature("voteModule()"),
+            abi.encode(address(mockVoteModule))
+        );
 
-        vm.mockCall(address(mockVoter), abi.encodeWithSignature("minter()"), abi.encode(address(mockMinter)));
+        vm.mockCall(
+            address(mockVoter),
+            abi.encodeWithSignature("minter()"),
+            abi.encode(address(mockMinter))
+        );
 
-        vm.mockCall(address(mockVoter), abi.encodeWithSignature("getPeriod()"), abi.encode(block.timestamp / 1 weeks));
+        vm.mockCall(
+            address(mockVoter),
+            abi.encodeWithSignature("getPeriod()"),
+            abi.encode(block.timestamp / 1 weeks)
+        );
 
         xShadow = new XShadow(
             address(shadow),
@@ -37,11 +49,27 @@ contract XShadowTest is TestBase {
     }
 
     function test_constructor() public view {
-        assertEq(address(xShadow.SHADOW()), address(shadow), "Shadow token address mismatch");
-        assertEq(address(xShadow.VOTER()), address(mockVoter), "Voter address mismatch");
+        assertEq(
+            address(xShadow.SHADOW()),
+            address(shadow),
+            "Shadow token address mismatch"
+        );
+        assertEq(
+            address(xShadow.VOTER()),
+            address(mockVoter),
+            "Voter address mismatch"
+        );
         assertEq(xShadow.operator(), mockOperator, "Operator address mismatch");
-        assertEq(address(xShadow.ACCESS_HUB()), address(accessHub), "AccessHub address mismatch");
-        assertEq(address(xShadow.VOTE_MODULE()), address(mockVoteModule), "VoteModule address mismatch");
+        assertEq(
+            address(xShadow.ACCESS_HUB()),
+            address(accessHub),
+            "AccessHub address mismatch"
+        );
+        assertEq(
+            address(xShadow.VOTE_MODULE()),
+            address(mockVoteModule),
+            "VoteModule address mismatch"
+        );
     }
 
     function test_pauseAndUnpause() public {
@@ -99,22 +127,47 @@ contract XShadowTest is TestBase {
         xShadow.createVest(amount);
 
         // Verify vest creation
-        (uint256 vestAmount, uint256 start, uint256 maxEnd, uint256 vestId) = xShadow.vestInfo(alice, 0);
+        (
+            uint256 vestAmount,
+            uint256 start,
+            uint256 maxEnd,
+            uint256 vestId
+        ) = xShadow.vestInfo(alice, 0);
         assertEq(vestAmount, amount, "Vest amount mismatch");
         assertEq(start, block.timestamp, "Vest start time mismatch");
-        assertEq(maxEnd, block.timestamp + xShadow.MAX_VEST(), "Vest max end time mismatch");
+        assertEq(
+            maxEnd,
+            block.timestamp + xShadow.MAX_VEST(),
+            "Vest max end time mismatch"
+        );
         assertEq(vestId, 0, "Vest ID mismatch");
 
         // Test early exit (before MIN_VEST)
         xShadow.exitVest(0);
-        assertEq(xShadow.balanceOf(alice), amount, "xSHADOW balance mismatch after early exit");
-        assertEq(shadow.balanceOf(alice), 0, "Emissions token balance should be 0 after early exit");
+        assertEq(
+            xShadow.balanceOf(alice),
+            amount,
+            "xSHADOW balance mismatch after early exit"
+        );
+        assertEq(
+            shadow.balanceOf(alice),
+            0,
+            "Emissions token balance should be 0 after early exit"
+        );
 
         // Vest is the same because exit was cancelled
         (vestAmount, start, maxEnd, vestId) = xShadow.vestInfo(alice, 0);
         assertEq(vestAmount, 0, "Vest amount should be 0 after exit");
-        assertEq(start, block.timestamp, "Vest start time incorrect after exit");
-        assertEq(maxEnd, block.timestamp + xShadow.MAX_VEST(), "Vest max end time incorrect after exit");
+        assertEq(
+            start,
+            block.timestamp,
+            "Vest start time incorrect after exit"
+        );
+        assertEq(
+            maxEnd,
+            block.timestamp + xShadow.MAX_VEST(),
+            "Vest max end time incorrect after exit"
+        );
         assertEq(vestId, 0, "Vest ID incorrect after exit");
         vm.stopPrank();
     }
@@ -122,7 +175,9 @@ contract XShadowTest is TestBase {
     function testFuzz_exit(uint256 amount, uint256 exitTime) public {
         // Bound inputs to reasonable ranges
         vm.assume(amount > xShadow.BASIS() && amount <= type(uint128).max);
-        vm.assume(exitTime >= xShadow.MIN_VEST() && exitTime <= type(uint32).max);
+        vm.assume(
+            exitTime >= xShadow.MIN_VEST() && exitTime <= type(uint32).max
+        );
 
         // Setup initial state
         vm.startPrank(alice);
@@ -139,7 +194,7 @@ contract XShadowTest is TestBase {
         vm.warp(block.timestamp + exitTime);
 
         // Get vest end time for calculations
-        (,, uint256 maxEnd,) = xShadow.vestInfo(alice, 0);
+        (, , uint256 maxEnd, ) = xShadow.vestInfo(alice, 0);
 
         uint256 expectedReturn;
         uint256 penalty;
@@ -158,7 +213,9 @@ contract XShadowTest is TestBase {
             uint256 base = (amount * SLASHING_PENALTY) / BASIS;
 
             // Calculate additional amount earned through linear vesting
-            uint256 vestEarned = ((amount * (BASIS - SLASHING_PENALTY) * (block.timestamp - start)) / MAX_VEST) / BASIS;
+            uint256 vestEarned = ((amount *
+                (BASIS - SLASHING_PENALTY) *
+                (block.timestamp - start)) / MAX_VEST) / BASIS;
 
             expectedReturn = base + vestEarned;
             penalty = amount - expectedReturn;
@@ -169,16 +226,31 @@ contract XShadowTest is TestBase {
         vm.stopPrank();
 
         // Verify balances after exit
-        assertEq(xShadow.balanceOf(alice), 0, "xSHADOW balance should be 0 after exit");
-        assertEq(shadow.balanceOf(alice), expectedReturn, "Incorrect emissions token return amount");
-        assertEq(xShadow.pendingRebase(), penalty, "Incorrect pending rebase amount");
+        assertEq(
+            xShadow.balanceOf(alice),
+            0,
+            "xSHADOW balance should be 0 after exit"
+        );
+        assertEq(
+            shadow.balanceOf(alice),
+            expectedReturn,
+            "Incorrect emissions token return amount"
+        );
+        assertEq(
+            xShadow.pendingRebase(),
+            penalty,
+            "Incorrect pending rebase amount"
+        );
 
         // Verify vest was deleted
-        (uint256 vestAmount,,,) = xShadow.vestInfo(alice, 0);
+        (uint256 vestAmount, , , ) = xShadow.vestInfo(alice, 0);
         assertEq(vestAmount, 0, "Vest amount should be 0 after exit");
     }
 
-    function testFuzz_rebaseWithMultipleVestings(uint256[] memory amounts, uint256[] memory exitTimesSeed) public {
+    function testFuzz_rebaseWithMultipleVestings(
+        uint256[] memory amounts,
+        uint256[] memory exitTimesSeed
+    ) public {
         // Bound number of vestings between 1 and 32
         bound(amounts.length, 1, 32);
 
@@ -187,7 +259,11 @@ contract XShadowTest is TestBase {
         for (uint256 i = 0; i < amounts.length; i++) {
             vm.assume(amounts[i] > 0 && amounts[i] <= type(uint128).max);
             if (exitTimesSeed.length <= i) {
-                exitTimes[i] = bound(uint256(keccak256(abi.encode(amounts[i]))), 0, type(uint32).max);
+                exitTimes[i] = bound(
+                    uint256(keccak256(abi.encode(amounts[i]))),
+                    0,
+                    type(uint32).max
+                );
             } else {
                 exitTimes[i] = exitTimesSeed[i];
             }
@@ -219,7 +295,7 @@ contract XShadowTest is TestBase {
 
             // Track expected penalties that should go to pending rebase
             uint256 expectedPenalty;
-            (, uint256 start, uint256 maxEnd,) = xShadow.vestInfo(alice, i);
+            (, uint256 start, uint256 maxEnd, ) = xShadow.vestInfo(alice, i);
 
             if (block.timestamp < start + xShadow.MIN_VEST()) {
                 // No penalty if exited before MIN_VEST
@@ -229,11 +305,12 @@ contract XShadowTest is TestBase {
                 expectedPenalty = 0;
             } else {
                 // Calculate linear vesting penalty
-                uint256 base = (amounts[i] * xShadow.SLASHING_PENALTY()) / xShadow.BASIS();
-                uint256 vestEarned = (
-                    (amounts[i] * (xShadow.BASIS() - xShadow.SLASHING_PENALTY()) * (block.timestamp - start))
-                        / xShadow.MAX_VEST()
-                ) / xShadow.BASIS();
+                uint256 base = (amounts[i] * xShadow.SLASHING_PENALTY()) /
+                    xShadow.BASIS();
+                uint256 vestEarned = ((amounts[i] *
+                    (xShadow.BASIS() - xShadow.SLASHING_PENALTY()) *
+                    (block.timestamp - start)) / xShadow.MAX_VEST()) /
+                    xShadow.BASIS();
                 expectedPenalty = amounts[i] - (base + vestEarned);
             }
 
@@ -243,11 +320,17 @@ contract XShadowTest is TestBase {
         vm.stopPrank();
 
         // Verify accumulated pending rebase
-        assertEq(xShadow.pendingRebase(), totalPendingRebase, "Incorrect total pending rebase");
+        assertEq(
+            xShadow.pendingRebase(),
+            totalPendingRebase,
+            "Incorrect total pending rebase"
+        );
 
         // Mock voter period to enable rebase
         vm.mockCall(
-            address(mockVoter), abi.encodeWithSignature("getPeriod()"), abi.encode(xShadow.lastDistributedPeriod() + 1)
+            address(mockVoter),
+            abi.encodeWithSignature("getPeriod()"),
+            abi.encode(xShadow.lastDistributedPeriod() + 1)
         );
 
         // Execute rebase
@@ -257,7 +340,11 @@ contract XShadowTest is TestBase {
         // Verify rebase distribution based on BASIS threshold
         if (totalPendingRebase >= xShadow.BASIS()) {
             // If above BASIS, should distribute all pending rewards
-            assertEq(xShadow.pendingRebase(), 0, "Pending rebase should be 0 after distribution");
+            assertEq(
+                xShadow.pendingRebase(),
+                0,
+                "Pending rebase should be 0 after distribution"
+            );
 
             // Verify rebased amount was sent to vote module
             assertEq(
@@ -267,7 +354,11 @@ contract XShadowTest is TestBase {
             );
         } else {
             // If below BASIS, pending rebase should remain unchanged
-            assertEq(xShadow.pendingRebase(), totalPendingRebase, "Pending rebase should remain unchanged");
+            assertEq(
+                xShadow.pendingRebase(),
+                totalPendingRebase,
+                "Pending rebase should remain unchanged"
+            );
 
             // Vote module should not receive any tokens
             assertEq(
@@ -304,14 +395,16 @@ contract XShadowTest is TestBase {
 
         // Should get partial amount based on time elapsed
         uint256 base = (amount * xShadow.SLASHING_PENALTY()) / xShadow.BASIS();
-        uint256 vestEarned = (
-            (
-                amount * (xShadow.BASIS() - xShadow.SLASHING_PENALTY())
-                    * (block.timestamp - (block.timestamp - xShadow.MIN_VEST() - 1))
-            ) / xShadow.MAX_VEST()
-        ) / xShadow.BASIS();
+        uint256 vestEarned = ((amount *
+            (xShadow.BASIS() - xShadow.SLASHING_PENALTY()) *
+            (block.timestamp - (block.timestamp - xShadow.MIN_VEST() - 1))) /
+            xShadow.MAX_VEST()) / xShadow.BASIS();
         uint256 expectedAmount = base + vestEarned;
-        assertEq(postBalance - preBalance, expectedAmount, "Incorrect partial vest amount received");
+        assertEq(
+            postBalance - preBalance,
+            expectedAmount,
+            "Incorrect partial vest amount received"
+        );
         vm.stopPrank();
     }
 
@@ -372,7 +465,12 @@ contract XShadowTest is TestBase {
 
         // Try to exit more than balance
         vm.expectRevert(
-            abi.encodeWithSignature("ERC20InsufficientBalance(address,uint256,uint256)", alice, amount, amount * 2)
+            abi.encodeWithSignature(
+                "ERC20InsufficientBalance(address,uint256,uint256)",
+                alice,
+                amount,
+                amount * 2
+            )
         );
         xShadow.exit(amount * 2);
 
@@ -404,7 +502,11 @@ contract XShadowTest is TestBase {
         uint256 postBalance = shadow.balanceOf(alice);
 
         // Should get full amount
-        assertEq(postBalance - preBalance, amount, "Should receive full amount after max vest period");
+        assertEq(
+            postBalance - preBalance,
+            amount,
+            "Should receive full amount after max vest period"
+        );
         vm.stopPrank();
     }
 
@@ -418,9 +520,15 @@ contract XShadowTest is TestBase {
         xShadow.convertEmissionsToken(amount);
         vm.stopPrank();
 
-        assertEq(xShadow.balanceOf(alice), amount, "Incorrect xSHADOW balance after conversion");
         assertEq(
-            shadow.balanceOf(address(xShadow)), amount, "Incorrect emissions token balance after conversion"
+            xShadow.balanceOf(alice),
+            amount,
+            "Incorrect xSHADOW balance after conversion"
+        );
+        assertEq(
+            shadow.balanceOf(address(xShadow)),
+            amount,
+            "Incorrect emissions token balance after conversion"
         );
     }
 
@@ -435,17 +543,36 @@ contract XShadowTest is TestBase {
         // Create multiple vests
         for (uint256 i = 0; i < numVests; i++) {
             xShadow.createVest(amount);
-            (uint256 vestAmount,,, uint256 vestId) = xShadow.vestInfo(alice, i);
-            assertEq(vestAmount, amount, string.concat("Vest ", vm.toString(i), " amount incorrect"));
-            assertEq(vestId, i, string.concat("Vest ", vm.toString(i), " ID incorrect"));
+            (uint256 vestAmount, , , uint256 vestId) = xShadow.vestInfo(
+                alice,
+                i
+            );
+            assertEq(
+                vestAmount,
+                amount,
+                string.concat("Vest ", vm.toString(i), " amount incorrect")
+            );
+            assertEq(
+                vestId,
+                i,
+                string.concat("Vest ", vm.toString(i), " ID incorrect")
+            );
         }
 
         // Randomly select vest to exit and random time
-        uint256 vestToExit = uint256(keccak256(abi.encodePacked(seed))) % numVests;
-        uint256 randomTime = uint256(keccak256(abi.encodePacked(seed, vestToExit))) % xShadow.MAX_VEST();
+        uint256 vestToExit = uint256(keccak256(abi.encodePacked(seed))) %
+            numVests;
+        uint256 randomTime = uint256(
+            keccak256(abi.encodePacked(seed, vestToExit))
+        ) % xShadow.MAX_VEST();
 
         // Store initial vest info
-        (uint256 exitVestAmount, uint256 exitVestStart, uint256 exitVestMaxEnd,) = xShadow.vestInfo(alice, vestToExit);
+        (
+            uint256 exitVestAmount,
+            uint256 exitVestStart,
+            uint256 exitVestMaxEnd,
+
+        ) = xShadow.vestInfo(alice, vestToExit);
         uint256 preBalance = shadow.balanceOf(alice);
 
         // Warp to random time and exit vest
@@ -463,38 +590,58 @@ contract XShadowTest is TestBase {
             expectedAmount = exitVestAmount;
         } else {
             // If in between, calculate linear amount
-            uint256 base = (exitVestAmount * xShadow.SLASHING_PENALTY()) / xShadow.BASIS();
-            uint256 vestEarned = (
-                (exitVestAmount * (xShadow.BASIS() - xShadow.SLASHING_PENALTY()) * (block.timestamp - exitVestStart))
-                    / xShadow.MAX_VEST()
-            ) / xShadow.BASIS();
+            uint256 base = (exitVestAmount * xShadow.SLASHING_PENALTY()) /
+                xShadow.BASIS();
+            uint256 vestEarned = ((exitVestAmount *
+                (xShadow.BASIS() - xShadow.SLASHING_PENALTY()) *
+                (block.timestamp - exitVestStart)) / xShadow.MAX_VEST()) /
+                xShadow.BASIS();
             expectedAmount = base + vestEarned;
             // Calculate penalty amount that should go to pending rebase
             penalty = exitVestAmount - expectedAmount;
         }
 
         // Verify exited vest is zeroed
-        (uint256 exitVestAmountAfter,,,) = xShadow.vestInfo(alice, vestToExit);
+        (uint256 exitVestAmountAfter, , , ) = xShadow.vestInfo(
+            alice,
+            vestToExit
+        );
         assertEq(exitVestAmountAfter, 0, "Exited vest should be zeroed");
 
         // Verify received correct amount
         uint256 postBalance = shadow.balanceOf(alice);
         if (randomTime < xShadow.MIN_VEST()) {
-            assertEq(xShadow.balanceOf(alice), exitVestAmount, "Should receive xShadow back if before MIN_VEST");
+            assertEq(
+                xShadow.balanceOf(alice),
+                exitVestAmount,
+                "Should receive xShadow back if before MIN_VEST"
+            );
         } else {
-            assertEq(postBalance - preBalance, expectedAmount, "Incorrect exit amount received");
+            assertEq(
+                postBalance - preBalance,
+                expectedAmount,
+                "Incorrect exit amount received"
+            );
         }
 
         // Verify other vests still intact
         for (uint256 i = 0; i < numVests; i++) {
             if (i != vestToExit) {
-                (uint256 vestAmount,,,) = xShadow.vestInfo(alice, i);
-                assertEq(vestAmount, amount, string.concat("Vest ", vm.toString(i), " amount changed"));
+                (uint256 vestAmount, , , ) = xShadow.vestInfo(alice, i);
+                assertEq(
+                    vestAmount,
+                    amount,
+                    string.concat("Vest ", vm.toString(i), " amount changed")
+                );
             }
         }
 
         // Verify pending rebase amount
-        assertEq(xShadow.pendingRebase(), penalty, "Incorrect pending rebase amount");
+        assertEq(
+            xShadow.pendingRebase(),
+            penalty,
+            "Incorrect pending rebase amount"
+        );
     }
 
     function test_rebaseAlreadyExecutedInPeriod() public {
@@ -518,7 +665,11 @@ contract XShadowTest is TestBase {
 
         // Mock voter period
         uint256 currentPeriod = block.timestamp / 1 weeks;
-        vm.mockCall(address(mockVoter), abi.encodeWithSignature("getPeriod()"), abi.encode(currentPeriod));
+        vm.mockCall(
+            address(mockVoter),
+            abi.encodeWithSignature("getPeriod()"),
+            abi.encode(currentPeriod)
+        );
 
         // First rebase should succeed
         vm.startPrank(xShadow.MINTER());
@@ -554,10 +705,18 @@ contract XShadowTest is TestBase {
                 break;
             }
         }
-        assertEq(testEventEmitted, false, "Rebase event should not be emitted on second rebase in same period");
+        assertEq(
+            testEventEmitted,
+            false,
+            "Rebase event should not be emitted on second rebase in same period"
+        );
 
         // Move to next period
-        vm.mockCall(address(mockVoter), abi.encodeWithSignature("getPeriod()"), abi.encode(currentPeriod + 1));
+        vm.mockCall(
+            address(mockVoter),
+            abi.encodeWithSignature("getPeriod()"),
+            abi.encode(currentPeriod + 1)
+        );
 
         // Verify the Rebase event is emitted on the next period
         vm.expectEmit(true, true, false, false);
@@ -582,13 +741,23 @@ contract XShadowTest is TestBase {
         xShadow.operatorRedeem(amount);
 
         uint256 postBalance = shadow.balanceOf(mockOperator);
-        assertEq(postBalance - preBalance, amount, "Incorrect redemption amount");
-        assertEq(xShadow.balanceOf(mockOperator), 0, "Operator should have 0 xSHADOW after redemption");
+        assertEq(
+            postBalance - preBalance,
+            amount,
+            "Incorrect redemption amount"
+        );
+        assertEq(
+            xShadow.balanceOf(mockOperator),
+            0,
+            "Operator should have 0 xSHADOW after redemption"
+        );
     }
 
     function test_revertOperatorRedeemUnauthorized() public {
         vm.prank(alice);
-        vm.expectRevert(abi.encodeWithSignature("NOT_AUTHORIZED(address)", alice));
+        vm.expectRevert(
+            abi.encodeWithSignature("NOT_AUTHORIZED(address)", alice)
+        );
         xShadow.operatorRedeem(100e18);
     }
 
@@ -610,7 +779,11 @@ contract XShadowTest is TestBase {
         xShadow.rescueTrappedTokens(tokens, amounts);
 
         uint256 postBalance = trapped.balanceOf(mockOperator);
-        assertEq(postBalance - preBalance, amount, "Incorrect amount of trapped tokens rescued");
+        assertEq(
+            postBalance - preBalance,
+            amount,
+            "Incorrect amount of trapped tokens rescued"
+        );
     }
 
     function test_revertRescueEmissionsToken() public {
@@ -621,7 +794,9 @@ contract XShadowTest is TestBase {
 
         // Test unauthorized access
         vm.prank(alice);
-        vm.expectRevert(abi.encodeWithSignature("NOT_AUTHORIZED(address)", alice));
+        vm.expectRevert(
+            abi.encodeWithSignature("NOT_AUTHORIZED(address)", alice)
+        );
         xShadow.rescueTrappedTokens(tokens, amounts);
 
         // Test can't rescue emissions token
@@ -636,7 +811,11 @@ contract XShadowTest is TestBase {
         vm.prank(address(accessHub));
         xShadow.migrateOperator(newOperator);
 
-        assertEq(xShadow.operator(), newOperator, "Operator not correctly migrated");
+        assertEq(
+            xShadow.operator(),
+            newOperator,
+            "Operator not correctly migrated"
+        );
     }
 
     function test_revertMigrateOperatorToSame() public {
@@ -649,7 +828,9 @@ contract XShadowTest is TestBase {
         address newOperator = makeAddr("newOperator");
 
         vm.prank(alice);
-        vm.expectRevert(abi.encodeWithSignature("NOT_AUTHORIZED(address)", alice));
+        vm.expectRevert(
+            abi.encodeWithSignature("NOT_AUTHORIZED(address)", alice)
+        );
         xShadow.migrateOperator(newOperator);
     }
 
@@ -657,7 +838,11 @@ contract XShadowTest is TestBase {
         uint256 amount = 100e18;
         deal(address(shadow), address(xShadow), amount);
 
-        assertEq(xShadow.getBalanceResiding(), amount, "Incorrect residing balance");
+        assertEq(
+            xShadow.getBalanceResiding(),
+            amount,
+            "Incorrect residing balance"
+        );
     }
 
     function test_usersTotalVests() public {
@@ -668,13 +853,25 @@ contract XShadowTest is TestBase {
         shadow.approve(address(xShadow), amount * 2);
         xShadow.convertEmissionsToken(amount * 2);
 
-        assertEq(xShadow.usersTotalVests(alice), 0, "Initial vest count should be 0");
+        assertEq(
+            xShadow.usersTotalVests(alice),
+            0,
+            "Initial vest count should be 0"
+        );
 
         xShadow.createVest(amount);
-        assertEq(xShadow.usersTotalVests(alice), 1, "Should have 1 vest after creation");
+        assertEq(
+            xShadow.usersTotalVests(alice),
+            1,
+            "Should have 1 vest after creation"
+        );
 
         xShadow.createVest(amount);
-        assertEq(xShadow.usersTotalVests(alice), 2, "Should have 2 vests after second creation");
+        assertEq(
+            xShadow.usersTotalVests(alice),
+            2,
+            "Should have 2 vests after second creation"
+        );
         vm.stopPrank();
     }
 
@@ -701,7 +898,10 @@ contract XShadowTest is TestBase {
         vm.prank(address(accessHub));
         xShadow.setExemption(exemptees, statuses);
 
-        assertFalse(xShadow.isExempt(alice), "Alice should no longer be exempt");
+        assertFalse(
+            xShadow.isExempt(alice),
+            "Alice should no longer be exempt"
+        );
         assertFalse(xShadow.isExempt(bob), "Bob should no longer be exempt");
     }
 
@@ -723,7 +923,9 @@ contract XShadowTest is TestBase {
         statuses[1] = true;
 
         vm.prank(alice);
-        vm.expectRevert(abi.encodeWithSignature("NOT_AUTHORIZED(address)", alice));
+        vm.expectRevert(
+            abi.encodeWithSignature("NOT_AUTHORIZED(address)", alice)
+        );
         xShadow.setExemption(exemptees, statuses);
     }
 
@@ -742,7 +944,7 @@ contract XShadowTest is TestBase {
         // Verify penalty went to pendingRebase
         assertEq(
             xShadow.pendingRebase(),
-            (amount / 2) * xShadow.SLASHING_PENALTY() / xShadow.BASIS(),
+            ((amount / 2) * xShadow.SLASHING_PENALTY()) / xShadow.BASIS(),
             "Incorrect pending rebase"
         );
     }
@@ -757,13 +959,21 @@ contract XShadowTest is TestBase {
         vm.prank(alice);
         xShadow.transfer(address(mockVoteModule), amount / 2);
 
-        assertEq(xShadow.balanceOf(address(mockVoteModule)), amount / 2, "Transfer to VOTE_MODULE should succeed");
+        assertEq(
+            xShadow.balanceOf(address(mockVoteModule)),
+            amount / 2,
+            "Transfer to VOTE_MODULE should succeed"
+        );
 
         // Test transfer from VOTE_MODULE
         vm.prank(address(mockVoteModule));
         xShadow.transfer(alice, amount / 4);
 
-        assertEq(xShadow.balanceOf(alice), amount * 3 / 4, "Transfer from VOTE_MODULE should succeed");
+        assertEq(
+            xShadow.balanceOf(alice),
+            (amount * 3) / 4,
+            "Transfer from VOTE_MODULE should succeed"
+        );
     }
 
     function test_transferFromExempt() public {
@@ -782,14 +992,26 @@ contract XShadowTest is TestBase {
         xShadow.setExemption(exemptees, statuses);
 
         // Mock voter returns false
-        vm.mockCall(address(mockVoter), abi.encodeWithSignature("isGauge(address)"), abi.encode(false));
-        vm.mockCall(address(mockVoter), abi.encodeWithSignature("isFeeDistributor(address)"), abi.encode(false));
+        vm.mockCall(
+            address(mockVoter),
+            abi.encodeWithSignature("isGauge(address)"),
+            abi.encode(false)
+        );
+        vm.mockCall(
+            address(mockVoter),
+            abi.encodeWithSignature("isFeeDistributor(address)"),
+            abi.encode(false)
+        );
 
         // Test exempt transfer
         vm.prank(alice);
         xShadow.transfer(bob, amount / 2);
 
-        assertEq(xShadow.balanceOf(bob), amount / 2, "Transfer from exempt address should succeed");
+        assertEq(
+            xShadow.balanceOf(bob),
+            amount / 2,
+            "Transfer from exempt address should succeed"
+        );
     }
 
     function test_transferFromNonExempt() public {
@@ -799,12 +1021,22 @@ contract XShadowTest is TestBase {
         deal(address(xShadow), alice, amount);
 
         // Mock voter returns false
-        vm.mockCall(address(mockVoter), abi.encodeWithSignature("isGauge(address)"), abi.encode(false));
-        vm.mockCall(address(mockVoter), abi.encodeWithSignature("isFeeDistributor(address)"), abi.encode(false));
+        vm.mockCall(
+            address(mockVoter),
+            abi.encodeWithSignature("isGauge(address)"),
+            abi.encode(false)
+        );
+        vm.mockCall(
+            address(mockVoter),
+            abi.encodeWithSignature("isFeeDistributor(address)"),
+            abi.encode(false)
+        );
 
         // Test non-exempt transfer (should fail)
         vm.prank(bob);
-        vm.expectRevert(abi.encodeWithSignature("NOT_WHITELISTED(address)", bob));
+        vm.expectRevert(
+            abi.encodeWithSignature("NOT_WHITELISTED(address)", bob)
+        );
         xShadow.transfer(alice, amount / 4);
     }
 
@@ -816,14 +1048,25 @@ contract XShadowTest is TestBase {
         deal(address(xShadow), fakeGauge, amount);
 
         // Mock voter to recognize gauge
-        vm.mockCall(address(mockVoter), abi.encodeWithSignature("isGauge(address)"), abi.encode(true));
+        vm.mockCall(
+            address(mockVoter),
+            abi.encodeWithSignature("isGauge(address)"),
+            abi.encode(true)
+        );
 
         // Test gauge transfer
         vm.prank(fakeGauge);
         xShadow.transfer(alice, amount);
 
-        assertTrue(xShadow.isExempt(fakeGauge), "Gauge should be auto-added to exempt");
-        assertEq(xShadow.balanceOf(alice), amount, "Transfer from gauge should succeed");
+        assertTrue(
+            xShadow.isExempt(fakeGauge),
+            "Gauge should be auto-added to exempt"
+        );
+        assertEq(
+            xShadow.balanceOf(alice),
+            amount,
+            "Transfer from gauge should succeed"
+        );
     }
 
     function test_transfer_fromFeeDistributor() public {
@@ -835,14 +1078,29 @@ contract XShadowTest is TestBase {
         deal(address(xShadow), fakeFeeDistributor, amount);
 
         // Mock voter to recognize fee distributor
-        vm.mockCall(address(mockVoter), abi.encodeWithSignature("isGauge(address)"), abi.encode(false));
-        vm.mockCall(address(mockVoter), abi.encodeWithSignature("isFeeDistributor(address)"), abi.encode(true));
+        vm.mockCall(
+            address(mockVoter),
+            abi.encodeWithSignature("isGauge(address)"),
+            abi.encode(false)
+        );
+        vm.mockCall(
+            address(mockVoter),
+            abi.encodeWithSignature("isFeeDistributor(address)"),
+            abi.encode(true)
+        );
 
         // Test fee distributor transfer
         vm.prank(fakeFeeDistributor);
         xShadow.transfer(alice, amount);
 
-        assertTrue(xShadow.isExempt(fakeFeeDistributor), "Fee distributor should be auto-added to exempt");
-        assertEq(xShadow.balanceOf(alice), amount, "Transfer from fee distributor should succeed");
+        assertTrue(
+            xShadow.isExempt(fakeFeeDistributor),
+            "Fee distributor should be auto-added to exempt"
+        );
+        assertEq(
+            xShadow.balanceOf(alice),
+            amount,
+            "Transfer from fee distributor should succeed"
+        );
     }
 }

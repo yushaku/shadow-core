@@ -288,7 +288,7 @@ contract x33 is ERC4626, IX33, ReentrancyGuard {
         uint256 shares
     ) internal virtual override whileNotLocked {
         SafeERC20.safeTransferFrom(xShadow, caller, address(this), assets);
-        
+
         /// @dev deposit to the voteModule before minting shares to the user
         voteModule.deposit(assets);
         _mint(receiver, shares);

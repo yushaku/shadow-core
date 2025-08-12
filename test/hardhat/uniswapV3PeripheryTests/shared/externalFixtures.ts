@@ -57,7 +57,7 @@ export async function v2RouterFixture(): Promise<{
 
   const routerProxy = await ethers.getContractAt(
     "TransparentUpgradeableProxy",
-    await c.swapRouter.getAddress()
+    await c.swapRouter.getAddress(),
   );
 
   const MockRouter = await ethers.getContractFactory("MockTimeSwapRouter");

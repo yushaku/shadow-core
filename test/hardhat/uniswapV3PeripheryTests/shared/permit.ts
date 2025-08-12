@@ -1,6 +1,6 @@
-import { BigNumberish, constants, Signature, Wallet } from 'ethers'
-import { splitSignature } from 'ethers/lib/utils'
-import { TestERC20, TestERC20PermitAllowed } from "./../../../typechain-types"
+import { BigNumberish, constants, Signature, Wallet } from "ethers";
+import { splitSignature } from "ethers/lib/utils";
+import { TestERC20, TestERC20PermitAllowed } from "./../../../typechain-types";
 
 export async function getPermitSignature(
   wallet: Wallet,
@@ -8,14 +8,14 @@ export async function getPermitSignature(
   spender: string,
   value: BigNumberish = constants.MaxUint256,
   deadline = constants.MaxUint256,
-  permitConfig?: { nonce?: BigNumberish; name?: string; chainId?: number; version?: string }
+  permitConfig?: { nonce?: BigNumberish; name?: string; chainId?: number; version?: string },
 ): Promise<Signature> {
   const [nonce, name, version, chainId] = await Promise.all([
     permitConfig?.nonce ?? token.nonces(wallet.address),
     permitConfig?.name ?? token.name(),
-    permitConfig?.version ?? '1',
+    permitConfig?.version ?? "1",
     permitConfig?.chainId ?? wallet.getChainId(),
-  ])
+  ]);
 
   return splitSignature(
     await wallet._signTypedData(
@@ -28,24 +28,24 @@ export async function getPermitSignature(
       {
         Permit: [
           {
-            name: 'owner',
-            type: 'address',
+            name: "owner",
+            type: "address",
           },
           {
-            name: 'spender',
-            type: 'address',
+            name: "spender",
+            type: "address",
           },
           {
-            name: 'value',
-            type: 'uint256',
+            name: "value",
+            type: "uint256",
           },
           {
-            name: 'nonce',
-            type: 'uint256',
+            name: "nonce",
+            type: "uint256",
           },
           {
-            name: 'deadline',
-            type: 'uint256',
+            name: "deadline",
+            type: "uint256",
           },
         ],
       },
@@ -55,7 +55,7 @@ export async function getPermitSignature(
         value,
         nonce,
         deadline,
-      }
-    )
-  )
+      },
+    ),
+  );
 }

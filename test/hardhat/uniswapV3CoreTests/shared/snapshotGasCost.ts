@@ -16,7 +16,7 @@ export default async function snapshotGasCost(
     | Contract
     | Promise<Contract>
     | Promise<bigint>
-    | bigint
+    | bigint,
 ): Promise<void> {
   const resolved = await x;
   if (typeof resolved === "bigint") {

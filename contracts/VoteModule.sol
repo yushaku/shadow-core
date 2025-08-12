@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.26;
 
-import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
-import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
+import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
-import {IVoteModule} from "./interfaces/IVoteModule.sol";
-import {IVoter} from "./interfaces/IVoter.sol";
-import {IXShadow} from "./interfaces/IXShadow.sol";
+import { IVoteModule } from "./interfaces/IVoteModule.sol";
+import { IVoter } from "./interfaces/IVoter.sol";
+import { IXShadow } from "./interfaces/IXShadow.sol";
 
 contract VoteModule is IVoteModule, ReentrancyGuard, Initializable {
     /// @inheritdoc IVoteModule
@@ -47,8 +47,7 @@ contract VoteModule is IVoteModule, ReentrancyGuard, Initializable {
     /// @inheritdoc IVoteModule
     mapping(address user => uint256 amount) public balanceOf;
     /// @inheritdoc IVoteModule
-    mapping(address user => uint256 rewardPerToken)
-        public userRewardPerTokenStored;
+    mapping(address user => uint256 rewardPerToken) public userRewardPerTokenStored;
     /// @inheritdoc IVoteModule
     mapping(address user => uint256 rewards) public storedRewardsPerUser;
     /// @inheritdoc IVoteModule
@@ -64,15 +63,11 @@ contract VoteModule is IVoteModule, ReentrancyGuard, Initializable {
         _;
     }
 
-    constructor() {
+    constructor() public {
         voter = msg.sender;
     }
 
-    function initialize(
-        address _xShadow,
-        address _voter,
-        address _accessHub
-    ) external initializer {
+    function initialize(address _xShadow, address _voter, address _accessHub) external initializer {
         // @dev making sure who deployed calls initialize
         require(voter == msg.sender, UNAUTHORIZED());
         require(_accessHub != address(0), INVALID_ADDRESS());
@@ -106,9 +101,7 @@ contract VoteModule is IVoteModule, ReentrancyGuard, Initializable {
         deposit(IERC20(xShadow).balanceOf(msg.sender));
     }
     /// @inheritdoc IVoteModule
-    function deposit(
-        uint256 amount
-    ) public updateReward(msg.sender) nonReentrant {
+    function deposit(uint256 amount) public updateReward(msg.sender) nonReentrant {
         /// @dev ensure the amount is > 0
         require(amount != 0, ZERO_AMOUNT());
         /// @dev if the caller is not exempt
@@ -137,9 +130,7 @@ contract VoteModule is IVoteModule, ReentrancyGuard, Initializable {
         _claim(msg.sender);
     }
     /// @inheritdoc IVoteModule
-    function withdraw(
-        uint256 amount
-    ) public updateReward(msg.sender) nonReentrant {
+    function withdraw(uint256 amount) public updateReward(msg.sender) nonReentrant {
         /// @dev ensure the amount is > 0
         require(amount != 0, ZERO_AMOUNT());
         /// @dev if the caller is not exempt
@@ -164,9 +155,7 @@ contract VoteModule is IVoteModule, ReentrancyGuard, Initializable {
 
     /// @inheritdoc IVoteModule
     /// @dev this is ONLY callable by xShadow, which has important safety checks
-    function notifyRewardAmount(
-        uint256 amount
-    ) external updateReward(address(0)) nonReentrant {
+    function notifyRewardAmount(uint256 amount) external updateReward(address(0)) nonReentrant {
         /// @dev ensure > 0
         require(amount != 0, ZERO_AMOUNT());
         /// @dev only callable by xShadow contract
@@ -199,10 +188,7 @@ contract VoteModule is IVoteModule, ReentrancyGuard, Initializable {
 
     /** AccessHub Gated Functions */
     /// @inheritdoc IVoteModule
-    function setCooldownExemption(
-        address _user,
-        bool _exempt
-    ) external onlyAccessHub {
+    function setCooldownExemption(address _user, bool _exempt) external onlyAccessHub {
         /// @dev ensure the call is not the same status
         require(cooldownExempt[_user] != _exempt, NO_CHANGE());
         /// @dev adjust the exemption status
@@ -317,9 +303,8 @@ contract VoteModule is IVoteModule, ReentrancyGuard, Initializable {
                 : rewardPerTokenStored +
                     /// @dev to remaining time (since update) multiplied by the current reward rate
                     /// @dev scaled to precision of 1e18, then divided by the total supply
-                    (((lastTimeRewardApplicable() - lastUpdateTime) *
-                        rewardRate *
-                        PRECISION) / totalSupply)
+                    (((lastTimeRewardApplicable() - lastUpdateTime) * rewardRate * PRECISION) /
+                        totalSupply)
         );
     }
     /// @inheritdoc IVoteModule
@@ -333,10 +318,7 @@ contract VoteModule is IVoteModule, ReentrancyGuard, Initializable {
     }
 
     /// @inheritdoc IVoteModule
-    function isDelegateFor(
-        address caller,
-        address owner
-    ) external view returns (bool approved) {
+    function isDelegateFor(address caller, address owner) external view returns (bool approved) {
         /// @dev check the delegate mapping AND admin mapping due to hierarchy (admin > delegate)
         return (delegates[owner] == caller ||
             admins[owner] == caller ||
@@ -345,10 +327,7 @@ contract VoteModule is IVoteModule, ReentrancyGuard, Initializable {
     }
 
     /// @inheritdoc IVoteModule
-    function isAdminFor(
-        address caller,
-        address owner
-    ) external view returns (bool approved) {
+    function isAdminFor(address caller, address owner) external view returns (bool approved) {
         /// @dev return whether the caller is the address in the map
         /// @dev return true if caller is the owner as well
         return (admins[owner] == caller || caller == owner);

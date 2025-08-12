@@ -9,7 +9,7 @@ import {ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20P
 /// @dev standard mintable ERC20 built for vote-governance emissions
 contract Shadow is ERC20, ERC20Burnable, ERC20Permit {
     error NOT_MINTER();
-    /// @notice minter contract address
+
     address public minter;
 
     constructor(
@@ -18,9 +18,11 @@ contract Shadow is ERC20, ERC20Burnable, ERC20Permit {
         minter = _minter;
     }
 
-    /// @notice mint function called by minter weekly
-    /// @param to the address to mint to
-    /// @param amount amount of tokens
+    /**
+     * @notice mint function called by minter weekly
+     * @param to the address to mint to
+     * @param amount amount of tokens
+     */
     function mint(address to, uint256 amount) public {
         require(msg.sender == minter, NOT_MINTER());
         _mint(to, amount);

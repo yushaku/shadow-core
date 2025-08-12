@@ -50,31 +50,18 @@ describe("Platform", function () {
     await pair.connect(lper).approve(gauge.getAddress(), ethers.MaxUint256);
     await gauge
       .connect(lper)
-      ["deposit(uint256,uint256,address[])"](lpBalance, 0, [
-        c.shadow.getAddress(),
-      ]);
+      ["deposit(uint256,uint256,address[])"](lpBalance, 0, [c.shadow.getAddress()]);
   }
 
   async function initVoter() {
     // get some shadow
-    await setERC20Balance(
-      await c.shadow.getAddress(),
-      voter.address,
-      e(1),
-    );
-    console.log(
-      "Shadow balance:",
-      await c.shadow.balanceOf(voter.address),
-    );
+    await setERC20Balance(await c.shadow.getAddress(), voter.address, e(1));
+    console.log("Shadow balance:", await c.shadow.balanceOf(voter.address));
 
     // lock shadow
-    await c.shadow
-      .connect(voter)
-      .approve(c.votingEscrow.getAddress(), ethers.MaxUint256);
+    await c.shadow.connect(voter).approve(c.votingEscrow.getAddress(), ethers.MaxUint256);
     const tokenId = (await c.votingEscrow.connect(voter).latestTokenId()) + 1n;
-    await c.votingEscrow
-      .connect(voter)
-      .createLock(e(1), await c.votingEscrow.MAXTIME());
+    await c.votingEscrow.connect(voter).createLock(e(1), await c.votingEscrow.MAXTIME());
 
     return tokenId;
   }
