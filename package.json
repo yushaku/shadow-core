@@ -1,26 +1,29 @@
 {
-  "name": "shadow-core",
-  "version": "1.0.0",
-  "description": "ve(3,3) protocol core contracts",
-  "author": "yushaku",
-  "scripts": {
-    "lint": "solhint 'contracts/**/*.sol'",
-    "lint:fix": "solhint 'contracts/**/*.sol' --fix",
-    "format": "prettier --write .",
-    "format:sol": "prettier --write --plugin=prettier-plugin-solidity 'contracts/**/*.sol'"
-  },
-  "dependencies": {
-    "@nomicfoundation/hardhat-verify": "^2.1.1",
-    "@openzeppelin/contracts": "^5.4.0",
-    "@openzeppelin/contracts-upgradeable": "^5.4.0",
-    "@openzeppelin/hardhat-upgrades": "^3.9.1",
-    "hardhat": "^2.26.2",
-    "hardhat-deploy": "^1.0.4",
-    "hardhat-gas-reporter": "^2.3.0"
-  },
-  "devDependencies": {
-    "prettier": "^3.6.2",
-    "prettier-plugin-solidity": "^2.1.0",
-    "solhint": "^6.0.0"
-  }
+	"name": "shadow-core",
+	"version": "1.0.0",
+	"description": "ve(3,3) protocol core contracts",
+	"author": "yushaku",
+	"scripts": {
+		"lint": "solhint 'contracts/**/*.sol'",
+		"lint:fix": "solhint 'contracts/**/*.sol' --fix",
+		"format": "prettier --write .",
+		"format:sol": "prettier --write --plugin=prettier-plugin-solidity 'contracts/**/*.sol'"
+	},
+	"dependencies": {
+		"@nomicfoundation/hardhat-ethers": "^3.1.0",
+		"@nomicfoundation/hardhat-foundry": "^1.2.0",
+		"@nomicfoundation/hardhat-toolbox": "^6.1.0",
+		"@nomicfoundation/hardhat-verify": "^2.1.1",
+		"ethers": "^6.15.0",
+		"hardhat": "^2.26.2",
+		"hardhat-deploy": "^1.0.4",
+		"hardhat-gas-reporter": "^2.3.0",
+		"viem": "^2.33.3"
+	},
+	"devDependencies": {
+		"@types/node": "^24.2.1",
+		"prettier": "^3.6.2",
+		"prettier-plugin-solidity": "^2.1.0",
+		"solhint": "^6.0.0"
+	}
 }

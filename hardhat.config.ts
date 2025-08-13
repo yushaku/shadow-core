@@ -1,6 +1,7 @@
-import "@nomicfoundation/hardhat-toolbox-viem";
-import "@nomicfoundation/hardhat-verify";
+import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-foundry";
+import "@nomicfoundation/hardhat-verify";
+import "@nomicfoundation/hardhat-toolbox";
 import "@openzeppelin/hardhat-upgrades";
 import "hardhat-deploy";
 import "hardhat-gas-reporter";
@@ -14,17 +15,28 @@ const config: HardhatUserConfig = {
     hardhat: {
       allowUnlimitedContractSize: true,
     },
-    ethereum: {
-      url: "https://eth.llamarpc.com",
+    bsc: {
+      url: "https://bsc-dataseed.bnbchain.org",
       accounts,
     },
-    sepolia: {
-      url: "https://ethereum-sepolia-rpc.publicnode.com",
+    bsc_testnet: {
+      url: "https://bsc-testnet.bnbchain.org",
+      accounts,
+    },
+    base: {
+      url: "https://base.llamarpc.com",
+      accounts,
+    },
+    base_testnet: {
+      url: "https://base-goerli.llamarpc.com",
       accounts,
     },
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_API_KEY,
+  },
+  sourcify: {
+    enabled: true,
   },
   gasReporter: {
     enabled: false,
@@ -35,6 +47,9 @@ const config: HardhatUserConfig = {
   },
   namedAccounts: {
     deployer: { default: 0 },
+  },
+  paths: {
+    cache: 'cache/hardhat',
   },
 };
 
