@@ -1,16 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import {
-	AccessControlEnumerableUpgradeable,
-	Initializable
-} from "@openzeppelin-contracts-upgradeable/access/extensions/AccessControlEnumerableUpgradeable.sol";
+import {AccessControlEnumerableUpgradeable, Initializable} from "@openzeppelin-contracts-upgradeable/contracts/access/extensions/AccessControlEnumerableUpgradeable.sol";
 
 import {IAccessHub} from "contracts/interfaces/IAccessHub.sol";
 import {IVoter} from "contracts/interfaces/IVoter.sol";
 import {IMinter} from "contracts/interfaces/IMinter.sol";
 import {ILauncherPlugin} from "contracts/interfaces/ILauncherPlugin.sol";
-import {IXShadow} from "contracts/interfaces/IXShadow.sol";
+import {IYushaku} from "contracts/interfaces/IXShadow.sol";
 import {IX33} from "contracts/interfaces/IX33.sol";
 
 import {IRamsesV3Factory} from "contracts/CL/core/interfaces/IRamsesV3Factory.sol";
@@ -20,42 +17,33 @@ import {IRamsesV3Pool} from "contracts/CL/core/interfaces/IRamsesV3Pool.sol";
 import {IFeeCollector} from "contracts/CL/gauge/interfaces/IFeeCollector.sol";
 import {IVoteModule} from "contracts/interfaces/IVoteModule.sol";
 
+/**
+ * @title AccessHub
+ * @notice AccessHub is the main entry point for the protocol
+ */
 contract AccessHub is IAccessHub, Initializable, AccessControlEnumerableUpgradeable {
-	/** Start of Storage Slots */
-
-	/// @notice role that can call changing fee splits and swap fees
 	bytes32 public constant SWAP_FEE_SETTER = keccak256("SWAP_FEE_SETTER");
-	/// @notice operator role
 	bytes32 public constant PROTOCOL_OPERATOR = keccak256("PROTOCOL_OPERATOR");
 
-	/// @inheritdoc IAccessHub
 	address public timelock;
-	/// @inheritdoc IAccessHub
 	address public treasury;
 
 	/** "nice-to-have" addresses for quickly finding contracts within the system */
-
-	/// @inheritdoc IAccessHub
 	address public clGaugeFactory;
-	/// @inheritdoc IAccessHub
 	address public gaugeFactory;
-	/// @inheritdoc IAccessHub
 	address public feeDistributorFactory;
 
 	/** core contracts */
-
 	IVoter public voter;
 	IMinter public minter;
 	ILauncherPlugin public launcherPlugin;
-	IXShadow public xShadow;
+	IYushaku public xShadow;
 	IX33 public x33;
 	IRamsesV3Factory public ramsesV3PoolFactory;
 	IPairFactory public poolFactory;
 	IFeeRecipientFactory public feeRecipientFactory;
 	IFeeCollector public feeCollector;
 	IVoteModule public voteModule;
-
-	/**  End of Storage Slots */
 
 	modifier timelocked() {
 		require(msg.sender == timelock, NOT_TIMELOCK(msg.sender));
@@ -74,7 +62,7 @@ contract AccessHub is IAccessHub, Initializable, AccessControlEnumerableUpgradea
 		voter = IVoter(params.voter);
 		minter = IMinter(params.minter);
 		launcherPlugin = ILauncherPlugin(params.launcherPlugin);
-		xShadow = IXShadow(params.xShadow);
+		xShadow = IYushaku(params.xShadow);
 		x33 = IX33(params.x33);
 		ramsesV3PoolFactory = IRamsesV3Factory(params.ramsesV3PoolFactory);
 		poolFactory = IPairFactory(params.poolFactory);
@@ -101,7 +89,7 @@ contract AccessHub is IAccessHub, Initializable, AccessControlEnumerableUpgradea
 		voter = IVoter(params.voter);
 		minter = IMinter(params.minter);
 		launcherPlugin = ILauncherPlugin(params.launcherPlugin);
-		xShadow = IXShadow(params.xShadow);
+		xShadow = IYushaku(params.xShadow);
 		x33 = IX33(params.x33);
 		ramsesV3PoolFactory = IRamsesV3Factory(params.ramsesV3PoolFactory);
 		poolFactory = IPairFactory(params.poolFactory);
@@ -359,6 +347,7 @@ contract AccessHub is IAccessHub, Initializable, AccessControlEnumerableUpgradea
 			}
 		}
 	}
+
 	/// @inheritdoc IAccessHub
 	function removeFeeDistributorRewards(
 		address[] calldata _pools,
@@ -574,7 +563,7 @@ contract AccessHub is IAccessHub, Initializable, AccessControlEnumerableUpgradea
 
 	/// @inheritdoc IAccessHub
 	function setNewTimelock(address _timelock) external timelocked {
-		require(timelock != _timelock, SAME_ADDRESS());
+		if (timelock == _timelock) revert SAME_ADDRESS();
 		timelock = _timelock;
 	}
 }

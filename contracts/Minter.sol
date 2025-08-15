@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.26;
 
-import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+// import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 import {IERC20Extended} from "./interfaces/IERC20Extended.sol";
 import {IMinter} from "./interfaces/IMinter.sol";
@@ -53,6 +53,7 @@ contract Minter is IMinter {
 		address _xYSK
 	) external {
 		if (msg.sender != operator) revert IVoter.NOT_AUTHORIZED(msg.sender);
+
 		/// @dev ensure the emissions token isn't set yet
 		if (address(ysk) != address(0)) revert STARTED();
 		if (_xYSK == address(0)) revert INVALID_CONTRACT();
@@ -145,6 +146,15 @@ contract Minter is IMinter {
 		emit EmissionsMultiplierUpdated(_emissionsMultiplier);
 	}
 
+	/**
+	 * @notice transfer the operator to a new address
+	 * @param _newOperator the new operator
+	 */
+	function transferOperator(address _newOperator) external onlyGovernance {
+		operator = _newOperator;
+		emit SetOperator(_newOperator);
+	}
+
 	/// @inheritdoc IMinter
 	function calculateWeeklyEmissions() public view returns (uint256) {
 		/// @dev fetch proposed emissions
@@ -159,8 +169,8 @@ contract Minter is IMinter {
 		return _weeklyEmissions;
 	}
 
-	function getPeriod() public view returns (uint256 period) {
-		period = block.timestamp / 1 weeks;
+	function getPeriod() public view returns (uint256) {
+		return block.timestamp / 1 weeks;
 	}
 
 	function getEpoch() public view returns (uint256 _epoch) {

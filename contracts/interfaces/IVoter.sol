@@ -95,8 +95,8 @@ interface IVoter {
 	/// @notice ratio of xShadow emissions globally
 	function xRatio() external view returns (uint256);
 
-	/// @notice xShadow contract address
-	function xShadow() external view returns (address);
+	/// @notice xy contract address
+	function xy() external view returns (address);
 
 	/// @notice legacy factory address (uni-v2/stableswap)
 	function legacyFactory() external view returns (address);
@@ -191,7 +191,7 @@ interface IVoter {
 
 	/// @notice returns the address of the emission's token
 	/// @return _shadow emissions token contract address
-	function shadow() external view returns (address _shadow);
+	function ysk() external view returns (address _shadow);
 
 	/// @notice returns the address of the pool's gauge, if any
 	/// @param _pool pool address

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity ^0.8.24;
+pragma solidity 0.8.26;
 
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
@@ -27,7 +27,7 @@ import {IFeeDistributor} from "./interfaces/IFeeDistributor.sol";
 import {IFeeDistributorFactory} from "./interfaces/IFeeDistributorFactory.sol";
 import {IGauge} from "./interfaces/IGauge.sol";
 import {IGaugeFactory} from "./interfaces/IGaugeFactory.sol";
-import {IXShadow} from "./interfaces/IXShadow.sol";
+import {IXY} from "./interfaces/IXY.sol";
 
 contract Voter is IVoter, ReentrancyGuard, Initializable {
 	using EnumerableSet for EnumerableSet.AddressSet;
@@ -36,33 +36,19 @@ contract Voter is IVoter, ReentrancyGuard, Initializable {
 	uint256 public constant BASIS = 1_000_000;
 
 	address public legacyFactory;
-
-	address public shadow;
-
+	address public ysk;
 	address public gaugeFactory;
-
 	address public feeDistributorFactory;
-
 	address public minter;
-
 	address public accessHub;
-
 	address public governor;
-
 	address public clFactory;
-
 	address public clGaugeFactory;
-
 	address public nfpManager;
-
 	address public feeRecipientFactory;
-
-	address public xShadow;
-
+	address public xy;
 	address public voteModule;
-
 	address public launcherPlugin;
-
 	uint256 public xRatio;
 
 	EnumerableSet.AddressSet pools;
@@ -97,7 +83,6 @@ contract Voter is IVoter, ReentrancyGuard, Initializable {
 
 	mapping(address => bool) public isWhitelisted;
 	mapping(address => bool) public isAlive;
-
 	mapping(address => bool) public isClGauge;
 
 	/// @dev How many different CL pools there are for the same token pair
@@ -129,7 +114,7 @@ contract Voter is IVoter, ReentrancyGuard, Initializable {
 		address _feeDistributorFactory,
 		address _minter,
 		address _msig,
-		address _xShadow,
+		address _xY,
 		address _clFactory,
 		address _clGaugeFactory,
 		address _nfpManager,
@@ -140,11 +125,11 @@ contract Voter is IVoter, ReentrancyGuard, Initializable {
 		/// @dev making sure who deployed calls initialize
 		require(accessHub == msg.sender, NOT_AUTHORIZED(msg.sender));
 		legacyFactory = _legacyFactory;
-		shadow = _shadow;
+		ysk = _shadow;
 		gaugeFactory = _gauges;
 		feeDistributorFactory = _feeDistributorFactory;
 		minter = _minter;
-		xShadow = _xShadow;
+		xy = _xY;
 		governor = _msig;
 		feeRecipientFactory = _feeRecipientFactory;
 		voteModule = _voteModule;
@@ -159,7 +144,7 @@ contract Voter is IVoter, ReentrancyGuard, Initializable {
 		/// @dev emits from the zero address since it's the first time
 		emit EmissionsRatio(address(0), 0, 1_000_000);
 		/// @dev perma approval
-		IERC20(shadow).approve(xShadow, type(uint256).max);
+		IERC20(ysk).approve(xy, type(uint256).max);
 	}
 
 	/// @notice sets the default xShadowRatio
@@ -353,19 +338,19 @@ contract Voter is IVoter, ReentrancyGuard, Initializable {
 			/// @dev if the gauge is already distributed for the period, terminate
 			if (gaugePeriodDistributed[_gauge][_period]) return;
 
-			/// @dev fetch shadow address
-			address _xShadow = address(xShadow);
+			/// @dev fetch ysk address
+			address _xY = address(xy);
 			/// @dev fetch the current ratio and multiply by the claimable
 			uint256 _xShadowClaimable = (_claimable * xRatio) / BASIS;
-			/// @dev remove from the regular claimable tokens (SHADOW)
+			/// @dev remove from the regular claimable tokens (YSK)
 			_claimable -= _xShadowClaimable;
 
 			/// @dev can only distribute if the distributed amount / week > 0 and is > left()
 			bool canDistribute = true;
 
-			/// @dev _claimable could be 0 if emission is 100% xShadow
+			/// @dev _claimable could be 0 if emission is 100% xy
 			if (_claimable > 0) {
-				if (_claimable / DURATION == 0 || _claimable < IGauge(_gauge).left(shadow)) {
+				if (_claimable / DURATION == 0 || _claimable < IGauge(_gauge).left(ysk)) {
 					canDistribute = false;
 				}
 			}
@@ -373,7 +358,7 @@ contract Voter is IVoter, ReentrancyGuard, Initializable {
 			if (_xShadowClaimable > 0) {
 				if (
 					_xShadowClaimable / DURATION == 0 ||
-					_xShadowClaimable < IGauge(_gauge).left(_xShadow)
+					_xShadowClaimable < IGauge(_gauge).left(_xY)
 				) {
 					canDistribute = false;
 				}
@@ -382,16 +367,16 @@ contract Voter is IVoter, ReentrancyGuard, Initializable {
 			if (canDistribute) {
 				/// @dev set it to true firstly
 				gaugePeriodDistributed[_gauge][_period] = true;
-				/// @dev check SHADOW "claimable"
+				/// @dev check YSK "claimable"
 				if (_claimable > 0) {
 					/// @dev notify emissions
-					IGauge(_gauge).notifyRewardAmount(shadow, _claimable);
+					IGauge(_gauge).notifyRewardAmount(ysk, _claimable);
 				}
-				/// @dev check xSHADOW "claimable"
+				/// @dev check xYSK "claimable"
 				if (_xShadowClaimable > 0) {
-					/// @dev convert, then notify the xShadow
-					IXShadow(_xShadow).convertEmissionsToken(_xShadowClaimable);
-					IGauge(_gauge).notifyRewardAmount(_xShadow, _xShadowClaimable);
+					/// @dev convert, then notify the xy
+					IXY(_xY).convertEmissionsToken(_xShadowClaimable);
+					IGauge(_gauge).notifyRewardAmount(_xY, _xShadowClaimable);
 				}
 
 				emit DistributeReward(msg.sender, _gauge, _claimable + _xShadowClaimable);
@@ -481,7 +466,7 @@ contract Voter is IVoter, ReentrancyGuard, Initializable {
 		/// @dev if there is anything claimable left
 		if (_claimable > 0) {
 			/// @dev send to the governor contract
-			IERC20(shadow).transfer(governor, _claimable);
+			IERC20(ysk).transfer(governor, _claimable);
 		}
 		/// @dev update last distribution to the current period
 		lastDistro[_gauge] = currentPeriod;
@@ -520,7 +505,7 @@ contract Voter is IVoter, ReentrancyGuard, Initializable {
 			uint256 _claimable = _claimablePerPeriod(pool, _period);
 			/// @dev if there is gt 0 emissions, send to governor
 			if (_claimable > 0) {
-				IERC20(shadow).transfer(governor, _claimable);
+				IERC20(ysk).transfer(governor, _claimable);
 				/// @dev mark period as distributed
 				gaugePeriodDistributed[_gauge][_period] = true;
 			}
@@ -608,8 +593,8 @@ contract Voter is IVoter, ReentrancyGuard, Initializable {
 		/// @dev create a legacy gauge from the factory
 		address _gauge = IGaugeFactory(gaugeFactory).createGauge(_pool);
 		/// @dev give infinite approvals in advance
-		IERC20(shadow).approve(_gauge, type(uint256).max);
-		IERC20(xShadow).approve(_gauge, type(uint256).max);
+		IERC20(ysk).approve(_gauge, type(uint256).max);
+		IERC20(xy).approve(_gauge, type(uint256).max);
 		/// @dev update voter mappings
 		feeDistributorForGauge[_gauge] = _feeDistributor;
 		gaugeForPool[_pool] = _gauge;
@@ -655,9 +640,9 @@ contract Voter is IVoter, ReentrancyGuard, Initializable {
 			.createFeeDistributor(_feeCollector);
 		/// @dev create the gauge
 		address _gauge = IClGaugeFactory(clGaugeFactory).createGauge(_pool);
-		/// @dev unlimited approve shadow and xShadow to the gauge
-		IERC20(shadow).approve(_gauge, type(uint256).max);
-		IERC20(xShadow).approve(_gauge, type(uint256).max);
+		/// @dev unlimited approve shadow and xy to the gauge
+		IERC20(ysk).approve(_gauge, type(uint256).max);
+		IERC20(xy).approve(_gauge, type(uint256).max);
 		/// @dev update mappings
 		feeDistributorForClGauge[_gauge] = _feeDistributor;
 		gaugeForPool[_pool] = _gauge;
@@ -789,13 +774,13 @@ contract Voter is IVoter, ReentrancyGuard, Initializable {
 		/// @dev gate to minter which prevents bricking distribution
 		require(msg.sender == minter, NOT_AUTHORIZED(msg.sender));
 		/// @dev transfer the tokens to the voter
-		IERC20(shadow).transferFrom(msg.sender, address(this), amount);
+		IERC20(ysk).transferFrom(msg.sender, address(this), amount);
 		/// @dev fetch the current period
 		uint256 period = getPeriod();
 		/// @dev add to the totalReward for the period
 		totalRewardPerPeriod[period] += amount;
 		/// @dev emit an event
-		emit NotifyReward(msg.sender, shadow, amount);
+		emit NotifyReward(msg.sender, ysk, amount);
 	}
 
 	///////////////////////////

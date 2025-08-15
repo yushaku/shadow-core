@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-interface IX33 is IERC20 {
+interface IXYZ is IERC20 {
 	/// @dev parameters passed to the aggregator swap
 	struct AggregatorParams {
 		address aggregator; // address of the whitelisted aggregator

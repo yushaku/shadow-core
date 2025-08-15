@@ -9,11 +9,12 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 
 import {IVoter} from "./interfaces/IVoter.sol";
 import {IGauge} from "./interfaces/IGauge.sol";
-import {IXShadow} from "./interfaces/IXShadow.sol";
+import {IXY} from "./interfaces/IXY.sol";
 
 /// @dev we use a very minimal interface for easy fetching
 interface IMinimalPoolInterface {
 	function token0() external view returns (address);
+
 	function token1() external view returns (address);
 }
 
@@ -35,7 +36,7 @@ contract Gauge is IGauge, ReentrancyGuard {
 	/// @dev 1e27 precision
 	uint256 internal constant PRECISION = 10 ** 18;
 
-	IXShadow public immutable xShadow;
+	IXY public immutable xShadow;
 
 	mapping(address user => uint256) public balanceOf;
 	mapping(address user => mapping(address token => uint256 rewardPerToken))
@@ -53,7 +54,7 @@ contract Gauge is IGauge, ReentrancyGuard {
 
 		/// @dev temporary voter interface
 		IVoter tempVoter = IVoter(voter);
-		xShadow = IXShadow(tempVoter.xShadow());
+		xShadow = IXY(tempVoter.xShadow());
 
 		/// @dev temporary minimal pool interface to fetch token(0 / 1)
 		IMinimalPoolInterface pool = IMinimalPoolInterface(stake);
@@ -172,7 +173,7 @@ contract Gauge is IGauge, ReentrancyGuard {
 			_rewardData[token].rewardPerTokenStored +
 			((lastTimeRewardApplicable(token) - _rewardData[token].lastUpdateTime) *
 				_rewardData[token].rewardRate) /
-				totalSupply;
+			totalSupply;
 	}
 
 	/// @inheritdoc IGauge

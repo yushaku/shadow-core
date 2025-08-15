@@ -7,34 +7,28 @@ import {ERC4626} from "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.so
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-import {IVoter} from "../interfaces/IVoter.sol";
-import {IXShadow} from "../interfaces/IXShadow.sol";
-import {IVoteModule} from "../interfaces/IVoteModule.sol";
-import {IX33} from "../interfaces/IX33.sol";
+import {IVoteModule} from "contracts/interfaces/IVoteModule.sol";
+import {IVoter} from "contracts/interfaces/IVoter.sol";
+import {IXYZ} from "contracts/interfaces/IXYZ.sol";
+import {IXY} from "contracts/interfaces/IXY.sol";
 
-/// @title Canonical xShadow Wrapper for Shadow Exchange on Sonic
-/// @dev Autocompounding shares token voting optimally each epoch
-contract x33 is ERC4626, IX33, ReentrancyGuard {
+/**
+ * @title Canonical xYushaku Wrapper for yushaku Exchange
+ * @dev AUTO-COMPOUNDING shares token voting optimally each epoch
+ */
+contract XYZ is ERC4626, IXYZ, ReentrancyGuard {
 	using SafeERC20 for ERC20;
 
-	/// @inheritdoc IX33
-	address public operator;
-
-	/// @inheritdoc IX33
 	address public immutable accessHub;
-
-	IERC20 public immutable shadow;
-	IXShadow public immutable xShadow;
 	IVoteModule public immutable voteModule;
+	IERC20 public immutable ysk;
+	IXY public immutable xy;
 	IVoter public immutable voter;
 
-	/// @inheritdoc IX33
+	address public operator;
 	uint256 public activePeriod;
 
-	/// @inheritdoc IX33
 	mapping(uint256 => bool) public periodUnlockStatus;
-
-	/// @notice Mapping of whitelisted aggregators
 	mapping(address => bool) public whitelistedAggregators;
 
 	modifier whileNotLocked() {
@@ -55,23 +49,23 @@ contract x33 is ERC4626, IX33, ReentrancyGuard {
 	constructor(
 		address _operator,
 		address _accessHub,
-		address _xShadow,
+		address _xYsk,
 		address _voter,
 		address _voteModule
-	) ERC20("Shadow Liquid Staking Token", "x33") ERC4626(IERC20(_xShadow)) {
+	) ERC20("Ysk Liquid Staking Token", "XYZ") ERC4626(IERC20(_xYsk)) {
 		operator = _operator;
 		accessHub = _accessHub;
-		xShadow = IXShadow(_xShadow);
-		shadow = IERC20(xShadow.SHADOW());
+		xy = IXY(_xYsk);
+		ysk = IERC20(xy.YSK());
 		voteModule = IVoteModule(_voteModule);
 		voter = IVoter(_voter);
 		activePeriod = getPeriod();
-		/// @dev pre-approve shadow and xShadow
-		shadow.approve(address(xShadow), type(uint256).max);
-		xShadow.approve(address(voteModule), type(uint256).max);
+		/// @dev pre-approve ysk and xYsk
+		ysk.approve(address(xy), type(uint256).max);
+		xy.approve(address(voteModule), type(uint256).max);
 	}
 
-	/// @inheritdoc IX33
+	/// @inheritdoc IXYZ
 	function submitVotes(
 		address[] calldata _pools,
 		uint256[] calldata _weights
@@ -80,25 +74,25 @@ contract x33 is ERC4626, IX33, ReentrancyGuard {
 		voter.vote(address(this), _pools, _weights);
 	}
 
-	/// @inheritdoc IX33
+	/// @inheritdoc IXYZ
 	function compound() external onlyOperator {
 		/// @dev fetch the current ratio prior to compounding
 		uint256 currentRatio = ratio();
-		/// @dev cache the current shadow balance
-		uint256 currentShadowBalance;
+		/// @dev cache the current ysk balance
+		uint256 currentYskBalance;
 		/// @dev fetch from simple IERC20 call to the underlying SHADOW
-		currentShadowBalance = shadow.balanceOf(address(this));
-		/// @dev convert to xShadow
-		xShadow.convertEmissionsToken(currentShadowBalance);
+		currentYskBalance = ysk.balanceOf(address(this));
+		/// @dev convert to xYsk
+		xy.convertEmissionsToken(currentYskBalance);
 		/// @dev deposit into the voteModule
 		voteModule.depositAll();
 		/// @dev fetch new ratio
 		uint256 newRatio = ratio();
 
-		emit Compounded(currentRatio, newRatio, currentShadowBalance);
+		emit Compounded(currentRatio, newRatio, currentYskBalance);
 	}
 
-	/// @inheritdoc IX33
+	/// @inheritdoc IXYZ
 	function claimRebase() external onlyOperator {
 		/// @dev claim rebase only if full rebase amount is ready
 		/// @dev this is fine since the gap to do so is 6+ days
@@ -118,7 +112,7 @@ contract x33 is ERC4626, IX33, ReentrancyGuard {
 		emit Rebased(currentRatio, newRatio, rebaseSize);
 	}
 
-	/// @inheritdoc IX33
+	/// @inheritdoc IXYZ
 	function claimIncentives(
 		address[] calldata _feeDistributors,
 		address[][] calldata _tokens
@@ -127,7 +121,7 @@ contract x33 is ERC4626, IX33, ReentrancyGuard {
 		voter.claimIncentives(address(this), _feeDistributors, _tokens);
 	}
 
-	/// @inheritdoc IX33
+	/// @inheritdoc IXYZ
 	function swapIncentiveViaAggregator(
 		AggregatorParams calldata _params
 	) external nonReentrant onlyOperator {
@@ -138,50 +132,47 @@ contract x33 is ERC4626, IX33, ReentrancyGuard {
 		);
 
 		/// @dev required to validate later against malicious calldata
-		/// @dev fetch underlying xShadow in the votemodule before swap
-		uint256 xShadowBalanceBeforeSwap = totalAssets();
-		/// @dev fetch the shadowBalance of the contract
-		uint256 shadowBalanceBeforeSwap = shadow.balanceOf(address(this));
+		/// @dev fetch underlying xYsk in the votemodule before swap
+		uint256 xYskBalanceBeforeSwap = totalAssets();
+		/// @dev fetch the yskBalance of the contract
+		uint256 yskBalanceBeforeSwap = ysk.balanceOf(address(this));
 
 		/// @dev swap via aggregator (swapping SHADOW is forbidden)
-		require(_params.tokenIn != address(shadow), FORBIDDEN_TOKEN(address(shadow)));
+		require(_params.tokenIn != address(ysk), FORBIDDEN_TOKEN(address(ysk)));
 		IERC20(_params.tokenIn).approve(_params.aggregator, _params.amountIn);
 		(bool success, bytes memory returnData) = _params.aggregator.call(_params.callData);
 		/// @dev revert with the returnData for debugging
 		require(success, AGGREGATOR_REVERTED(returnData));
 
 		/// @dev fetch the new balances after swap
-		/// @dev shadow balance after the swap
-		uint256 shadowBalanceAfterSwap = shadow.balanceOf(address(this));
-		/// @dev underlying xShadow balance in the voteModule
-		uint256 xShadowBalanceAfterSwap = totalAssets();
-		/// @dev the difference from shadow before to after
-		uint256 diffShadow = shadowBalanceAfterSwap - shadowBalanceBeforeSwap;
-		/// @dev shadow tokenOut slippage check
-		require(diffShadow >= _params.minAmountOut, AMOUNT_OUT_TOO_LOW(diffShadow));
-		/// @dev prevent any holding xshadow on x33 to be manipulated (under any circumstance)
-		require(
-			xShadowBalanceAfterSwap == xShadowBalanceBeforeSwap,
-			FORBIDDEN_TOKEN(address(shadow))
-		);
+		/// @dev ysk balance after the swap
+		uint256 yskBalanceAfterSwap = ysk.balanceOf(address(this));
+		/// @dev underlying xYsk balance in the voteModule
+		uint256 xYskBalanceAfterSwap = totalAssets();
+		/// @dev the difference from ysk before to after
+		uint256 diffYsk = yskBalanceAfterSwap - yskBalanceBeforeSwap;
+		/// @dev ysk tokenOut slippage check
+		require(diffYsk >= _params.minAmountOut, AMOUNT_OUT_TOO_LOW(diffYsk));
+		/// @dev prevent any holding xysk on x33 to be manipulated (under any circumstance)
+		require(xYskBalanceAfterSwap == xYskBalanceBeforeSwap, FORBIDDEN_TOKEN(address(ysk)));
 
-		emit SwappedBribe(operator, _params.tokenIn, _params.amountIn, diffShadow);
+		emit SwappedBribe(operator, _params.tokenIn, _params.amountIn, diffYsk);
 	}
 
-	/// @inheritdoc IX33
+	/// @inheritdoc IXYZ
 	function rescue(address _token, uint256 _amount) external nonReentrant onlyAccessHub {
-		uint256 snapshotxShadowBalance = totalAssets();
+		uint256 snapshotxYskBalance = totalAssets();
 
 		/// @dev transfer to the caller
 		IERC20(_token).transfer(msg.sender, _amount);
 
 		/// @dev _token could be any malicious contract someone sent to the x33 module
-		/// @dev extra security check to ensure xShadow balance or allowance doesn't change when rescued
-		require(xShadow.allowance(_token, address(this)) == 0, FORBIDDEN_TOKEN(address(xShadow)));
-		require(totalAssets() == snapshotxShadowBalance, FORBIDDEN_TOKEN(address(xShadow)));
+		/// @dev extra security check to ensure xYsk balance or allowance doesn't change when rescued
+		require(xy.allowance(_token, address(this)) == 0, FORBIDDEN_TOKEN(address(xy)));
+		require(totalAssets() == snapshotxYskBalance, FORBIDDEN_TOKEN(address(xy)));
 	}
 
-	/// @inheritdoc IX33
+	/// @inheritdoc IXYZ
 	function unlock() external onlyOperator {
 		/// @dev block unlocking until the cooldown is concluded
 		require(!isCooldownActive(), LOCKED());
@@ -190,8 +181,8 @@ contract x33 is ERC4626, IX33, ReentrancyGuard {
 
 		emit Unlocked(block.timestamp);
 	}
-	/// @inheritdoc IX33
 
+	/// @inheritdoc IXYZ
 	function transferOperator(address _newOperator) external onlyAccessHub {
 		address currentOperator = operator;
 
@@ -201,12 +192,13 @@ contract x33 is ERC4626, IX33, ReentrancyGuard {
 		emit NewOperator(currentOperator, operator);
 	}
 
-	/// @inheritdoc IX33
+	/// @inheritdoc IXYZ
 	function whitelistAggregator(address _aggregator, bool _status) external onlyAccessHub {
 		/// @dev add to the whitelisted aggregator mapping
 		whitelistedAggregators[_aggregator] = _status;
 		emit AggregatorWhitelistUpdated(_aggregator, _status);
 	}
+
 	/**
 	 * Read Functions
 	 */
@@ -217,18 +209,18 @@ contract x33 is ERC4626, IX33, ReentrancyGuard {
 		return voteModule.balanceOf(address(this));
 	}
 
-	/// @inheritdoc IX33
+	/// @inheritdoc IXYZ
 	function ratio() public view returns (uint256) {
 		if (totalSupply() == 0) return 1e18;
 		return (totalAssets() * 1e18) / totalSupply();
 	}
 
-	/// @inheritdoc IX33
+	/// @inheritdoc IXYZ
 	function getPeriod() public view returns (uint256 period) {
 		period = block.timestamp / 1 weeks;
 	}
 
-	/// @inheritdoc IX33
+	/// @inheritdoc IXYZ
 	function isUnlocked() public view returns (bool) {
 		/// @dev calculate the time left in the current period
 		/// @dev getPeriod() + 1 can be viewed as the starting point of the NEXT period
@@ -242,7 +234,7 @@ contract x33 is ERC4626, IX33, ReentrancyGuard {
 		return periodUnlockStatus[getPeriod()];
 	}
 
-	/// @inheritdoc IX33
+	/// @inheritdoc IXYZ
 	function isCooldownActive() public view returns (bool) {
 		/// @dev fetch the next unlock from the voteModule
 		uint256 unlockTime = voteModule.unlockTime();
@@ -258,7 +250,7 @@ contract x33 is ERC4626, IX33, ReentrancyGuard {
 		uint256 assets,
 		uint256 shares
 	) internal virtual override whileNotLocked {
-		SafeERC20.safeTransferFrom(xShadow, caller, address(this), assets);
+		SafeERC20.safeTransferFrom(xy, caller, address(this), assets);
 
 		/// @dev deposit to the voteModule before minting shares to the user
 		voteModule.deposit(assets);
@@ -280,10 +272,10 @@ contract x33 is ERC4626, IX33, ReentrancyGuard {
 
 		_burn(owner, shares);
 
-		/// @dev withdraw from the voteModule before sending the user's xShadow
+		/// @dev withdraw from the voteModule before sending the user's xYsk
 		voteModule.withdraw(assets);
 
-		SafeERC20.safeTransfer(xShadow, receiver, assets);
+		SafeERC20.safeTransfer(xy, receiver, assets);
 
 		emit Withdraw(caller, receiver, owner, assets, shares);
 	}

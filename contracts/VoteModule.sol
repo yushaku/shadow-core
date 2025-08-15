@@ -8,7 +8,7 @@ import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.s
 
 import {IVoteModule} from "./interfaces/IVoteModule.sol";
 import {IVoter} from "./interfaces/IVoter.sol";
-import {IXShadow} from "./interfaces/IXShadow.sol";
+import {IYushaku} from "./interfaces/IXShadow.sol";
 
 contract VoteModule is IVoteModule, ReentrancyGuard, Initializable {
 	/// @inheritdoc IVoteModule
@@ -18,7 +18,7 @@ contract VoteModule is IVoteModule, ReentrancyGuard, Initializable {
 	/// @inheritdoc IVoteModule
 	address public voter;
 	/// @notice xShadow token
-	IXShadow public stakingToken;
+	IYushaku public stakingToken;
 	/// @notice underlying Shadow token
 	IERC20 public underlying;
 
@@ -76,8 +76,8 @@ contract VoteModule is IVoteModule, ReentrancyGuard, Initializable {
 		xShadow = _xShadow;
 		voter = _voter;
 		accessHub = _accessHub;
-		stakingToken = IXShadow(_xShadow);
-		underlying = IERC20(IXShadow(_xShadow).SHADOW());
+		stakingToken = IYushaku(_xShadow);
+		underlying = IERC20(IYushaku(_xShadow).SHADOW());
 	}
 
 	/// @dev common multirewarder-esque modifier for updating on interactions

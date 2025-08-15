@@ -2,11 +2,12 @@
 
 [profile.default]
 out = "out"
-libs = ["node_modules", "lib"]
+libs = ["lib"]
 script = "script"
-test = 'test/foundry'
+test = 'test'
 src = 'contracts'
 cache_path = 'cache/foundry'
+
 optimize = true
 optimizer_runs = 1000
 via_ir = true
@@ -24,9 +25,11 @@ bsc = { key = "${ETHERSCAN_API_KEY}", url = "https://api.bscscan.com" }
 bsc_testnet = { key = "${ETHERSCAN_API_KEY}", url = "https://api-testnet.bscscan.com" }
 base = { key = "${ETHERSCAN_API_KEY}", url = "https://api.basescan.org" }
 base_testnet = { key = "${ETHERSCAN_API_KEY}", url = "https://api-sepolia.basescan.org" }
+sonic = { key = "${ETHERSCAN_API_KEY}", url = "https://api-sonic.basescan.org" }
 
 [rpc_endpoints]
 bsc = "https://bsc-dataseed.bnbchain.org"
 bsc_testnet = "https://bsc-testnet.bnbchain.org"
 base = "https://base.llamarpc.com"
 base_testnet = "https://base-sepolia.gateway.tenderly.co"
+sonic = "https://sonic-json-rpc.stakely.io"

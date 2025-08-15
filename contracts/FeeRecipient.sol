@@ -6,7 +6,8 @@ import {IFeeDistributor} from "./interfaces/IFeeDistributor.sol";
 import {IFeeRecipient} from "./interfaces/IFeeRecipient.sol";
 import {IFeeRecipientFactory} from "./interfaces/IFeeRecipientFactory.sol";
 
-/// @notice Pair Fees contract is used as a 1:1 pair relationship to split out fees, this ensures that the curve does not need to be modified for LP shares
+/// @notice Pair Fees contract is used as a 1:1 pair relationship to split out fees,
+/// this ensures that the curve does not need to be modified for LP shares
 contract FeeRecipient is IFeeRecipient {
 	/// @notice The pair it is bonded to
 	address public immutable pair;

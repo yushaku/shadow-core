@@ -23,3 +23,4 @@ forge script deploy/ysk.s.sol:DeployYSK \
 # --broadcast \
 # --verify
 
+forge clone 0x74d416f40603a98da8c1592e0548e8b22f1b14f1 --chain 146 --etherscan-api-key sonic
