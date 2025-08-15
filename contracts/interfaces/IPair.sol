@@ -33,6 +33,13 @@ interface IPair {
 	);
 	event Sync(uint112 reserve0, uint112 reserve1);
 
+	/// @dev Structure to capture time period observations every 30 minutes, used for local oracles
+	struct Observation {
+		uint256 timestamp;
+		uint256 reserve0Cumulative;
+		uint256 reserve1Cumulative;
+	}
+
 	/// @notice initialize the pool, called only once programatically
 	function initialize(address _token0, address _token1, bool _stable) external;
 
@@ -111,4 +118,13 @@ interface IPair {
 
 	/// @notice returns the feeRecipient of the pair
 	function feeRecipient() external view returns (address);
+
+	/// @notice returns the token0 of the pair
+	function token0() external view returns (address);
+
+	/// @notice returns the token1 of the pair
+	function token1() external view returns (address);
+
+	/// @notice returns if pair is stable
+	function stable() external view returns (bool);
 }

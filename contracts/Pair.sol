@@ -13,42 +13,33 @@ import {IPair} from "contracts/interfaces/IPair.sol";
 
 /**
  * @title Pair
- * @notice is Uniswap V2 (volatile) and stable pool
+ * @author Solidly, Uniswap Labs
+ * @notice stable or volatile pool
  */
 contract Pair is IPair, ERC20, ReentrancyGuard {
 	using UQ112x112 for uint224;
 
-	/// @dev Structure to capture time period obervations every 30 minutes, used for local oracles
-	struct Observation {
-		uint256 timestamp;
-		uint256 reserve0Cumulative;
-		uint256 reserve1Cumulative;
-	}
-
 	Observation[] public observations;
 
-	uint256 internal _unlocked;
+	// uint256 internal _unlocked;
 
 	/// @notice Capture oracle reading every 30 minutes
-	uint256 public constant periodSize = 1800;
-
+	uint256 public constant PERIOD_SIZE = 1800;
 	/// @notice min liquidity amount which is burned on creation
 	uint256 public constant MINIMUM_LIQUIDITY = 10 ** 3;
-
+	/// @dev first MINIMUM_LIQUIDITY tokens are permanently locked
+	uint256 internal constant MINIMUM_K = 10 ** 9;
+	/// @dev 1m = 100%
+	uint256 internal constant FEE_DENOM = 1_000_000;
 	/// @notice legacy factory address
 	address public immutable factory;
-	/// @notice token0 in the pool
+
 	address public token0;
-	/// @notice token1 in the pool
 	address public token1;
-	/// @notice where the swap fees accrue to
 	address public feeRecipient;
 
-	/// @dev uses single storage slot, accessible via getReserves
 	uint112 private reserve0;
-	/// @dev uses single storage slot, accessible via getReserves
 	uint112 private reserve1;
-	/// @dev uses single storage slot, accessible via getReserves
 	uint32 private blockTimestampLast;
 
 	uint256 public reserve0CumulativeLast;
@@ -61,16 +52,13 @@ contract Pair is IPair, ERC20, ReentrancyGuard {
 
 	uint256 internal decimals0;
 	uint256 internal decimals1;
-	/// @dev first MINIMUM_LIQUIDITY tokens are permanently locked
-	uint256 internal constant MINIMUM_K = 10 ** 9;
-	/// @dev 1m = 100%
-	uint256 internal constant FEE_DENOM = 1_000_000;
 
 	/// @notice whether the pool uses the xy(x^2 * y + y^2 * x) >= k swap curve
 	bool public stable;
 
 	string internal _name;
 	string internal _symbol;
+
 	constructor() ERC20("", "") {
 		/// @dev initialize the factory address
 		factory = msg.sender;
@@ -130,6 +118,7 @@ contract Pair is IPair, ERC20, ReentrancyGuard {
 		decimals0 = 10 ** IERC20Extended(token0).decimals();
 		decimals1 = 10 ** IERC20Extended(token1).decimals();
 	}
+
 	/// @inheritdoc IPair
 	function getReserves()
 		public
@@ -181,7 +170,7 @@ contract Pair is IPair, ERC20, ReentrancyGuard {
 		/// @dev compare the last observation with current timestamp, if greater than 30 minutes, record a new event
 		timeElapsed = blockTimestamp - _point.timestamp;
 		/// @dev if > the periodSize (usually 30m twap)
-		if (timeElapsed > periodSize) {
+		if (timeElapsed > PERIOD_SIZE) {
 			observations.push(
 				Observation(blockTimestamp, reserve0CumulativeLast, reserve1CumulativeLast)
 			);
@@ -256,6 +245,7 @@ contract Pair is IPair, ERC20, ReentrancyGuard {
 			kLast = _k(reserve0, reserve1);
 		}
 	}
+
 	/// @inheritdoc IPair
 	/// @dev this low-level function should be called from a contract which performs important safety checks
 	function mint(address to) external nonReentrant returns (uint256 liquidity) {
@@ -294,6 +284,7 @@ contract Pair is IPair, ERC20, ReentrancyGuard {
 		if (feeOn) kLast = _k(uint256(reserve0), uint256(reserve1));
 		emit Mint(msg.sender, amount0, amount1);
 	}
+
 	/// @inheritdoc IPair
 	/// @dev this low-level function should be called from a contract which performs important safety checks
 	function burn(address to) external nonReentrant returns (uint256 amount0, uint256 amount1) {
@@ -331,6 +322,7 @@ contract Pair is IPair, ERC20, ReentrancyGuard {
 		if (feeOn) kLast = _k(reserve0, reserve1);
 		emit Burn(msg.sender, amount0, amount1, to);
 	}
+
 	/// @inheritdoc IPair
 	/// @dev this low-level function should be called from a contract which performs important safety checks
 	function swap(
@@ -403,24 +395,28 @@ contract Pair is IPair, ERC20, ReentrancyGuard {
 			reserve1
 		);
 	}
+
 	/// @inheritdoc IPair
 	function setFeeRecipient(address _feeRecipient) external {
 		/// @dev gate to the PairFactory
 		require(msg.sender == factory, NOT_AUTHORIZED());
 		feeRecipient = _feeRecipient;
 	}
+
 	/// @inheritdoc IPair
 	function setFeeSplit(uint256 _feeSplit) external {
 		/// @dev gate to the PairFactory
 		require(msg.sender == factory, NOT_AUTHORIZED());
 		feeSplit = _feeSplit;
 	}
+
 	/// @inheritdoc IPair
 	function setFee(uint256 _fee) external {
 		/// @dev gate to the PairFactory
 		require(msg.sender == factory, NOT_AUTHORIZED());
 		fee = _fee;
 	}
+
 	/// @inheritdoc IPair
 	function mintFee() external nonReentrant {
 		/// @dev fetch the current public reserves
@@ -448,8 +444,10 @@ contract Pair is IPair, ERC20, ReentrancyGuard {
 
 	function _f(uint256 x0, uint256 y) internal pure returns (uint256) {
 		return
-			(x0 * ((((y * y) / 1e18) * y) / 1e18)) / 1e18 +
-			(((((x0 * x0) / 1e18) * x0) / 1e18) * y) / 1e18;
+			(x0 * ((((y * y) / 1e18) * y) / 1e18)) /
+			1e18 +
+			(((((x0 * x0) / 1e18) * x0) / 1e18) * y) /
+			1e18;
 	}
 
 	function _d(uint256 x0, uint256 y) internal pure returns (uint256) {
@@ -479,6 +477,7 @@ contract Pair is IPair, ERC20, ReentrancyGuard {
 		}
 		return y;
 	}
+
 	/// @inheritdoc IPair
 	function getAmountOut(uint256 amountIn, address tokenIn) external view returns (uint256) {
 		(uint256 _reserve0, uint256 _reserve1) = (reserve0, reserve1);

@@ -2,33 +2,22 @@
 pragma solidity ^0.8.26;
 
 interface IPairFactory {
-	error FEE_TOO_HIGH();
-	error ZERO_FEE();
-	/// @dev invalid assortment
-	error IA();
-	/// @dev zero address
-	error ZA();
-	/// @dev pair exists
-	error PE();
-	error NOT_AUTHORIZED();
-	error INVALID_FEE_SPLIT();
+	error FeeTooHigh();
+	error ZeroFee();
+	error SameAddress();
+	error ZeroAddress();
+	error PairExists();
+	error NotAuthorized();
+	error InvalidFeeSplit();
 
 	event PairCreated(address indexed token0, address indexed token1, address pair, uint256);
-
 	event SetFee(uint256 indexed fee);
-
 	event SetPairFee(address indexed pair, uint256 indexed fee);
-
 	event SetFeeSplit(uint256 indexed _feeSplit);
-
 	event SetPairFeeSplit(address indexed pair, uint256 indexed _feeSplit);
-
 	event SkimStatus(address indexed _pair, bool indexed _status);
-
 	event NewTreasury(address indexed _caller, address indexed _newTreasury);
-
 	event FeeSplitWhenNoGauge(address indexed _caller, bool indexed _status);
-
 	event SetFeeRecipient(address indexed pair, address indexed feeRecipient);
 
 	/// @notice returns the total length of legacy pairs
