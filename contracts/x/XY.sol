@@ -7,12 +7,16 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import {IVoter} from "../interfaces/IVoter.sol";
-import {IRamsesV3Pool} from "../CL/core/interfaces/IRamsesV3Pool.sol";
-import {IXShadow} from "../interfaces/IXShadow.sol";
-import {IVoteModule} from "../interfaces/IVoteModule.sol";
+import {IVoter} from "contracts/interfaces/IVoter.sol";
+import {IXY} from "contracts/interfaces/IXY.sol";
+import {IVoteModule} from "contracts/interfaces/IVoteModule.sol";
 
-contract XShadow is ERC20, IXShadow, Pausable {
+/**
+ * @title XY
+ * @notice is the voting escrow token for the Yushaku ecosystem.
+ * @dev 1 YSK = 1 xYushaku
+ */
+contract XY is IXY, ERC20, Pausable {
 	using EnumerableSet for EnumerableSet.AddressSet;
 	uint256 public constant BASIS = 10_000;
 	uint256 public constant SLASHING_PENALTY = 5000;
@@ -22,7 +26,7 @@ contract XShadow is ERC20, IXShadow, Pausable {
 	address public immutable MINTER;
 	address public immutable ACCESS_HUB;
 	address public immutable VOTE_MODULE;
-	IERC20 public immutable SHADOW;
+	IERC20 public immutable YSK;
 	IVoter public immutable VOTER;
 
 	address public operator;
@@ -41,14 +45,14 @@ contract XShadow is ERC20, IXShadow, Pausable {
 	}
 
 	constructor(
-		address _shadow,
+		address _ysk,
 		address _voter,
 		address _operator,
 		address _accessHub,
 		address _voteModule,
 		address _minter
-	) ERC20("xShadow", "xSHADOW") {
-		SHADOW = IERC20(_shadow);
+	) ERC20("xYushaku", "xY") {
+		YSK = IERC20(_ysk);
 		VOTER = IVoter(_voter);
 		MINTER = _minter;
 		operator = _operator;
@@ -114,74 +118,54 @@ contract XShadow is ERC20, IXShadow, Pausable {
 	// General use functions
 	/*****************************************************************/
 
+	/// @notice converts 1 YSK to 1 xYushaku
+	/// @param _amount amount of YSK to convert
 	function convertEmissionsToken(uint256 _amount) external whenNotPaused {
-		/// @dev ensure the _amount is > 0
-		require(_amount != 0, ZERO());
-		/// @dev transfer from the caller to this address
-		SHADOW.transferFrom(msg.sender, address(this), _amount);
-		/// @dev mint the xSHADOW to the caller
+		if (_amount == 0) revert ZERO();
+
+		YSK.transferFrom(msg.sender, address(this), _amount);
 		_mint(msg.sender, _amount);
-		/// @dev emit an event for conversion
 		emit Converted(msg.sender, _amount);
 	}
 
 	function rebase() external whenNotPaused {
-		/// @dev gate to minter and call it on epoch flips
 		require(msg.sender == MINTER, NOT_MINTER());
-		/// @dev fetch the current period
+
 		uint256 period = VOTER.getPeriod();
-		/// @dev if it's a new period (epoch)
-		if (
-			period > lastDistributedPeriod &&
-			/// @dev if the rebase is greater than the Basis
-			pendingRebase >= BASIS
-		) {
-			/// @dev PvP rebase notified to the voteModule staking contract to stream to xSHADOW
-			/// @dev fetch the current period from voter
+		if (period > lastDistributedPeriod && pendingRebase >= BASIS) {
 			lastDistributedPeriod = period;
-			/// @dev store the rebase
 			uint256 _temp = pendingRebase;
-			/// @dev zero it out
 			pendingRebase = 0;
-			/// @dev approve SHADOW transferring to voteModule
-			SHADOW.approve(VOTE_MODULE, _temp);
-			/// @dev notify the SHADOW rebase
-			IVoteModule(VOTE_MODULE).notifyRewardAmount(_temp);
 			emit Rebase(msg.sender, _temp);
+
+			YSK.approve(VOTE_MODULE, _temp);
+			IVoteModule(VOTE_MODULE).notifyRewardAmount(_temp);
 		}
 	}
 
-	function exit(uint256 _amount) external whenNotPaused returns (uint256 _exitedAmount) {
-		/// @dev cannot exit a 0 amount
-		require(_amount != 0, ZERO());
-		/// @dev if it's at least 2 wei it will give a penalty
-		uint256 penalty = ((_amount * SLASHING_PENALTY) / BASIS);
-		uint256 exitAmount = _amount - penalty;
-
-		/// @dev burn the xShadow from the caller's address
+	function exit(uint256 _amount) external whenNotPaused returns (uint256 exitAmount) {
+		if (_amount == 0) revert ZERO();
 		_burn(msg.sender, _amount);
 
-		/// @dev store the rebase earned from the penalty
+		/// @dev if it's at least 2 wei it will give a penalty
+		uint256 penalty = ((_amount * SLASHING_PENALTY) / BASIS);
 		pendingRebase += penalty;
 
-		/// @dev transfer the exitAmount to the caller
-		SHADOW.transfer(msg.sender, exitAmount);
-		/// @dev emit actual exited amount
+		exitAmount = _amount - penalty;
+		YSK.transfer(msg.sender, exitAmount);
+
 		emit InstantExit(msg.sender, exitAmount);
-		return exitAmount;
 	}
 
 	function createVest(uint256 _amount) external whenNotPaused {
-		/// @dev ensure not 0
-		require(_amount != 0, ZERO());
-		/// @dev preemptive burn
+		if (_amount == 0) revert ZERO();
 		_burn(msg.sender, _amount);
-		/// @dev fetch total length of vests
+
 		uint256 vestLength = vestInfo[msg.sender].length;
-		/// @dev push new position
 		vestInfo[msg.sender].push(
 			VestPosition(_amount, block.timestamp, block.timestamp + MAX_VEST, vestLength)
 		);
+
 		emit NewVest(msg.sender, vestLength, _amount);
 	}
 
@@ -204,7 +188,7 @@ contract XShadow is ERC20, IXShadow, Pausable {
 		/// @dev case: vest is complete
 		/// @dev send liquid Shadow to msg.sender
 		else if (_vest.maxEnd <= block.timestamp) {
-			SHADOW.transfer(msg.sender, _amount);
+			YSK.transfer(msg.sender, _amount);
 			emit ExitVesting(msg.sender, _vestID, _amount);
 		}
 		/// @dev case: vest is in progress
@@ -222,20 +206,20 @@ contract XShadow is ERC20, IXShadow, Pausable {
 			/// @dev add to the existing pendingRebases
 			pendingRebase += (_amount - exitedAmount);
 			/// @dev transfer underlying to the sender after penalties removed
-			SHADOW.transfer(msg.sender, exitedAmount);
+			YSK.transfer(msg.sender, exitedAmount);
 			emit ExitVesting(msg.sender, _vestID, _amount);
 		}
 	}
 
 	/*****************************************************************/
-	// Permissions functions,
-	// timelock/operator gated
+	/* Permissions functions */
+	/* timelock/operator gated */
 	/*****************************************************************/
 
 	function operatorRedeem(uint256 _amount) external onlyGovernance {
 		_burn(operator, _amount);
-		SHADOW.transfer(operator, _amount);
-		emit XShadowRedeemed(address(this), _amount);
+		YSK.transfer(operator, _amount);
+		emit XYskRedeemed(address(this), _amount);
 	}
 
 	function rescueTrappedTokens(
@@ -244,7 +228,7 @@ contract XShadow is ERC20, IXShadow, Pausable {
 	) external onlyGovernance {
 		for (uint256 i = 0; i < _tokens.length; ++i) {
 			/// @dev cant fetch the underlying
-			require(_tokens[i] != address(SHADOW), CANT_RESCUE());
+			require(_tokens[i] != address(YSK), CANT_RESCUE());
 			IERC20(_tokens[i]).transfer(operator, _amounts[i]);
 		}
 	}
@@ -287,12 +271,12 @@ contract XShadow is ERC20, IXShadow, Pausable {
 	}
 
 	/*****************************************************************/
-	// Getter functions
+	/* View functions */
 	/*****************************************************************/
 
 	/// @dev simply returns the balance of the underlying
 	function getBalanceResiding() public view returns (uint256 _amount) {
-		return SHADOW.balanceOf(address(this));
+		return YSK.balanceOf(address(this));
 	}
 
 	function usersTotalVests(address _who) public view returns (uint256 _length) {
@@ -305,9 +289,5 @@ contract XShadow is ERC20, IXShadow, Pausable {
 
 	function isExempt(address _who) external view returns (bool _exempt) {
 		return exempt.contains(_who);
-	}
-
-	function shadow() external view returns (address) {
-		return address(SHADOW);
 	}
 }
