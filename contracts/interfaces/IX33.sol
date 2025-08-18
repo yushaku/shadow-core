@@ -49,13 +49,13 @@ interface IX33 is IERC20 {
 	/// @notice submits the optimized votes for the epoch
 	function submitVotes(address[] calldata _pools, uint256[] calldata _weights) external;
 
-	/// @notice swap function using aggregators to process rewards into SHADOW
+	/// @notice swap function using aggregators to process rewards into ysk
 	function swapIncentiveViaAggregator(AggregatorParams calldata _params) external;
 
 	/// @notice claims the rebase accrued to x33
 	function claimRebase() external;
 
-	/// @notice compounds any existing SHADOW within the contract
+	/// @notice compounds any existing ysk within the contract
 	function compound() external;
 
 	/// @notice direct claim
@@ -93,7 +93,7 @@ interface IX33 is IERC20 {
 	/// @notice accessHub address
 	function accessHub() external view returns (address);
 
-	/// @notice returns the ratio of xShadow per X33 token
+	/// @notice returns the ratio of xYSK per X33 token
 	function ratio() external view returns (uint256 _ratio);
 
 	/// @notice the most recent active period the contract has interacted in

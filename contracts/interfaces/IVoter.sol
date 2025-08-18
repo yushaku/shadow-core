@@ -74,13 +74,13 @@ interface IVoter {
 	event Poke(address indexed user);
 
 	function initialize(
-		address _shadow,
+		address _ysk,
 		address _legacyFactory,
 		address _gauges,
 		address _feeDistributorFactory,
 		address _minter,
 		address _msig,
-		address _xShadow,
+		address _xysk,
 		address _clFactory,
 		address _clGaugeFactory,
 		address _nfpManager,
@@ -92,11 +92,11 @@ interface IVoter {
 	/// @notice denominator basis
 	function BASIS() external view returns (uint256);
 
-	/// @notice ratio of xShadow emissions globally
+	/// @notice ratio of xysk emissions globally
 	function xRatio() external view returns (uint256);
 
-	/// @notice xShadow contract address
-	function xShadow() external view returns (address);
+	/// @notice xy contract address
+	function xy() external view returns (address);
 
 	/// @notice legacy factory address (uni-v2/stableswap)
 	function legacyFactory() external view returns (address);
@@ -124,7 +124,7 @@ interface IVoter {
 	/// @notice address of the central access Hub
 	function accessHub() external view returns (address);
 
-	/// @notice the address of the shadow launcher plugin to enable third party launchers
+	/// @notice the address of the ysk launcher plugin to enable third party launchers
 	/// @return _launcherPlugin the address of the plugin
 	function launcherPlugin() external view returns (address _launcherPlugin);
 
@@ -190,8 +190,8 @@ interface IVoter {
 	function isFeeDistributor(address _feeDistributor) external view returns (bool _trueOrFalse);
 
 	/// @notice returns the address of the emission's token
-	/// @return _shadow emissions token contract address
-	function shadow() external view returns (address _shadow);
+	/// @return _ysk emissions token contract address
+	function ysk() external view returns (address _ysk);
 
 	/// @notice returns the address of the pool's gauge, if any
 	/// @param _pool pool address
@@ -311,7 +311,7 @@ interface IVoter {
 	/// @param _tokens two dimensional array for the tokens to claim
 	function claimRewards(address[] calldata _gauges, address[][] calldata _tokens) external;
 
-	/// @notice claim arbitrary rewards from specific legacy gauges, and exit to shadow
+	/// @notice claim arbitrary rewards from specific legacy gauges, and exit to ysk
 	/// @param _gauges address of the gauges
 	/// @param _tokens two dimensional array for the tokens to claim
 	function claimLegacyRewardsAndExit(
@@ -349,7 +349,7 @@ interface IVoter {
 	/// @return _feeDistributors the array of feeDists
 	function getAllFeeDistributors() external view returns (address[] memory _feeDistributors);
 
-	/// @notice sets the xShadowRatio default
+	/// @notice sets the xyskRatio default
 	function setGlobalRatio(uint256 _xRatio) external;
 
 	/// @notice whether the token is whitelisted in governance

@@ -49,12 +49,12 @@ interface IGauge {
 	/// @param account address to check
 	/// @return _reward amount of token claimable
 	function earned(address token, address account) external view returns (uint256 _reward);
-	/// @notice claims rewards (shadow + any external LP Incentives)
+	/// @notice claims rewards (ysk + any external LP Incentives)
 	/// @param account the address to claim for
 	/// @param tokens an array of the tokens to claim
 	function getReward(address account, address[] calldata tokens) external;
 
-	/// @notice claims all rewards and instant exits xshadow into shadow
+	/// @notice claims all rewards and instant exits xysk into ysk
 	function getRewardAndExit(address account, address[] calldata tokens) external;
 
 	/// @notice calculates the token amounts earned per lp token

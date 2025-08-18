@@ -8,6 +8,7 @@ interface IAccessHub {
 	error NOT_TIMELOCK(address);
 	error MANUAL_EXECUTION_FAILURE(bytes);
 	error KICK_FORBIDDEN(address);
+	error INVALID_ADDRESS();
 
 	/// @dev Struct to hold initialization parameters
 	struct InitParams {
@@ -16,7 +17,7 @@ interface IAccessHub {
 		address voter;
 		address minter;
 		address launcherPlugin;
-		address xShadow;
+		address xYushaku;
 		address x33;
 		address ramsesV3PoolFactory;
 		address poolFactory;
@@ -79,7 +80,7 @@ interface IAccessHub {
 	/// @notice revives inactive/killed gauges
 	function reviveGauge(address[] calldata _pairs) external;
 
-	/// @notice sets the ratio of xShadow/Shadow awarded globally to LPs
+	/// @notice sets the ratio of xYushaku/Yushaku awarded globally to LPs
 	function setEmissionsRatioInVoter(uint256 _pct) external;
 
 	/// @notice allows governance to retrieve emissions in the voter contract that will not be distributed due to the gauge being inactive
@@ -89,24 +90,24 @@ interface IAccessHub {
 	/// @notice allows governance to designate a tickspacing as the "main" one, to prevent governance spam and confusion
 	function setMainTickSpacingInVoter(address tokenA, address tokenB, int24 tickSpacing) external;
 
-	/** xShadow Functions */
+	/** xYushaku Functions */
 
-	/// @notice enables or disables the transfer whitelist in xShadow
-	function transferWhitelistInXShadow(
+	/// @notice enables or disables the transfer whitelist in xYushaku
+	function transferWhitelistInXYushaku(
 		address[] calldata _who,
 		bool[] calldata _whitelisted
 	) external;
 
-	/// @notice enables or disables the governance in xShadow
-	function toggleXShadowGovernance(bool enable) external;
+	/// @notice enables or disables the governance in xYushaku
+	function toggleXYushakuGovernance(bool enable) external;
 
 	/// @notice allows redemption from the operator
-	function operatorRedeemXShadow(uint256 _amount) external;
+	function operatorRedeemXYushaku(uint256 _amount) external;
 
-	/// @notice migrates the xShadow operator
+	/// @notice migrates the xYushaku operator
 	function migrateOperator(address _operator) external;
 
-	/// @notice rescues any trapped tokens in xShadow
+	/// @notice rescues any trapped tokens in xYushaku
 	function rescueTrappedTokens(address[] calldata _tokens, uint256[] calldata _amounts) external;
 
 	/** X33 Functions */
@@ -247,21 +248,4 @@ interface IAccessHub {
 
 	/// @notice timelock gated function to change the timelock
 	function setNewTimelock(address _timelock) external;
-
-	/// @notice function for initializing the voter contract with its dependencies
-	function initializeVoter(
-		address _shadow,
-		address _legacyFactory,
-		address _gauges,
-		address _feeDistributorFactory,
-		address _minter,
-		address _msig,
-		address _xShadow,
-		address _clFactory,
-		address _clGaugeFactory,
-		address _nfpManager,
-		address _feeRecipientFactory,
-		address _voteModule,
-		address _launcherPlugin
-	) external;
 }

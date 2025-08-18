@@ -13,6 +13,7 @@ interface IFeeRecipientFactory {
 	/// @notice the last feeRecipient address created
 	/// @return _feeRecipient the address of the last pair fees contract
 	function lastFeeRecipient() external view returns (address _feeRecipient);
+
 	/// @notice create the pair fees for a pair
 	/// @param pair the address of the pair
 	/// @return _feeRecipient the address of the newly created feeRecipient

@@ -1,24 +1,12 @@
 {
+	"cSpell.words": ["IERC", "Yushaku"],
+	"solidity-va.outline.pragmas.show": true,
+	"solidity.compileUsingRemoteVersion": "v0.8.26+commit.8a97fa7a",
 	"wake.compiler.solc.remappings": [
 		"forge-std/=lib/forge-std/src/",
 		"@openzeppelin/=lib/openzeppelin-contracts/",
 		"@openzeppelin-contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/",
 		"permit2/=lib/permit2/",
-		"solmate/=lib/solmate/",
-		"ds-test/=lib/solmate/lib/ds-test/src/",
-		"erc4626-tests/=lib/openzeppelin-contracts-upgradeable/lib/erc4626-tests/",
-		"forge-gas-snapshot/=lib/permit2/lib/forge-gas-snapshot/src/",
-		"foundry-devops/=lib/foundry-devops/src/",
-		"halmos-cheatcodes/=lib/openzeppelin-contracts-upgradeable/lib/halmos-cheatcodes/src/",
-		"hardhat-deploy/=node_modules/hardhat-deploy/",
-		"hardhat/=node_modules/hardhat/",
-		"openzeppelin-contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/",
-		"openzeppelin-contracts/=lib/openzeppelin-contracts/"
-	],
-	"cSpell.words": [
-		"IERC",
-		"Yushaku"
-	],
-	"solidity-va.outline.pragmas.show": true,
-	"solidity.compileUsingRemoteVersion": "v0.8.26+commit.8a97fa7a"
+		"solmate/=lib/solmate/"
+	]
 }
