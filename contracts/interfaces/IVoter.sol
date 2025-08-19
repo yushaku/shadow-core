@@ -95,8 +95,8 @@ interface IVoter {
 	/// @notice ratio of xysk emissions globally
 	function xRatio() external view returns (uint256);
 
-	/// @notice xy contract address
-	function xy() external view returns (address);
+	/// @notice xYSK contract address
+	function xYSK() external view returns (address);
 
 	/// @notice legacy factory address (uni-v2/stableswap)
 	function legacyFactory() external view returns (address);

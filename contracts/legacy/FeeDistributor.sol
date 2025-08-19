@@ -5,10 +5,11 @@ import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import {IFeeDistributor} from "./interfaces/IFeeDistributor.sol";
-import {IVoter} from "./interfaces/IVoter.sol";
-import {IVoteModule} from "./interfaces/IVoteModule.sol";
-import {ILauncherPlugin} from "./interfaces/ILauncherPlugin.sol";
+
+import {IFeeDistributor} from "contracts/interfaces/IFeeDistributor.sol";
+import {IVoter} from "contracts/interfaces/IVoter.sol";
+import {IVoteModule} from "contracts/interfaces/IVoteModule.sol";
+import {ILauncherPlugin} from "contracts/interfaces/ILauncherPlugin.sol";
 
 contract FeeDistributor is IFeeDistributor, ReentrancyGuard {
 	using EnumerableSet for EnumerableSet.AddressSet;

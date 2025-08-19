@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-
 pragma solidity ^0.8.26;
 
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
@@ -12,6 +11,11 @@ import {IGauge} from "contracts/interfaces/IGauge.sol";
 import {IRouter} from "contracts/interfaces/IRouter.sol";
 import {IWETH} from "contracts/interfaces/IWETH.sol";
 
+/**
+ * @title V2 Router
+ * @author Solidly, Uniswap Labs
+ * @notice Router allows routes through any pools created by PairFactory.sol
+ */
 contract Router is IRouter {
 	address public immutable factory;
 	address public immutable WETH;
@@ -120,8 +124,10 @@ contract Router is IRouter {
 
 	function _f(uint256 x0, uint256 y) internal pure returns (uint256) {
 		return
-			(x0 * ((((y * y) / 1e18) * y) / 1e18)) / 1e18 +
-			(((((x0 * x0) / 1e18) * x0) / 1e18) * y) / 1e18;
+			(x0 * ((((y * y) / 1e18) * y) / 1e18)) /
+			1e18 +
+			(((((x0 * x0) / 1e18) * x0) / 1e18) * y) /
+			1e18;
 	}
 
 	function _d(uint256 x0, uint256 y) internal pure returns (uint256) {

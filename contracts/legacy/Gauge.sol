@@ -7,13 +7,14 @@ import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import {IVoter} from "./interfaces/IVoter.sol";
-import {IGauge} from "./interfaces/IGauge.sol";
-import {IXShadow} from "./interfaces/IXShadow.sol";
+import {IVoter} from "contracts/interfaces/IVoter.sol";
+import {IGauge} from "contracts/interfaces/IGauge.sol";
+import {IXY} from "contracts/interfaces/IXY.sol";
 
 /// @dev we use a very minimal interface for easy fetching
 interface IMinimalPoolInterface {
 	function token0() external view returns (address);
+
 	function token1() external view returns (address);
 }
 
@@ -35,7 +36,7 @@ contract Gauge is IGauge, ReentrancyGuard {
 	/// @dev 1e27 precision
 	uint256 internal constant PRECISION = 10 ** 18;
 
-	IXShadow public immutable xShadow;
+	IXY public immutable xShadow;
 
 	mapping(address user => uint256) public balanceOf;
 	mapping(address user => mapping(address token => uint256 rewardPerToken))
@@ -53,14 +54,14 @@ contract Gauge is IGauge, ReentrancyGuard {
 
 		/// @dev temporary voter interface
 		IVoter tempVoter = IVoter(voter);
-		xShadow = IXShadow(tempVoter.xShadow());
+		xShadow = IXY(tempVoter.xYSK());
 
 		/// @dev temporary minimal pool interface to fetch token(0 / 1)
 		IMinimalPoolInterface pool = IMinimalPoolInterface(stake);
 
 		/// @dev add initial rewards of emissions (shadow/xshadow) and token0/token1
-		tokenWhitelists.add(tempVoter.shadow());
-		tokenWhitelists.add(tempVoter.xShadow());
+		tokenWhitelists.add(tempVoter.ysk());
+		tokenWhitelists.add(tempVoter.xYSK());
 		tokenWhitelists.add(pool.token0());
 		tokenWhitelists.add(pool.token1());
 	}
@@ -91,7 +92,8 @@ contract Gauge is IGauge, ReentrancyGuard {
 
 	/// @inheritdoc IGauge
 	function lastTimeRewardApplicable(address token) public view returns (uint256) {
-		/// @dev returns the lesser of the current unix timestamp, and the timestamp for when the period finishes for the specified reward token
+		/// @dev returns the lesser of the current unix timestamp,
+    /// and the timestamp for when the period finishes for the specified reward token
 		return Math.min(block.timestamp, _rewardData[token].periodFinish);
 	}
 
@@ -148,7 +150,7 @@ contract Gauge is IGauge, ReentrancyGuard {
 				/// @dev if the token is xShadow
 				if (tokens[i] == address(xShadow)) {
 					/// @dev store shadow token
-					address shadowToken = address(xShadow.SHADOW());
+					address shadowToken = address(xShadow.YSK());
 					/// @dev calculate the amount of SHADOW owed
 					uint256 shadowToSend = xShadow.exit(_reward);
 					/// @dev send the shadow to the user
@@ -172,7 +174,7 @@ contract Gauge is IGauge, ReentrancyGuard {
 			_rewardData[token].rewardPerTokenStored +
 			((lastTimeRewardApplicable(token) - _rewardData[token].lastUpdateTime) *
 				_rewardData[token].rewardRate) /
-				totalSupply;
+			totalSupply;
 	}
 
 	/// @inheritdoc IGauge

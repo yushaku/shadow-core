@@ -3,7 +3,7 @@ pragma solidity ^0.8.26;
 
 import {IPairFactory} from "contracts/interfaces/IPairFactory.sol";
 import {IPair} from "contracts/interfaces/IPair.sol";
-import {Pair} from "contracts/Pair.sol";
+import {Pair} from "contracts/legacy/Pair.sol";
 
 contract PairFactory is IPairFactory {
 	/// @dev max swap fee set to 10%

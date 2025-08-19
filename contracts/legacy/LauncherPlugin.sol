@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.24;
 
-import {ILauncherPlugin} from "./interfaces/ILauncherPlugin.sol";
-import {IVoter} from "./interfaces/IVoter.sol";
+import {ILauncherPlugin} from "contracts/interfaces/ILauncherPlugin.sol";
+import {IVoter} from "contracts/interfaces/IVoter.sol";
 
 /// @author ShadowDEX on Sonic
 /// @title LauncherPlugins contract for modular plug-n-play with Sonic memes

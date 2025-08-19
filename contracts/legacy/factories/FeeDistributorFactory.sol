@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import {FeeDistributor} from "./../FeeDistributor.sol";
+import {FeeDistributor} from "contracts/legacy/FeeDistributor.sol";
 
 contract FeeDistributorFactory {
 	address public lastFeeDistributor;

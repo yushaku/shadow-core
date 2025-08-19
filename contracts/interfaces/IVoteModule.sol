@@ -73,16 +73,15 @@ interface IVoteModule {
 
 	function rewardPerToken() external view returns (uint256 _rewardPerToken);
 
-	/// @notice deposits all xysk in the caller's wallet
-	function depositAll() external;
-
-	/// @notice deposit a specified amount of xysk
+	/// @notice deposit a specified amount of xYSK
+	/// @param amount the amount of xYSK to deposit
+	/// @dev if amount is max uint256, deposit all xYSK
 	function deposit(uint256 amount) external;
 
-	/// @notice withdraw all xysk
+	/// @notice withdraw all xYSK
 	function withdrawAll() external;
 
-	/// @notice withdraw a specified amount of xysk
+	/// @notice withdraw a specified amount of xYSK
 	function withdraw(uint256 amount) external;
 
 	/// @notice check for admin perms
@@ -99,11 +98,11 @@ interface IVoteModule {
 	/// @return _left rewards remaining in the period
 	function left() external view returns (uint256 _left);
 
-	/// @notice used by the xysk contract to notify pending rebases
+	/// @notice used by the xYSK contract to notify pending rebases
 	/// @param amount the amount of ysk to be notified from exit penalties
 	function notifyRewardAmount(uint256 amount) external;
 
-	/// @notice the address of the xysk token (staking/voting token)
+	/// @notice the address of the xYSK token (staking/voting token)
 	/// @return _xYSK the address
 	function xYSK() external view returns (IXY _xYSK);
 
@@ -118,8 +117,8 @@ interface IVoteModule {
 	/// @notice last time the rewards system was updated
 	function lastUpdateTime() external view returns (uint256 _lastUpdateTime);
 
-	/// @notice rewards per xysk
-	/// @return _rewardPerToken the amount of rewards per xysk
+	/// @notice rewards per xYSK
+	/// @return _rewardPerToken the amount of rewards per xYSK
 	function rewardPerTokenStored() external view returns (uint256 _rewardPerToken);
 
 	/// @notice when the 1800 seconds after notifying are up
@@ -134,7 +133,7 @@ interface IVoteModule {
 	/// @return amount the staked balance
 	function balanceOf(address user) external view returns (uint256 amount);
 
-	/// @notice rewards per amount of xysk's staked
+	/// @notice rewards per amount of xYSK's staked
 	function userRewardPerTokenStored(address user) external view returns (uint256 rewardPerToken);
 
 	/// @notice the amount of rewards claimable for the user

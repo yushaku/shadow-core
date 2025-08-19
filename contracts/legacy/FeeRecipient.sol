@@ -2,11 +2,13 @@
 pragma solidity ^0.8.26;
 
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
-import {IFeeDistributor} from "./interfaces/IFeeDistributor.sol";
-import {IFeeRecipient} from "./interfaces/IFeeRecipient.sol";
-import {IFeeRecipientFactory} from "./interfaces/IFeeRecipientFactory.sol";
 
-/// @notice Pair Fees contract is used as a 1:1 pair relationship to split out fees, this ensures that the curve does not need to be modified for LP shares
+import {IFeeDistributor} from "contracts/interfaces/IFeeDistributor.sol";
+import {IFeeRecipient} from "contracts/interfaces/IFeeRecipient.sol";
+import {IFeeRecipientFactory} from "contracts/interfaces/IFeeRecipientFactory.sol";
+
+/// @notice Pair Fees contract is used as a 1:1 pair relationship to split out fees,
+/// this ensures that the curve does not need to be modified for LP shares
 contract FeeRecipient is IFeeRecipient {
 	/// @notice The pair it is bonded to
 	address public immutable pair;
