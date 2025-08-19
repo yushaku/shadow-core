@@ -1,25 +1,38 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.26;
 
+import {UUPSUpgradeable} from "@openzeppelin-contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin-contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import {OwnableUpgradeable} from "@openzeppelin-contracts-upgradeable/access/OwnableUpgradeable.sol";
+
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
-import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
 import {IVoteModule} from "./interfaces/IVoteModule.sol";
 import {IVoter} from "./interfaces/IVoter.sol";
-import {IXShadow} from "./interfaces/IXShadow.sol";
+import {IXY} from "./interfaces/IXY.sol";
 
-contract VoteModule is IVoteModule, ReentrancyGuard, Initializable {
-	/// @inheritdoc IVoteModule
+/**
+ * @title Vote Module
+ * @notice This contract is responsible for managing the staking and delegation of the xShadow token.
+ * It serves as the primary module for determining a user's voting power within the Shadow protocol.
+ *
+ * Key Features:
+ * - Staking: Users can deposit and withdraw their xShadow tokens to and from the contract.
+ * - Reward Distribution: The contract receives rewards and distributes them to stakers over a set duration.
+ * - Delegation: Users can delegate their voting power to another address, allowing that address to vote on their behalf.
+ * - Cooldown: A cooldown period is enforced for withdrawals after a rebase event to ensure system stability.
+ * - Poke: The contract notifies the Voter contract of any changes in a user's staked balance, ensuring that their voting power is always up-to-date.
+ */
+contract VoteModule is
+	IVoteModule,
+	OwnableUpgradeable,
+	ReentrancyGuardUpgradeable,
+	UUPSUpgradeable
+{
 	address public accessHub;
-	/// @inheritdoc IVoteModule
-	address public xShadow;
-	/// @inheritdoc IVoteModule
 	address public voter;
-	/// @notice xShadow token
-	IXShadow public stakingToken;
-	/// @notice underlying Shadow token
+	IXY public xYSK;
 	IERC20 public underlying;
 
 	/// @notice rebases are released over 30 minutes
@@ -31,76 +44,100 @@ contract VoteModule is IVoteModule, ReentrancyGuard, Initializable {
 	/// @notice decimal precision of 1e18
 	uint256 public constant PRECISION = 10 ** 18;
 
-	/// @inheritdoc IVoteModule
 	uint256 public totalSupply;
-	/// @inheritdoc IVoteModule
 	uint256 public lastUpdateTime;
-	/// @inheritdoc IVoteModule
 	uint256 public rewardPerTokenStored;
-	/// @inheritdoc IVoteModule
 	uint256 public periodFinish;
-	/// @inheritdoc IVoteModule
 	uint256 public rewardRate;
-	/// @inheritdoc IVoteModule
 	uint256 public unlockTime;
 
-	/// @inheritdoc IVoteModule
 	mapping(address user => uint256 amount) public balanceOf;
-	/// @inheritdoc IVoteModule
 	mapping(address user => uint256 rewardPerToken) public userRewardPerTokenStored;
-	/// @inheritdoc IVoteModule
 	mapping(address user => uint256 rewards) public storedRewardsPerUser;
-	/// @inheritdoc IVoteModule
 	mapping(address delegator => address delegatee) public delegates;
-	/// @inheritdoc IVoteModule
 	mapping(address owner => address operator) public admins;
-	/// @inheritdoc IVoteModule
 	mapping(address user => bool exempt) public cooldownExempt;
 
+	constructor() {
+		_disableInitializers();
+	}
+
+	function _authorizeUpgrade(address newImplementation) internal override {
+		if (newImplementation == address(0)) revert INVALID_ADDRESS();
+		_checkOwner();
+	}
+
 	modifier onlyAccessHub() {
-		/// @dev ensure it is the accessHub
 		require(msg.sender == accessHub, NOT_ACCESSHUB());
 		_;
 	}
 
-	constructor() {
-		voter = msg.sender;
-	}
+	function initialize(address _admin, address _voter, address _accessHub) external initializer {
+		if (_accessHub == address(0)) revert INVALID_ADDRESS();
+		if (_admin == address(0)) revert INVALID_ADDRESS();
+		if (_voter == address(0)) revert INVALID_ADDRESS();
 
-	function initialize(address _xShadow, address _voter, address _accessHub) external initializer {
-		// @dev making sure who deployed calls initialize
-		require(voter == msg.sender, UNAUTHORIZED());
-		require(_accessHub != address(0), INVALID_ADDRESS());
-		require(_xShadow != address(0), INVALID_ADDRESS());
-		require(_voter != address(0), INVALID_ADDRESS());
-		xShadow = _xShadow;
+		__Ownable_init(_admin);
 		voter = _voter;
 		accessHub = _accessHub;
-		stakingToken = IXShadow(_xShadow);
-		underlying = IERC20(IXShadow(_xShadow).SHADOW());
 	}
 
-	/// @dev common multirewarder-esque modifier for updating on interactions
+	/// @dev common multi-rewarder-esquee modifier for updating on interactions
 	modifier updateReward(address account) {
-		/// @dev fetch and store the new rewardPerToken
 		rewardPerTokenStored = rewardPerToken();
-		/// @dev fetch and store the new last update time
 		lastUpdateTime = lastTimeRewardApplicable();
-		/// @dev check for address(0) calls from notifyRewardAmount
 		if (account != address(0)) {
-			/// @dev update the individual account's mapping for stored rewards
 			storedRewardsPerUser[account] = earned(account);
-			/// @dev update account's mapping for rewardspertoken
 			userRewardPerTokenStored[account] = rewardPerTokenStored;
 		}
 		_;
 	}
 
-	/// @inheritdoc IVoteModule
-	function depositAll() external {
-		deposit(IERC20(xShadow).balanceOf(msg.sender));
+
+	/***************************************************************************************/
+	/* AccessHub/owner Functions */
+	/***************************************************************************************/
+
+  function setUp(address _xYSK) external onlyOwner {
+		xYSK = IXY(_xYSK);
+		underlying = IERC20(xYSK.YSK());
+  }
+
+	function setAccessHub(address _accessHub) external onlyAccessHub {
+		if (_accessHub == address(0)) revert INVALID_ADDRESS();
+		accessHub = _accessHub;
 	}
 
+	/// @inheritdoc IVoteModule
+	function setCooldownExemption(address _user, bool _exempt) external onlyAccessHub {
+		require(cooldownExempt[_user] != _exempt, NO_CHANGE());
+		cooldownExempt[_user] = _exempt;
+
+		emit ExemptedFromCooldown(_user, _exempt);
+	}
+
+	/// @inheritdoc IVoteModule
+	function setNewDuration(uint256 _durationInSeconds) external onlyAccessHub {
+		require(_durationInSeconds != 0 && _durationInSeconds <= 7 days, INVALID_TIME());
+
+		uint256 oldDuration = duration;
+		duration = _durationInSeconds;
+		emit NewDuration(oldDuration, duration);
+	}
+
+	/// @inheritdoc IVoteModule
+	function setNewCooldown(uint256 _cooldownInSeconds) external onlyAccessHub {
+		require(_cooldownInSeconds <= 7 days, INVALID_TIME());
+
+		uint256 oldCooldown = cooldown;
+		cooldown = _cooldownInSeconds;
+		emit NewCooldown(oldCooldown, cooldown);
+	}
+
+	/***************************************************************************************/
+	/* User Functions */
+	/***************************************************************************************/
+ 
 	/// @inheritdoc IVoteModule
 	function deposit(uint256 amount) public updateReward(msg.sender) nonReentrant {
 		if (amount == 0) revert ZERO_AMOUNT();
@@ -111,8 +148,12 @@ contract VoteModule is IVoteModule, ReentrancyGuard, Initializable {
 			require(block.timestamp >= unlockTime, COOLDOWN_ACTIVE());
 		}
 
+		if (amount == type(uint256).max) {
+			amount = IERC20(xYSK).balanceOf(msg.sender);
+		}
+
 		/// @dev transfer xShadow in
-		IERC20(xShadow).transferFrom(msg.sender, address(this), amount);
+		IERC20(xYSK).transferFrom(msg.sender, address(this), amount);
 		/// @dev update accounting
 		totalSupply += amount;
 		balanceOf[msg.sender] += amount;
@@ -122,6 +163,7 @@ contract VoteModule is IVoteModule, ReentrancyGuard, Initializable {
 
 		emit Deposit(msg.sender, amount);
 	}
+
 	/// @inheritdoc IVoteModule
 	function withdrawAll() external {
 		/// @dev fetch stored balance
@@ -131,6 +173,7 @@ contract VoteModule is IVoteModule, ReentrancyGuard, Initializable {
 		/// @dev claim rewards for the user
 		_claim(msg.sender);
 	}
+
 	/// @inheritdoc IVoteModule
 	function withdraw(uint256 amount) public updateReward(msg.sender) nonReentrant {
 		if (amount == 0) revert ZERO_AMOUNT();
@@ -146,7 +189,7 @@ contract VoteModule is IVoteModule, ReentrancyGuard, Initializable {
 		/// @dev decrement from balance mapping
 		balanceOf[msg.sender] -= amount;
 		/// @dev transfer the xShadow to the caller
-		IERC20(xShadow).transfer(msg.sender, amount);
+		IERC20(xYSK).transfer(msg.sender, amount);
 
 		/// @dev update data via poke
 		/// @dev we check in voter that msg.sender is the VoteModule
@@ -156,14 +199,13 @@ contract VoteModule is IVoteModule, ReentrancyGuard, Initializable {
 	}
 
 	/// @inheritdoc IVoteModule
+	/// @dev only callable by xShadow contract
 	/// @dev this is ONLY callable by xShadow, which has important safety checks
 	function notifyRewardAmount(uint256 amount) external updateReward(address(0)) nonReentrant {
-		/// @dev ensure > 0
 		require(amount != 0, ZERO_AMOUNT());
-		/// @dev only callable by xShadow contract
-		require(msg.sender == xShadow, NOT_XSHADOW());
-		/// @dev take the SHADOW from the contract to the voteModule
-		underlying.transferFrom(xShadow, address(this), amount);
+		require(msg.sender == address(xYSK), NOT_X_YSK());
+
+		underlying.transferFrom(address(xYSK), address(this), amount);
 
 		if (block.timestamp >= periodFinish) {
 			/// @dev the new reward rate being the amount divided by the duration
@@ -188,78 +230,59 @@ contract VoteModule is IVoteModule, ReentrancyGuard, Initializable {
 		emit NotifyReward(msg.sender, amount);
 	}
 
-	/** AccessHub Gated Functions */
-	/// @inheritdoc IVoteModule
-	function setCooldownExemption(address _user, bool _exempt) external onlyAccessHub {
-		/// @dev ensure the call is not the same status
-		require(cooldownExempt[_user] != _exempt, NO_CHANGE());
-		/// @dev adjust the exemption status
-		cooldownExempt[_user] = _exempt;
-
-		emit ExemptedFromCooldown(_user, _exempt);
-	}
-	/// @inheritdoc IVoteModule
-	function setNewDuration(uint256 _durationInSeconds) external onlyAccessHub {
-		/// @dev safety check
-		require(_durationInSeconds != 0 && _durationInSeconds <= 7 days);
-		uint256 oldDuration = duration;
-		duration = _durationInSeconds;
-
-		emit NewDuration(oldDuration, duration);
-	}
-
-	/// @inheritdoc IVoteModule
-	function setNewCooldown(uint256 _cooldownInSeconds) external onlyAccessHub {
-		/// @dev safety check
-		require(_cooldownInSeconds <= 7 days);
-		uint256 oldCooldown = cooldown;
-		cooldown = _cooldownInSeconds;
-
-		emit NewCooldown(oldCooldown, cooldown);
-	}
-
-	/** User Management Functions */
-
 	/// @inheritdoc IVoteModule
 	function delegate(address delegatee) external {
 		bool _isAdded = false;
-		/// @dev if there exists a delegate, and the chosen delegate is the zero address
 		if (delegatee == address(0) && delegates[msg.sender] != address(0)) {
-			/// @dev delete the mapping
 			delete delegates[msg.sender];
 		} else {
-			/// @dev else update delegation
 			delegates[msg.sender] = delegatee;
-			/// @dev flip to true if a delegate is written
 			_isAdded = true;
 		}
-		/// @dev emit event
+
 		emit Delegate(msg.sender, delegatee, _isAdded);
 	}
+
 	/// @inheritdoc IVoteModule
 	function setAdmin(address admin) external {
-		/// @dev visibility setting to false, even though default is false
 		bool _isAdded = false;
-		/// @dev if there exists an admin and the zero address is chosen
+
 		if (admin == address(0) && admins[msg.sender] != address(0)) {
-			/// @dev wipe mapping
 			delete admins[msg.sender];
 		} else {
-			/// @dev else update mapping
 			admins[msg.sender] = admin;
-			/// @dev flip to true if an admin is written
 			_isAdded = true;
 		}
-		/// @dev emit event
+
 		emit SetAdmin(msg.sender, admin, _isAdded);
 	}
 
-	/** View Functions */
+	/***************************************************************************************/
+	/* Internal Functions */
+	/***************************************************************************************/
+
+	/// @dev internal claim function to make exiting and claiming easier
+	function _claim(address _user) internal {
+		uint256 reward = storedRewardsPerUser[_user];
+
+		if (reward > 0) {
+			storedRewardsPerUser[_user] = 0;
+			underlying.approve(address(xYSK), reward);
+			xYSK.convertEmissionsToken(reward);
+			IERC20(xYSK).transfer(_user, reward);
+			emit ClaimRewards(_user, reward);
+		}
+	}
+
+	/***************************************************************************************/
+	/* View Functions */
+	/***************************************************************************************/
 
 	/// @inheritdoc IVoteModule
 	function lastTimeRewardApplicable() public view returns (uint256 _lta) {
 		_lta = Math.min(block.timestamp, periodFinish);
 	}
+
 	/// @inheritdoc IVoteModule
 	function earned(address account) public view returns (uint256 _reward) {
 		_reward =
@@ -272,29 +295,12 @@ contract VoteModule is IVoteModule, ReentrancyGuard, Initializable {
 			/// @dev add the existing stored rewards for the account to the total
 			storedRewardsPerUser[account];
 	}
+
 	/// @inheritdoc IVoteModule
 	function getReward() external updateReward(msg.sender) nonReentrant {
-		/// @dev redundant _sender storage for visibility (can be removed later likely)
-		address _sender = msg.sender;
-		/// @dev claim all the rewards
-		_claim(_sender);
+		_claim(msg.sender);
 	}
-	/// @dev internal claim function to make exiting and claiming easier
-	function _claim(address _user) internal {
-		/// @dev fetch the stored rewards (updated by modifier)
-		uint256 reward = storedRewardsPerUser[_user];
-		if (reward > 0) {
-			/// @dev zero out the stored rewards
-			storedRewardsPerUser[_user] = 0;
-			/// @dev approve Shadow to xShadow
-			underlying.approve(address(stakingToken), reward);
-			/// @dev convert
-			stakingToken.convertEmissionsToken(reward);
-			/// @dev transfer xShadow to the user
-			IERC20(xShadow).transfer(_user, reward);
-			emit ClaimRewards(_user, reward);
-		}
-	}
+
 	/// @inheritdoc IVoteModule
 	/// @dev the return value is scaled (multiplied) by PRECISION = 10 ** 18
 	function rewardPerToken() public view returns (uint256 _rpt) {
@@ -309,6 +315,7 @@ contract VoteModule is IVoteModule, ReentrancyGuard, Initializable {
 						totalSupply)
 		);
 	}
+
 	/// @inheritdoc IVoteModule
 	function left() public view returns (uint256 _left) {
 		_left = (
@@ -321,10 +328,7 @@ contract VoteModule is IVoteModule, ReentrancyGuard, Initializable {
 
 	function isDelegateFor(address caller, address owner) external view returns (bool approved) {
 		/// @dev check the delegate mapping AND admin mapping due to hierarchy (admin > delegate)
-		return (delegates[owner] == caller ||
-			admins[owner] == caller ||
-			/// @dev return true if caller is the owner as well
-			caller == owner);
+		return (delegates[owner] == caller || admins[owner] == caller || caller == owner);
 	}
 
 	/// @dev return whether the caller is the address in the map

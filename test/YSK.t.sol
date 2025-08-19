@@ -11,13 +11,13 @@ contract YSKTest is TheTestBase {
         super.setUp();
     }
 
-    function test_nameSymbolDecimals() public {
+    function test_nameSymbolDecimals() public view {
         assertEq(ysk.name(), "Yushaku", "Name mismatch");
         assertEq(ysk.symbol(), "YSK", "Symbol mismatch");
         assertEq(ysk.decimals(), 18, "Decimals mismatch");
     }
 
-    function test_initialBalances() public {
+    function test_initialBalances() public view{
         assertEq(ysk.balanceOf(ACCESS_MANAGER), 0, "Initial balance for ACCESS_MANAGER should be 0");
         assertEq(ysk.balanceOf(bob), 0, "Initial balance for bob should be 0");
         assertEq(ysk.totalSupply(), 0, "Total supply should be 0");

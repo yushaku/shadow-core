@@ -58,13 +58,13 @@ contract X33 is ERC4626, IX33, ReentrancyGuard {
 	constructor(
 		address _operator,
 		address _accessHub,
-		address _xYsk,
+		address _xYSK,
 		address _voter,
 		address _voteModule
-	) ERC20("Ysk Liquid Staking Token", "XYZ") ERC4626(IERC20(_xYsk)) {
+	) ERC20("YSK Liquid Staking Token", "X33") ERC4626(IERC20(_xYSK)) {
 		operator = _operator;
 		accessHub = _accessHub;
-		xYSK = IXY(_xYsk);
+		xYSK = IXY(_xYSK);
 		YSK = IERC20(xYSK.YSK());
 		voteModule = IVoteModule(_voteModule);
 		voter = IVoter(_voter);
@@ -94,7 +94,7 @@ contract X33 is ERC4626, IX33, ReentrancyGuard {
 		/// @dev convert to xYSK
 		xYSK.convertEmissionsToken(currentYskBalance);
 		/// @dev deposit into the voteModule
-		voteModule.depositAll();
+		voteModule.deposit(type(uint256).max);
 		/// @dev fetch new ratio
 		uint256 newRatio = ratio();
 
@@ -114,7 +114,7 @@ contract X33 is ERC4626, IX33, ReentrancyGuard {
 		/// @dev claim the rebase
 		voteModule.getReward();
 		/// @dev deposit the rebase back into the voteModule
-		voteModule.depositAll();
+		voteModule.deposit(type(uint256).max);
 		/// @dev calculate the new index
 		uint256 newRatio = ratio();
 

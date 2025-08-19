@@ -73,21 +73,7 @@ interface IVoter {
 
 	event Poke(address indexed user);
 
-	function initialize(
-		address _ysk,
-		address _legacyFactory,
-		address _gauges,
-		address _feeDistributorFactory,
-		address _minter,
-		address _msig,
-		address _xysk,
-		address _clFactory,
-		address _clGaugeFactory,
-		address _nfpManager,
-		address _feeRecipientFactory,
-		address _voteModule,
-		address _launcherPlugin
-	) external;
+	function initialize(address) external;
 
 	/// @notice denominator basis
 	function BASIS() external view returns (uint256);

@@ -51,7 +51,7 @@ contract XY is IXY, ERC20, Pausable {
 		address _accessHub,
 		address _voteModule,
 		address _minter
-	) ERC20("xYushaku", "xY") {
+	) ERC20("xYushaku", "xYSK") {
 		YSK = IERC20(_ysk);
 		VOTER = IVoter(_voter);
 		MINTER = _minter;

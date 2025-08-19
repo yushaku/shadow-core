@@ -51,7 +51,7 @@ interface IAccessHub {
 	function feeDistributorFactory() external view returns (address _feeDistributorFactory);
 
 	/// @notice initializing function for setting values in the AccessHub
-	function initialize(InitParams calldata params) external;
+	function initialize(address) external;
 
 	/// @notice sets the swap fees for multiple pairs
 	function setSwapFees(

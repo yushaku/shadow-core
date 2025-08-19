@@ -15,6 +15,8 @@ interface IMinter {
 	/// @dev error for if a contract is not set correctly
 	error INVALID_CONTRACT();
 
+  error NOT_AUTHORIZED(address caller);
+
 	event SetVeDist(address _value);
 	event SetVoter(address _value);
 	event SetOperator(address indexed _newOperator);

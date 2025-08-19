@@ -26,9 +26,7 @@ library RewardClaimers {
 					msg.sender ==
 						INonfungiblePositionManager(nfpManager).ownerOf(_nfpTokenIds[i][j]) ||
 						msg.sender ==
-							INonfungiblePositionManager(nfpManager).getApproved(
-								_nfpTokenIds[i][j]
-							) ||
+						INonfungiblePositionManager(nfpManager).getApproved(_nfpTokenIds[i][j]) ||
 						INonfungiblePositionManager(nfpManager).isApprovedForAll(
 							INonfungiblePositionManager(nfpManager).ownerOf(_nfpTokenIds[i][j]),
 							msg.sender
@@ -61,7 +59,7 @@ library RewardClaimers {
 		}
 	}
 
-	/// @dev for users to exit legacy rewarded xshadow into shadow directly
+	/// @dev for users to exit legacy rewarded xYSK into YSK directly
 	function claimLegacyRewardsAndExit(
 		address[] calldata _gauges,
 		address[][] calldata _tokens
