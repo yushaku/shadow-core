@@ -18,48 +18,46 @@ interface IMinimalPoolInterface {
 	function token1() external view returns (address);
 }
 
-/// @notice Gauges are used to incentivize pools, they emit reward tokens over 7 days for staked LP tokens
+/**
+ * @title Gauge V2
+ * @notice Gauges are used to incentivize pools V2, they emit reward tokens over 7 days for staked LP tokens
+ */
 contract Gauge is IGauge, ReentrancyGuard {
 	using EnumerableSet for EnumerableSet.AddressSet;
 
-	/// @notice the LP token that needs to be staked for rewards
-	address public immutable stake;
-	/// @notice the address of the voter contract
-	address public immutable voter;
-	/// @dev rewards in the array
-	address[] internal rewards;
-	/// @notice total supply of LP tokens staked
-	uint256 public totalSupply;
-
-	/// @dev rewards are released over 7 days
+	/// @dev rewards are released duration
 	uint256 internal constant DURATION = 7 days;
-	/// @dev 1e27 precision
 	uint256 internal constant PRECISION = 10 ** 18;
 
-	IXY public immutable xShadow;
+	/// @notice the LP token that needs to be staked for rewards
+	address public immutable STAKE;
+	address public immutable VOTER;
+	IXY public immutable xYSK;
 
+	/// @dev rewards in the array
+	address[] internal rewards;
+	uint256 public totalSupply;
 	mapping(address user => uint256) public balanceOf;
 	mapping(address user => mapping(address token => uint256 rewardPerToken))
 		public userRewardPerTokenStored;
 	mapping(address user => mapping(address token => uint256 reward)) public storedRewardsPerUser;
 	mapping(address token => bool _isReward) public isReward;
-
 	mapping(address token => Reward) internal _rewardData;
 
 	EnumerableSet.AddressSet tokenWhitelists;
 
 	constructor(address _stake, address _voter) {
-		stake = _stake;
-		voter = _voter;
+		STAKE = _stake;
+		VOTER = _voter;
 
-		/// @dev temporary voter interface
-		IVoter tempVoter = IVoter(voter);
-		xShadow = IXY(tempVoter.xYSK());
+		/// @dev temporary VOTER interface
+		IVoter tempVoter = IVoter(VOTER);
+		xYSK = IXY(tempVoter.xYSK());
 
 		/// @dev temporary minimal pool interface to fetch token(0 / 1)
-		IMinimalPoolInterface pool = IMinimalPoolInterface(stake);
+		IMinimalPoolInterface pool = IMinimalPoolInterface(STAKE);
 
-		/// @dev add initial rewards of emissions (shadow/xshadow) and token0/token1
+		/// @dev add initial rewards of emissions (YSK/xYSK) and token0/token1
 		tokenWhitelists.add(tempVoter.ysk());
 		tokenWhitelists.add(tempVoter.xYSK());
 		tokenWhitelists.add(pool.token0());
@@ -80,43 +78,17 @@ contract Gauge is IGauge, ReentrancyGuard {
 		_;
 	}
 
-	/// @inheritdoc IGauge
-	function rewardsList() external view returns (address[] memory _rewards) {
-		_rewards = rewards;
-	}
-
-	/// @inheritdoc IGauge
-	function rewardsListLength() external view returns (uint256 _length) {
-		_length = rewards.length;
-	}
-
-	/// @inheritdoc IGauge
-	function lastTimeRewardApplicable(address token) public view returns (uint256) {
-		/// @dev returns the lesser of the current unix timestamp,
-    /// and the timestamp for when the period finishes for the specified reward token
-		return Math.min(block.timestamp, _rewardData[token].periodFinish);
-	}
-
-	/// @inheritdoc IGauge
-	function rewardData(address token) external view override returns (Reward memory data) {
-		data = _rewardData[token];
-	}
-
-	/// @inheritdoc IGauge
-	function earned(address token, address account) public view returns (uint256 _reward) {
-		_reward =
-			((balanceOf[account] *
-				(rewardPerToken(token) - userRewardPerTokenStored[account][token])) / PRECISION) +
-			storedRewardsPerUser[account][token];
-	}
+	/***************************************************************************************/
+	/* User Functions */
+	/***************************************************************************************/
 
 	/// @inheritdoc IGauge
 	function getReward(
 		address account,
 		address[] calldata tokens
 	) public updateReward(account) nonReentrant {
-		/// @dev ensure calls from the account or the voter address
-		require(msg.sender == account || msg.sender == voter, NOT_AUTHORIZED());
+		/// @dev ensure calls from the account or the VOTER address
+		require(msg.sender == account || msg.sender == VOTER, NOT_AUTHORIZED());
 		/// @dev loop through the tokens
 		for (uint256 i; i < tokens.length; i++) {
 			/// @dev fetch the stored rewards for the user for current index's token
@@ -137,8 +109,8 @@ contract Gauge is IGauge, ReentrancyGuard {
 		address account,
 		address[] calldata tokens
 	) public updateReward(account) nonReentrant {
-		/// @dev ensure calls from the account or the voter address
-		require(msg.sender == account || msg.sender == voter, NOT_AUTHORIZED());
+		/// @dev ensure calls from the account or the VOTER address
+		require(msg.sender == account || msg.sender == VOTER, NOT_AUTHORIZED());
 		/// @dev loop through the tokens
 		for (uint256 i; i < tokens.length; i++) {
 			/// @dev fetch the stored rewards for the user for current index's token
@@ -147,15 +119,15 @@ contract Gauge is IGauge, ReentrancyGuard {
 			if (_reward > 0) {
 				/// @dev zero out the rewards
 				storedRewardsPerUser[account][tokens[i]] = 0;
-				/// @dev if the token is xShadow
-				if (tokens[i] == address(xShadow)) {
-					/// @dev store shadow token
-					address shadowToken = address(xShadow.YSK());
-					/// @dev calculate the amount of SHADOW owed
-					uint256 shadowToSend = xShadow.exit(_reward);
-					/// @dev send the shadow to the user
-					_safeTransfer(shadowToken, account, shadowToSend);
-					emit ClaimRewards(account, shadowToken, shadowToSend);
+				/// @dev if the token is xYSK
+				if (tokens[i] == address(xYSK)) {
+					/// @dev store ysk token
+					address yskToken = address(xYSK.YSK());
+					/// @dev calculate the amount of ysk owed
+					uint256 yskToSend = xYSK.exit(_reward);
+					/// @dev send the ysk to the user
+					_safeTransfer(yskToken, account, yskToSend);
+					emit ClaimRewards(account, yskToken, yskToSend);
 				} else {
 					/// @dev transfer the expected rewards
 					_safeTransfer(tokens[i], account, _reward);
@@ -166,22 +138,8 @@ contract Gauge is IGauge, ReentrancyGuard {
 	}
 
 	/// @inheritdoc IGauge
-	function rewardPerToken(address token) public view returns (uint256) {
-		if (totalSupply == 0) {
-			return _rewardData[token].rewardPerTokenStored;
-		}
-		return
-			_rewardData[token].rewardPerTokenStored +
-			((lastTimeRewardApplicable(token) - _rewardData[token].lastUpdateTime) *
-				_rewardData[token].rewardRate) /
-			totalSupply;
-	}
-
-	/// @inheritdoc IGauge
 	function depositAll() external {
-		/// @dev deposits all the stake tokens for the caller
-		/// @dev msg.sender is retained
-		deposit(IERC20(stake).balanceOf(msg.sender));
+		deposit(IERC20(STAKE).balanceOf(msg.sender));
 	}
 
 	/// @inheritdoc IGauge
@@ -189,13 +147,10 @@ contract Gauge is IGauge, ReentrancyGuard {
 		address recipient,
 		uint256 amount
 	) public updateReward(recipient) nonReentrant {
-		/// @dev prevent zero deposits
 		require(amount != 0, ZERO_AMOUNT());
-		/// @dev pull the stake from the caller
-		_safeTransferFrom(stake, msg.sender, address(this), amount);
-		/// @dev increment the staked supply
+
+		_safeTransferFrom(STAKE, msg.sender, address(this), amount);
 		totalSupply += amount;
-		/// @dev add amount to the recipient
 		balanceOf[recipient] += amount;
 
 		emit Deposit(recipient, amount);
@@ -203,56 +158,25 @@ contract Gauge is IGauge, ReentrancyGuard {
 
 	/// @inheritdoc IGauge
 	function deposit(uint256 amount) public {
-		/// @dev deposit an amount for the caller
 		depositFor(msg.sender, amount);
 	}
 
 	/// @inheritdoc IGauge
 	function withdrawAll() external {
-		/// @dev withdraw the whole balance of the caller
-		/// @dev msg.sender is retained throughout
 		withdraw(balanceOf[msg.sender]);
 	}
 
 	/// @inheritdoc IGauge
 	function withdraw(uint256 amount) public updateReward(msg.sender) nonReentrant {
-		/// @dev prevent zero withdraws
 		require(amount != 0, ZERO_AMOUNT());
-		/// @dev decrement the totalSupply by the withdrawal amount
+
 		totalSupply -= amount;
-		/// @dev decrement the amount from the caller's mapping
 		balanceOf[msg.sender] -= amount;
-		/// @dev transfer the stake token to the caller
-		_safeTransfer(stake, msg.sender, amount);
+		_safeTransfer(STAKE, msg.sender, amount);
+
 		emit Withdraw(msg.sender, amount);
 	}
 
-	/// @inheritdoc IGauge
-	function left(address token) public view returns (uint256) {
-		/// @dev if we are at or past the periodFinish for the token, return 0
-		if (block.timestamp >= _rewardData[token].periodFinish) return 0;
-		/// @dev calculate the remaining time from periodFinish to current
-		uint256 _remaining = _rewardData[token].periodFinish - block.timestamp;
-		/// @dev return the remaining time, multiplied by the reward rate then scale to precision
-		return (_remaining * _rewardData[token].rewardRate) / PRECISION;
-	}
-
-	/// @inheritdoc IGauge
-	function whitelistReward(address _reward) external {
-		require(msg.sender == voter, NOT_AUTHORIZED());
-		/// @dev voter checks for governance whitelist before allowing call
-		tokenWhitelists.add(_reward);
-		emit RewardWhitelisted(_reward, true);
-	}
-
-	/// @inheritdoc IGauge
-	function removeRewardWhitelist(address _reward) external {
-		require(msg.sender == voter, NOT_AUTHORIZED());
-		tokenWhitelists.remove(_reward);
-		emit RewardWhitelisted(_reward, false);
-	}
-
-	/// @inheritdoc IGauge
 	/**
 	 * @notice amount must be greater than left() for the token, this is to prevent griefing attacks
 	 * @notice notifying rewards is completely permissionless
@@ -262,11 +186,8 @@ contract Gauge is IGauge, ReentrancyGuard {
 		address token,
 		uint256 amount
 	) external updateReward(address(0)) nonReentrant {
-		/// @dev prevent notifying the stake token
-		require(token != stake, CANT_NOTIFY_STAKE());
-		/// @dev do not accept 0 amounts
+		require(token != STAKE, CANT_NOTIFY_STAKE());
 		require(amount != 0, ZERO_AMOUNT());
-		/// @dev ensure the token is whitelisted
 		require(tokenWhitelists.contains(token), NOT_WHITELISTED());
 
 		_rewardData[token].rewardPerTokenStored = rewardPerToken(token);
@@ -312,45 +233,104 @@ contract Gauge is IGauge, ReentrancyGuard {
 		emit NotifyReward(msg.sender, token, amount);
 	}
 
+	/***************************************************************************************/
+	/* Authorized Functions */
+	/***************************************************************************************/
+
+	/// @inheritdoc IGauge
+	function whitelistReward(address _reward) external {
+		require(msg.sender == VOTER, NOT_AUTHORIZED());
+
+		tokenWhitelists.add(_reward);
+		emit RewardWhitelisted(_reward, true);
+	}
+
+	/// @inheritdoc IGauge
+	function removeRewardWhitelist(address _reward) external {
+		require(msg.sender == VOTER, NOT_AUTHORIZED());
+
+		tokenWhitelists.remove(_reward);
+		emit RewardWhitelisted(_reward, false);
+	}
+
+	/***************************************************************************************/
+	/* View Functions */
+	/***************************************************************************************/
+
 	function isWhitelisted(address token) public view returns (bool) {
 		return tokenWhitelists.contains(token);
 	}
 
-	/** internal safe transfer functions */
+	/// @inheritdoc IGauge
+	function rewardsList() external view returns (address[] memory _rewards) {
+		_rewards = rewards;
+	}
+
+	/// @inheritdoc IGauge
+	function rewardsListLength() external view returns (uint256 _length) {
+		_length = rewards.length;
+	}
+
+	/// @inheritdoc IGauge
+	function lastTimeRewardApplicable(address token) public view returns (uint256) {
+		/// @dev returns the lesser of the current unix timestamp,
+		/// and the timestamp for when the period finishes for the specified reward token
+		return Math.min(block.timestamp, _rewardData[token].periodFinish);
+	}
+
+	/// @inheritdoc IGauge
+	function rewardData(address token) external view override returns (Reward memory data) {
+		data = _rewardData[token];
+	}
+
+	/// @inheritdoc IGauge
+	function earned(address token, address account) public view returns (uint256 _reward) {
+		_reward =
+			((balanceOf[account] *
+				(rewardPerToken(token) - userRewardPerTokenStored[account][token])) / PRECISION) +
+			storedRewardsPerUser[account][token];
+	}
+
+	/// @inheritdoc IGauge
+	function rewardPerToken(address token) public view returns (uint256) {
+		if (totalSupply == 0) {
+			return _rewardData[token].rewardPerTokenStored;
+		}
+		return
+			_rewardData[token].rewardPerTokenStored +
+			((lastTimeRewardApplicable(token) - _rewardData[token].lastUpdateTime) *
+				_rewardData[token].rewardRate) /
+			totalSupply;
+	}
+
+	/// @inheritdoc IGauge
+	function left(address token) public view returns (uint256) {
+		/// @dev if we are at or past the periodFinish for the token, return 0
+		if (block.timestamp >= _rewardData[token].periodFinish) return 0;
+		/// @dev calculate the remaining time from periodFinish to current
+		uint256 _remaining = _rewardData[token].periodFinish - block.timestamp;
+		/// @dev return the remaining time, multiplied by the reward rate then scale to precision
+		return (_remaining * _rewardData[token].rewardRate) / PRECISION;
+	}
+
+	/***************************************************************************************/
+	/* Internal Functions */
+	/***************************************************************************************/
+
 	function _safeTransfer(address token, address to, uint256 value) internal {
-		require(
-			token.code.length > 0,
-			TOKEN_ERROR(
-				token
-			) /* throw address of the token as a custom error to help with debugging */
-		);
+		require(token.code.length > 0, TOKEN_ERROR(token));
+
 		(bool success, bytes memory data) = token.call(
 			abi.encodeWithSelector(IERC20.transfer.selector, to, value)
 		);
-		require(
-			success && (data.length == 0 || abi.decode(data, (bool))),
-			TOKEN_ERROR(
-				token
-			) /* throw address of the token as a custom error to help with debugging */
-		);
+		require(success && (data.length == 0 || abi.decode(data, (bool))), TOKEN_ERROR(token));
 	}
 
 	function _safeTransferFrom(address token, address from, address to, uint256 value) internal {
-		require(
-			token.code.length > 0,
-			TOKEN_ERROR(
-				token
-			) /* throw address of the token as a custom error to help with debugging */
-		);
+		require(token.code.length > 0, TOKEN_ERROR(token));
 		(bool success, bytes memory data) = token.call(
 			abi.encodeWithSelector(IERC20.transferFrom.selector, from, to, value)
 		);
-
-		require(
-			success && (data.length == 0 || abi.decode(data, (bool))),
-			TOKEN_ERROR(
-				token
-			) /* throw address of the token as a custom error to help with debugging */
-		);
+		require(success && (data.length == 0 || abi.decode(data, (bool))), TOKEN_ERROR(token));
 	}
 }

@@ -5,7 +5,7 @@ import {IFeeRecipientFactory} from "contracts/interfaces/IFeeRecipientFactory.so
 import {FeeRecipient} from "contracts/legacy/FeeRecipient.sol";
 
 contract FeeRecipientFactory is IFeeRecipientFactory {
-	address public immutable voter;
+	address public immutable VOTER;
 
 	address public lastFeeRecipient;
 	address public treasury;
@@ -17,13 +17,13 @@ contract FeeRecipientFactory is IFeeRecipientFactory {
 	event SetFeeToTreasury(uint256 indexed feeToTreasury);
 
 	modifier onlyGovernance() {
-		require(msg.sender == accessHub);
+		require(msg.sender == accessHub, NOT_AUTHORIZED());
 		_;
 	}
 
 	constructor(address _treasury, address _voter, address _accessHub) {
 		treasury = _treasury;
-		voter = _voter;
+		VOTER = _voter;
 		accessHub = _accessHub;
 		/// @dev start at 8%
 		feeToTreasury = 800;
@@ -31,7 +31,7 @@ contract FeeRecipientFactory is IFeeRecipientFactory {
 
 	/// @inheritdoc IFeeRecipientFactory
 	function createFeeRecipient(address pair) external returns (address _feeRecipient) {
-		require(msg.sender == voter, NOT_AUTHORIZED());
+		require(msg.sender == VOTER, NOT_AUTHORIZED());
 
 		_feeRecipient = address(new FeeRecipient(pair, msg.sender, address(this)));
 		feeRecipientForPair[pair] = _feeRecipient;

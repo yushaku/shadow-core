@@ -17,12 +17,13 @@ import {IWETH} from "contracts/interfaces/IWETH.sol";
  * @notice Router allows routes through any pools created by PairFactory.sol
  */
 contract Router is IRouter {
-	address public immutable factory;
-	address public immutable WETH;
-	uint256 internal constant MINIMUM_LIQUIDITY = 10 ** 3;
-	bytes32 immutable pairCodeHash;
 	/// @dev 1m = 100%
 	uint256 internal constant FEE_DENOM = 1_000_000;
+	uint256 internal constant MINIMUM_LIQUIDITY = 10 ** 3;
+
+	address public immutable FACTORY;
+	address public immutable WETH;
+	bytes32 internal immutable PAIR_CODE_HASH;
 
 	modifier ensure(uint256 deadline) {
 		require(block.timestamp <= deadline, EXPIRED());
@@ -30,8 +31,8 @@ contract Router is IRouter {
 	}
 
 	constructor(address _factory, address _weth) {
-		factory = _factory;
-		pairCodeHash = IPairFactory(_factory).pairCodeHash();
+		FACTORY = _factory;
+		PAIR_CODE_HASH = IPairFactory(_factory).pairCodeHash();
 		WETH = _weth;
 	}
 
@@ -63,9 +64,9 @@ contract Router is IRouter {
 					keccak256(
 						abi.encodePacked(
 							hex"ff",
-							factory,
+							FACTORY,
 							keccak256(abi.encodePacked(token0, token1, stable)),
-							pairCodeHash /// @dev init code hash
+							PAIR_CODE_HASH /// @dev init code hash
 						)
 					)
 				)
@@ -106,7 +107,7 @@ contract Router is IRouter {
 		amounts[0] = amountIn;
 		for (uint256 i = 0; i < routes.length; ++i) {
 			address pair = pairFor(routes[i].from, routes[i].to, routes[i].stable);
-			if (IPairFactory(factory).isPair(pair)) {
+			if (IPairFactory(FACTORY).isPair(pair)) {
 				amounts[i + 1] = IPair(pair).getAmountOut(amounts[i], routes[i].from);
 			}
 		}
@@ -167,11 +168,11 @@ contract Router is IRouter {
 		address pair = pairFor(tokenIn, tokenOut, true);
 		uint256 amountStable;
 		uint256 amountVolatile;
-		if (IPairFactory(factory).isPair(pair)) {
+		if (IPairFactory(FACTORY).isPair(pair)) {
 			amountStable = IPair(pair).getAmountOut(amountIn, tokenIn);
 		}
 		pair = pairFor(tokenIn, tokenOut, false);
-		if (IPairFactory(factory).isPair(pair)) {
+		if (IPairFactory(FACTORY).isPair(pair)) {
 			amountVolatile = IPair(pair).getAmountOut(amountIn, tokenIn);
 		}
 		return amountStable > amountVolatile ? (amountStable, true) : (amountVolatile, false);
@@ -185,7 +186,7 @@ contract Router is IRouter {
 	) internal view returns (uint256 amountIn) {
 		require(amountOut != 0, INSUFFICIENT_OUTPUT_AMOUNT());
 		address pair = pairFor(tokenIn, tokenOut, stable);
-		uint256 fee = IPairFactory(factory).pairFee(pair);
+		uint256 fee = IPairFactory(FACTORY).pairFee(pair);
 
 		(
 			uint256 decimals0,
@@ -249,7 +250,7 @@ contract Router is IRouter {
 		uint256 amountADesired,
 		uint256 amountBDesired
 	) external view returns (uint256 amountA, uint256 amountB, uint256 liquidity) {
-		address _pair = IPairFactory(factory).getPair(tokenA, tokenB, stable);
+		address _pair = IPairFactory(FACTORY).getPair(tokenA, tokenB, stable);
 		(uint256 reserveA, uint256 reserveB) = (0, 0);
 		uint256 _totalSupply = 0;
 		if (_pair != address(0)) {
@@ -285,7 +286,7 @@ contract Router is IRouter {
 		bool stable,
 		uint256 liquidity
 	) external view returns (uint256 amountA, uint256 amountB) {
-		address _pair = IPairFactory(factory).getPair(tokenA, tokenB, stable);
+		address _pair = IPairFactory(FACTORY).getPair(tokenA, tokenB, stable);
 
 		if (_pair == address(0)) {
 			return (0, 0);
@@ -311,9 +312,9 @@ contract Router is IRouter {
 		require(amountADesired >= amountAMin);
 		require(amountBDesired >= amountBMin);
 		/// @dev create the pair if it doesn't exist yet
-		address _pair = IPairFactory(factory).getPair(tokenA, tokenB, stable);
+		address _pair = IPairFactory(FACTORY).getPair(tokenA, tokenB, stable);
 		if (_pair == address(0)) {
-			_pair = IPairFactory(factory).createPair(tokenA, tokenB, stable);
+			_pair = IPairFactory(FACTORY).createPair(tokenA, tokenB, stable);
 		}
 		(uint256 reserveA, uint256 reserveB) = getReserves(tokenA, tokenB, stable);
 		if (reserveA == 0 && reserveB == 0) {
@@ -416,7 +417,7 @@ contract Router is IRouter {
 			deadline
 		);
 		address pair = pairFor(tokenA, tokenB, stable);
-		address voter = IPairFactory(factory).voter();
+		address voter = IPairFactory(FACTORY).voter();
 		address gauge = IVoter(voter).gaugeForPool(pair);
 		IERC20Extended(pair).approve(gauge, liquidity);
 		IGauge(gauge).depositFor(to, liquidity);
@@ -442,7 +443,7 @@ contract Router is IRouter {
 			deadline
 		);
 		address pair = pairFor(token, WETH, stable);
-		address voter = IPairFactory(factory).voter();
+		address voter = IPairFactory(FACTORY).voter();
 		address gauge = IVoter(voter).gaugeForPool(pair);
 		IERC20Extended(pair).approve(gauge, liquidity);
 		IGauge(gauge).depositFor(to, liquidity);

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.26;
 
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
@@ -11,121 +11,67 @@ import {IVoter} from "contracts/interfaces/IVoter.sol";
 import {IVoteModule} from "contracts/interfaces/IVoteModule.sol";
 import {ILauncherPlugin} from "contracts/interfaces/ILauncherPlugin.sol";
 
+/**
+ * @title Fee Distributor
+ * @notice This contract is the central hub for distributing fees and other incentives to the users who have voted for a specific liquidity pool (gauge).
+ * It aggregates fees from all the different pools and manages the complex logic of distributing them to the voters.
+ *
+ * Key Features:
+ * - Reward Distribution: Distributes various reward tokens to voters based on their voting weight in a given period (epoch).
+ * - Incentives (Bribes): Allows external users to "incentivize" or "bribe" a pool by sending tokens to this contract, which are then distributed to the voters of that pool.
+ * - Fee Collection: Receives fees from the FeeRecipient contract and adds them to the pool of rewards to be distributed.
+ * - Launcher Plugin Integration: Integrates with a LauncherPlugin, which can be configured to take a percentage of the fees for its services.
+ * - Periodic Distribution: The rewards are distributed on a periodic basis (weekly).
+ */
 contract FeeDistributor is IFeeDistributor, ReentrancyGuard {
 	using EnumerableSet for EnumerableSet.AddressSet;
 
-	/// @inheritdoc IFeeDistributor
 	address public immutable voter;
-	/// @inheritdoc IFeeDistributor
 	address public immutable voteModule;
-	/// @inheritdoc IFeeDistributor
 	address public immutable feeRecipient;
-	/// @inheritdoc IFeeDistributor
 	uint256 public immutable firstPeriod;
-
-	/// @dev fetch through: Voter-> LauncherPlugin
 	ILauncherPlugin public immutable plugin;
 
-	/// @inheritdoc IFeeDistributor
 	mapping(address owner => uint256 amount) public balanceOf;
-
-	/// @inheritdoc IFeeDistributor
 	mapping(uint256 period => uint256 weight) public votes;
-
-	/// @notice period => user => amount
 	mapping(uint256 period => mapping(address owner => uint256 weight)) public userVotes;
-
-	/// @notice period => token => total supply
 	mapping(uint256 period => mapping(address token => uint256 amount)) public rewardSupply;
-
-	/// @notice period => user => token => amount
+	mapping(address token => mapping(address owner => uint256 period)) public lastClaimByToken;
 	mapping(uint256 period => mapping(address owner => mapping(address token => uint256 amount)))
 		public userClaimed;
-
-	/// @notice token => user => period
-	mapping(address token => mapping(address owner => uint256 period)) public lastClaimByToken;
 
 	EnumerableSet.AddressSet rewards;
 
 	constructor(address _voter, address _feeRecipient) {
-		/// @dev initialize voter
 		voter = _voter;
-		/// @dev initialize the plugin
-		plugin = ILauncherPlugin(IVoter(_voter).launcherPlugin());
-		/// @dev fetch and initialize voteModule via voter
-		voteModule = IVoter(_voter).voteModule();
-		/// @dev set the firstPeriod as the current
-		firstPeriod = getPeriod();
-		/// @dev initialize the feeRecipient
 		feeRecipient = _feeRecipient;
-	}
-	/// @inheritdoc IFeeDistributor
-	function _deposit(uint256 amount, address owner) external {
-		/// @dev gate to the voter
-		require(msg.sender == voter, NOT_AUTHORIZED());
-		/// @dev fetch the next period (voting power slot)
-		uint256 nextPeriod = getPeriod() + 1;
-		/// @dev fetch the voting "balance" of the owner
-		balanceOf[owner] += amount;
-		/// @dev add the vote power to the cumulative
-		votes[nextPeriod] += amount;
-		/// @dev add to the owner's vote mapping
-		userVotes[nextPeriod][owner] += amount;
 
-		emit Deposit(owner, amount);
+		plugin = ILauncherPlugin(IVoter(_voter).launcherPlugin());
+		voteModule = IVoter(_voter).voteModule();
+		firstPeriod = getPeriod();
 	}
-	/// @inheritdoc IFeeDistributor
-	function _withdraw(uint256 amount, address owner) external {
-		/// @dev gate to the voter
-		require(msg.sender == voter, NOT_AUTHORIZED());
-		/// @dev fetch the next period (voting power slot)
-		uint256 nextPeriod = getPeriod() + 1;
-		/// @dev decrement the mapping by withdrawal amount
-		balanceOf[owner] -= amount;
-		/// @dev check if the owner has any votes cast
-		if (userVotes[nextPeriod][owner] > 0) {
-			/// @dev if so -- decrement vote by amount
-			userVotes[nextPeriod][owner] -= amount;
-			/// @dev and decrement cumulative votes
-			votes[nextPeriod] -= amount;
-		}
 
-		emit Withdraw(owner, amount);
-	}
 	/// @inheritdoc IFeeDistributor
 	/// @dev specific to periods rather than all
 	function getPeriodReward(uint256 period, address owner, address token) external nonReentrant {
-		/// @dev check that msg.sender is privileged
 		require(IVoteModule(voteModule).isAdminFor(msg.sender, owner), NOT_AUTHORIZED());
-		/// @dev claim to msg.sender
 		_getReward(period, owner, token, msg.sender);
 	}
+
 	/// @inheritdoc IFeeDistributor
 	function getReward(address owner, address[] memory tokens) external nonReentrant {
-		/// @dev check that msg.sender is privileged
 		require(IVoteModule(voteModule).isAdminFor(msg.sender, owner), NOT_AUTHORIZED());
-		/// @dev send to msg.sender (IMPORTANT: ensure these privileges are handled appropriately)
 		_getAllRewards(owner, tokens, msg.sender);
 	}
-	/// @inheritdoc IFeeDistributor
-	/// @dev used by Voter to allow batched reward claims
-	function getRewardForOwner(address owner, address[] memory tokens) external nonReentrant {
-		/// @dev gate to voter
-		require(msg.sender == voter, NOT_AUTHORIZED());
-		/// @dev call on behalf of owner
-		_getAllRewards(owner, tokens, owner);
-	}
+
+
 	/// @inheritdoc IFeeDistributor
 	function notifyRewardAmount(address token, uint256 amount) external nonReentrant {
-		/// @dev limit to feeRecipient (feeCollector in CL)
 		require(msg.sender == feeRecipient, NOT_AUTHORIZED());
-		/// @dev prevent spam
 		require(amount != 0, ZERO_AMOUNT());
-		/// @dev ensure the token is whitelisted (should never fail since the fees would be pushed)
 		require(IVoter(voter).isWhitelisted(token), IVoter.NOT_WHITELISTED());
-		/// @dev declare the next period (epoch)
+
 		uint256 nextPeriod = getPeriod() + 1;
-		/// @dev if all the prior checks pass, we can add the token to the rewards set
 		rewards.add(token);
 
 		/** LAUNCHPAD CONFIGS **/
@@ -154,23 +100,20 @@ contract FeeDistributor is IFeeDistributor, ReentrancyGuard {
 		_safeTransferFrom(token, msg.sender, address(this), amount);
 		uint256 balanceAfter = IERC20(token).balanceOf(address(this));
 
-		/// @dev only count the amount actually within the contract
-		amount = balanceAfter - balanceBefore;
 		/// @dev increase rewards for "nextPeriod"
+		amount = balanceAfter - balanceBefore;
 		rewardSupply[nextPeriod][token] += amount;
-		/// @dev emit event for fees notified to feeDist
+
 		emit NotifyReward(msg.sender, token, amount, nextPeriod);
 	}
+
 	/// @inheritdoc IFeeDistributor
-	/// @dev submit voting incentives to the FeeDistributor
+	/// @dev submit voting incentives(bribed) to the FeeDistributor
 	function incentivize(address token, uint256 amount) external nonReentrant {
-		/// @dev prevent spam
 		require(amount != 0, ZERO_AMOUNT());
-		/// @dev ensure whitelisted to prevent garbage from stuffing the arrays
 		require(IVoter(voter).isWhitelisted(token), IVoter.NOT_WHITELISTED());
-		/// @dev declare the reward period
+
 		uint256 nextPeriod = getPeriod() + 1;
-		/// @dev add to the rewards set
 		rewards.add(token);
 
 		/// @dev logic for handling tax tokens as bribes
@@ -178,23 +121,73 @@ contract FeeDistributor is IFeeDistributor, ReentrancyGuard {
 		_safeTransferFrom(token, msg.sender, address(this), amount);
 		uint256 balanceAfter = IERC20(token).balanceOf(address(this));
 
-		/// @dev only count the amount actually within the contract
 		amount = balanceAfter - balanceBefore;
-		/// @dev increase rewards for "nextPeriod"
 		rewardSupply[nextPeriod][token] += amount;
-		/// @dev emit event for incentives "bribed" to feeDist
+
 		emit VotesIncentivized(msg.sender, token, amount, nextPeriod);
+	}
+
+
+	/***************************************************************************************/
+	/* Voter.sol Functions */
+	/***************************************************************************************/
+
+	/// @inheritdoc IFeeDistributor
+	/// @dev used by Voter to allow batched reward claims
+	function getRewardForOwner(address owner, address[] memory tokens) external nonReentrant {
+		require(msg.sender == voter, NOT_AUTHORIZED());
+		_getAllRewards(owner, tokens, owner);
 	}
 
 	/// @inheritdoc IFeeDistributor
 	/// @dev for the voter to remove spam rewards
 	function removeReward(address _token) external {
-		/// @dev limit to voter only
 		require(msg.sender == voter, NOT_AUTHORIZED());
-		/// @dev remove the token from the rewards set
+
 		rewards.remove(_token);
-		/// @dev emit the address of the token removed
 		emit RewardsRemoved(_token);
+	}
+ 
+	/// @inheritdoc IFeeDistributor
+	function _deposit(uint256 amount, address owner) external {
+		require(msg.sender == voter, NOT_AUTHORIZED());
+
+		/// @dev fetch the next period (voting power slot)
+		uint256 nextPeriod = getPeriod() + 1;
+
+		balanceOf[owner] += amount;
+		votes[nextPeriod] += amount;
+		userVotes[nextPeriod][owner] += amount;
+
+		emit Deposit(owner, amount);
+	}
+
+	/// @inheritdoc IFeeDistributor
+	function _withdraw(uint256 amount, address owner) external {
+		/// @dev gate to the voter
+		require(msg.sender == voter, NOT_AUTHORIZED());
+		/// @dev fetch the next period (voting power slot)
+		uint256 nextPeriod = getPeriod() + 1;
+		/// @dev decrement the mapping by withdrawal amount
+		balanceOf[owner] -= amount;
+		/// @dev check if the owner has any votes cast
+		if (userVotes[nextPeriod][owner] > 0) {
+			/// @dev if so -- decrement vote by amount
+			userVotes[nextPeriod][owner] -= amount;
+			/// @dev and decrement cumulative votes
+			votes[nextPeriod] -= amount;
+		}
+
+		emit Withdraw(owner, amount);
+	}
+
+	/***************************************************************************************/
+	/* View Functions */
+	/***************************************************************************************/
+
+	/// @notice general read function for grabbing the current period (epoch)
+	function getPeriod() public view returns (uint256) {
+		return (block.timestamp / 1 weeks);
 	}
 
 	/// @inheritdoc IFeeDistributor
@@ -223,14 +216,13 @@ contract FeeDistributor is IFeeDistributor, ReentrancyGuard {
 		}
 	}
 
-	/// @notice general read function for grabbing the current period (epoch)
-	function getPeriod() public view returns (uint256) {
-		return (block.timestamp / 1 weeks);
-	}
+	/***************************************************************************************/
+	/* Internal Functions */
+	/***************************************************************************************/
+
 
 	/// @dev a core internal function for claiming rewards
 	function _getReward(uint256 period, address owner, address token, address receiver) internal {
-		/// @dev prevent claiming from periods that are not yet finalized
 		require(period <= getPeriod(), NOT_FINALIZED());
 
 		/// @dev if there are any votes in the period
@@ -277,39 +269,19 @@ contract FeeDistributor is IFeeDistributor, ReentrancyGuard {
 
 	/** internal safe transfer functions */
 	function _safeTransfer(address token, address to, uint256 value) internal {
-		require(
-			token.code.length > 0,
-			TOKEN_ERROR(
-				token
-			) /* throw address of the token as a custom error to help with debugging */
-		);
+		require(token.code.length > 0, TOKEN_ERROR(token));
 		(bool success, bytes memory data) = token.call(
 			abi.encodeWithSelector(IERC20.transfer.selector, to, value)
 		);
-		require(
-			success && (data.length == 0 || abi.decode(data, (bool))),
-			TOKEN_ERROR(
-				token
-			) /* throw address of the token as a custom error to help with debugging */
-		);
+		require(success && (data.length == 0 || abi.decode(data, (bool))), TOKEN_ERROR(token));
 	}
 
 	function _safeTransferFrom(address token, address from, address to, uint256 value) internal {
-		require(
-			token.code.length > 0,
-			TOKEN_ERROR(
-				token
-			) /* throw address of the token as a custom error to help with debugging */
-		);
+		require(token.code.length > 0, TOKEN_ERROR(token));
 		(bool success, bytes memory data) = token.call(
 			abi.encodeWithSelector(IERC20.transferFrom.selector, from, to, value)
 		);
 
-		require(
-			success && (data.length == 0 || abi.decode(data, (bool))),
-			TOKEN_ERROR(
-				token
-			) /* throw address of the token as a custom error to help with debugging */
-		);
+		require(success && (data.length == 0 || abi.decode(data, (bool))), TOKEN_ERROR(token));
 	}
 }

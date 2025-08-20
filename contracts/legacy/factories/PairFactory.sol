@@ -20,8 +20,7 @@ contract PairFactory is IPairFactory {
 	uint256 public feeSplit;
 
 	address[] public allPairs;
-	mapping(address token0 => mapping(address token1 => mapping(bool stable => address pair)))
-		public getPair;
+	mapping(address token0 => mapping(address token1 => mapping(bool stable => address pair))) public getPair;
 	mapping(address pair => bool isPair) public isPair;
 	mapping(address pair => uint256 fee) public _pairFee;
 	mapping(address pair => bool skimEnabled) public skimEnabled;

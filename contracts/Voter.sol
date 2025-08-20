@@ -567,11 +567,12 @@ contract Voter is IVoter, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUp
 	/***************************************************************************************/
 
 	function createGauge(address _pool) external returns (address) {
-		/// @dev ensure there is no gauge for the pool
 		require(gaugeForPool[_pool] == address(0), ACTIVE_GAUGE(gaugeForPool[_pool]));
+
 		/// @dev check if it's a legacy pair
 		bool isPair = IPairFactory(legacyFactory).isPair(_pool);
 		require(isPair, NOT_POOL());
+
 		/// @dev fetch token0 and token1 from the pool's metadata
 		(, , , , , address token0, address token1) = IPair(_pool).metadata();
 		/// @dev ensure that both tokens are whitelisted
@@ -647,7 +648,7 @@ contract Voter is IVoter, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUp
 			.createFeeDistributor(_feeCollector);
 		/// @dev create the gauge
 		address _gauge = IClGaugeFactory(clGaugeFactory).createGauge(_pool);
-		/// @dev unlimited approve shadow and xYSK to the gauge
+		/// @dev unlimited approve ysk and xYSK to the gauge
 		IERC20(ysk).approve(_gauge, type(uint256).max);
 		IERC20(xYSK).approve(_gauge, type(uint256).max);
 		/// @dev update mappings
@@ -777,13 +778,13 @@ contract Voter is IVoter, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUp
 	/* Emission Calculation */
 	/***************************************************************************************/
 
-  /**
-   * @notice Only Minter.sol can call this to send emissions to the voter
-   * @param amount: the amount of emissions to send
-   */
+	/**
+	 * @notice Only Minter.sol can call this to send emissions to the voter
+	 * @param amount: the amount of emissions to send
+	 */
 	function notifyRewardAmount(uint256 amount) external {
 		require(msg.sender == minter, NOT_AUTHORIZED(msg.sender));
-    
+
 		IERC20(ysk).transferFrom(msg.sender, address(this), amount);
 		uint256 period = getPeriod();
 		totalRewardPerPeriod[period] += amount;

@@ -7,57 +7,56 @@ import {IFeeDistributor} from "contracts/interfaces/IFeeDistributor.sol";
 import {IFeeRecipient} from "contracts/interfaces/IFeeRecipient.sol";
 import {IFeeRecipientFactory} from "contracts/interfaces/IFeeRecipientFactory.sol";
 
-/// @notice Pair Fees contract is used as a 1:1 pair relationship to split out fees,
-/// this ensures that the curve does not need to be modified for LP shares
+/**
+ * @notice Pair Fees contract is used as a 1:1 PAIR relationship to split out fees,
+ * this ensures that the curve does not need to be modified for LP shares
+ */
 contract FeeRecipient is IFeeRecipient {
-	/// @notice The pair it is bonded to
-	address public immutable pair;
-	/// @notice voter contract which fees are gated to be claimed by
-	address public immutable voter;
-	/// @notice feedist contract where fees will be sent to
+	address public immutable FEE_RECIPIENT_FACTORY;
+	address public immutable PAIR;
+	address public immutable VOTER;
+
 	address public feeDistributor;
-	/// @notice factory contract for feeRecipient (legacy fees)
-	address public immutable feeRecipientFactory;
 
 	constructor(address _pair, address _voter, address _feeRecipientFactory) {
-		pair = _pair;
-		voter = _voter;
-		feeRecipientFactory = _feeRecipientFactory;
+		PAIR = _pair;
+		VOTER = _voter;
+		FEE_RECIPIENT_FACTORY = _feeRecipientFactory;
 	}
 
-	/// @notice initialize the FeeRecipient contract and approve the LP tokens to the feeDist, gated to voter
+	/**
+	 * @dev only called by the voter.sol
+	 * @notice initialize the FeeRecipient contract and approve the LP tokens to the feeDist, gated to VOTER
+	 * @param _feeDistributor the feeDistributor contract address
+	 */
 	function initialize(address _feeDistributor) external {
-		require(msg.sender == voter, NOT_AUTHORIZED());
+		require(msg.sender == VOTER, NOT_AUTHORIZED());
+
 		feeDistributor = _feeDistributor;
-		IERC20(pair).approve(_feeDistributor, type(uint256).max);
+		IERC20(PAIR).approve(_feeDistributor, type(uint256).max);
 	}
 
-	/// @notice notifies the fees
+	/**
+	 * @dev only called by the voter.sol
+	 * @notice notifies the fees
+	 * it will share the fees to treasury + FeeDistributor
+	 */
 	function notifyFees() external {
-		/// @dev limit calling notifyFees() to the voter contract
-		require(msg.sender == voter, NOT_AUTHORIZED());
+		require(msg.sender == VOTER, NOT_AUTHORIZED());
 
-		/// @dev fetch balance of LP in the contract
-		uint256 amount = IERC20(pair).balanceOf(address(this));
-		/// @dev terminate early if there's no rewards
+		uint256 amount = IERC20(PAIR).balanceOf(address(this));
 		if (amount == 0) return;
-		/// @dev calculate treasury share
-		uint256 feeToTreasury = IFeeRecipientFactory(feeRecipientFactory).feeToTreasury();
-		/// @dev if any to treasury
+
+		uint256 feeToTreasury = IFeeRecipientFactory(FEE_RECIPIENT_FACTORY).feeToTreasury();
 		if (feeToTreasury > 0) {
-			/// @dev fetch treasury from factory
-			address treasury = IFeeRecipientFactory(feeRecipientFactory).treasury();
-			/// @dev mulDiv
+			address treasury = IFeeRecipientFactory(FEE_RECIPIENT_FACTORY).treasury();
 			uint256 amountToTreasury = (amount * feeToTreasury) / 10_000;
-			/// @dev decrement amount
 			amount -= amountToTreasury;
-			/// @dev naked transfer to treasury, no staking
-			IERC20(pair).transfer(treasury, amountToTreasury);
+			IERC20(PAIR).transfer(treasury, amountToTreasury);
 		}
 
-		/// @dev if there's any fees
 		if (amount > 0) {
-			IFeeDistributor(feeDistributor).notifyRewardAmount(pair, amount);
+			IFeeDistributor(feeDistributor).notifyRewardAmount(PAIR, amount);
 		}
 	}
 }

@@ -317,7 +317,9 @@ contract AccessHub is IAccessHub, UUPSUpgradeable, AccessControlEnumerableUpgrad
 		}
 	}
 
-	/** LauncherPlugin specific functions */
+	/***************************************************************************************/
+	/* LauncherPlugin specific functions */
+	/***************************************************************************************/
 
 	/// @inheritdoc IAccessHub
 	function migratePoolInLauncherPlugin(
