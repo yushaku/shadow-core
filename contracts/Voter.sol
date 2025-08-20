@@ -140,9 +140,9 @@ contract Voter is IVoter, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUp
 	}
 
 	function setUp(
-		address _shadow,
+		address _ysk,
 		address _legacyFactory,
-		address _gauges,
+		address _gaugesFactory,
 		address _feeDistributorFactory,
 		address _minter,
 		address _msig,
@@ -155,8 +155,8 @@ contract Voter is IVoter, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUp
 		address _launcherPlugin
 	) external onlyOwner {
 		legacyFactory = _legacyFactory;
-		ysk = _shadow;
-		gaugeFactory = _gauges;
+		ysk = _ysk;
+		gaugeFactory = _gaugesFactory;
 		feeDistributorFactory = _feeDistributorFactory;
 		minter = _minter;
 		xYSK = _xYSK;
@@ -169,15 +169,10 @@ contract Voter is IVoter, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUp
 		clGaugeFactory = _clGaugeFactory;
 		nfpManager = _nfpManager;
 
-		/// @dev default at 100% xRatio
-		xRatio = 1_000_000;
-		/// @dev emits from the zero address since it's the first time
-		emit EmissionsRatio(address(0), 0, 1_000_000);
-		/// @dev perma approval
 		IERC20(ysk).approve(xYSK, type(uint256).max);
 	}
 
-	/// @notice sets the default xShadowRatio
+	/// @notice sets the default xYskRatio
 	function setGlobalRatio(uint256 _xRatio) external onlyGovernance {
 		require(_xRatio <= BASIS, RATIO_TOO_HIGH(_xRatio));
 
@@ -370,9 +365,9 @@ contract Voter is IVoter, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUp
 			/// @dev fetch ysk address
 			address _xYSK = address(xYSK);
 			/// @dev fetch the current ratio and multiply by the claimable
-			uint256 _xShadowClaimable = (_claimable * xRatio) / BASIS;
+			uint256 _xYskClaimable = (_claimable * xRatio) / BASIS;
 			/// @dev remove from the regular claimable tokens (YSK)
-			_claimable -= _xShadowClaimable;
+			_claimable -= _xYskClaimable;
 
 			/// @dev can only distribute if the distributed amount / week > 0 and is > left()
 			bool canDistribute = true;
@@ -383,12 +378,9 @@ contract Voter is IVoter, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUp
 					canDistribute = false;
 				}
 			}
-			/// @dev _xShadowClaimable could be 0 if ratio is 100% emissions
-			if (_xShadowClaimable > 0) {
-				if (
-					_xShadowClaimable / DURATION == 0 ||
-					_xShadowClaimable < IGauge(_gauge).left(_xYSK)
-				) {
+			/// @dev _xYskClaimable could be 0 if ratio is 100% emissions
+			if (_xYskClaimable > 0) {
+				if (_xYskClaimable / DURATION == 0 || _xYskClaimable < IGauge(_gauge).left(_xYSK)) {
 					canDistribute = false;
 				}
 			}
@@ -402,13 +394,13 @@ contract Voter is IVoter, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUp
 					IGauge(_gauge).notifyRewardAmount(ysk, _claimable);
 				}
 				/// @dev check xYSK "claimable"
-				if (_xShadowClaimable > 0) {
+				if (_xYskClaimable > 0) {
 					/// @dev convert, then notify the xYSK
-					IXY(_xYSK).convertEmissionsToken(_xShadowClaimable);
-					IGauge(_gauge).notifyRewardAmount(_xYSK, _xShadowClaimable);
+					IXY(_xYSK).convertEmissionsToken(_xYskClaimable);
+					IGauge(_gauge).notifyRewardAmount(_xYSK, _xYskClaimable);
 				}
 
-				emit DistributeReward(msg.sender, _gauge, _claimable + _xShadowClaimable);
+				emit DistributeReward(msg.sender, _gauge, _claimable + _xYskClaimable);
 			}
 		}
 	}

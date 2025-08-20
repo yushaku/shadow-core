@@ -83,10 +83,10 @@ contract Minter is IMinter {
 	/// @inheritdoc IMinter
 	function kickoff(
 		address _ysk,
+		address _xYSK,
 		address _voter,
 		uint256 _initialWeeklyEmissions,
-		uint256 _initialMultiplier,
-		address _xYSK
+		uint256 _initialMultiplier
 	) external {
 		if (msg.sender != operator) revert NOT_AUTHORIZED(msg.sender);
 

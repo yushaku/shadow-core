@@ -50,10 +50,10 @@ interface IMinter {
 	/// @notice kicks off the initial minting and variable declarations
 	function kickoff(
 		address _usk,
+		address _xYSK,
 		address _voter,
 		uint256 _initialWeeklyEmissions,
-		uint256 _initialMultiplier,
-		address _xYSK
+		uint256 _initialMultiplier
 	) external;
 
 	/// @notice returns (block.timestamp / 1 week) for gauge use
