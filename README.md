@@ -1,33 +1,50 @@
-# shadow-core
+# High-Level Summary
 
-Core smart contract repository for Shadow Exchange
+This conrtacts implements a decentralized exchange (DEX) with a sophisticated vote-escrowed (ve) tokenomics model. The architecture is heavily inspired by protocols like Shadow and Velodrome, where users lock tokens to gain voting power, and then use that voting power to direct token emissions to different liquidity pools. The primary goal is to incentivize deep liquidity and long-term token holding.
 
-## Documentation & Resources
+## Core Components
 
-- [Contract Addresses](https://docs.shadow.so/pages/contract-addresses)
-- [Security Audits](https://docs.shadow.so/pages/audits)
-- [Documentation](https://docs.shadow.so/)
-- [License (BUSL-1.1)](https://docs.shadow.so/pages/BUSL)
+The codebase is well-structured and can be broken down into several core components:
 
-## Architecture
+1. Governance and Voting:
 
-![Architecture](https://github.com/user-attachments/assets/c3871a65-7d2e-4b00-97dc-a2bc42477dc7)
+- `AccessHub.sol`: This is the central nervous system of the protocol. It acts as the main entry point for administrative functions and manages the addresses of all the other core contracts. It's designed to be the single source of truth for the protocol's configuration.
+- `Voter.sol`: This is the heart of the governance system. It's where users cast their votes to direct emissions to different liquidity pools (gauges). It also handles the creation of new gauges and the distribution of rewards.
+- `VoteModule.sol`: This is the staking and delegation module. Users stake their xShadow tokens here to get voting power, which is then used in the Voter contract. It also allows users to delegate their voting power to other addresses.
 
-Shadow is built on Ramses V3 Core, which is based on Uniswap V3, with several enhancements. These improvements include [dynamic system and protocol fee mechanisms](/pages/x-33#fees), [FeeShare™](/pages/x-33#fee-share), and [x(3,3)](/pages/x-33). Ramses V3 Core also introduces a new accounting system to track how much active liquidity each concentrated liquidity position provides.
+2. Tokenomics and Emissions:
 
-## Security
+- `YSK.sol`: This is the base token of the protocol.
+- `x33.sol`: This is a liquid staking derivative. It allows users to stake their xYSK and receive a liquid XYZ token in return, while the contract auto-compounds the rewards.
+- `Minter.sol`: This contract is responsible for minting new YSK tokens as emissions, which are then distributed to the gauges based on the votes they receive.
 
-The protocol has undergone multiple security reviews:
+3. DEX and Liquidity:
 
-- Spearbit Audit [Report](https://cantina.xyz/portfolio/98695d75-ee7d-4e1c-aa96-6379f73c5b2c)
-- Consensys Diligence Audit [Report](https://diligence.consensys.io/audits/2024/08/ramses-v3)
-- Code4rena Contest [Report](https://code4rena.com/reports/2024-10-ramses-exchange)
-- Additional specialized testing by 100Proof, Zenith Mitigation, and yAudit
+- `Router.sol`: The main router contract that users interact with to swap tokens.
+- `Pair.sol`: The contract for the legacy (v2-style) liquidity pools.
+- `CL/` directory: This directory contains the contracts for the concentrated liquidity (v3-style) pools, which allow for more capital-efficient liquidity provision.
+- `factories/` directory: This directory contains the factory contracts that are responsible for creating new liquidity pools and gauges.
 
-## Protected Contracts
+4. Treasury and Fees:
 
-The following contracts are protected under BUSL-1.1 license:
+- `Treasury.sol` (`ShadowTreasuryHelper`): A sophisticated helper contract that manages the protocol's treasury. It automates tasks like staking, voting, claiming rewards, and distributing funds.
+- `FeeDistributor.sol`: This contract is responsible for distributing the fees collected from swaps to the users who have voted for the corresponding pools.
 
-- Voter.sol
-- GaugeV3.sol
-- FeeDistributor.sol
+## Architecture and Design Patterns
+
+The codebase employs several modern and robust design patterns:
+
+- Upgradeable Contracts: The core contracts are designed to be upgradeable, using both the UUPS and Transparent Proxy patterns.
+  This allows the protocol to be improved and patched over time without requiring a full migration.
+- Separation of Concerns: The codebase has a very clear separation of concerns between the different modules. For example, the VoteModule handles the staking logic, while the Voter handles the voting logic. This makes the system more modular, secure, and easier to maintain.
+- Diamond Storage: Some of the contracts use the diamond storage pattern to prevent storage collisions during upgrades. This is a best practice for writing upgradeable contracts.
+- Vote-Escrowed (ve) Model: The entire protocol is built around the ve-tokenomics model, which is designed to align the incentives of all participants, from liquidity providers to token holders.
+
+## How It All Fits Together
+
+1.  Users provide liquidity to the DEX by depositing tokens into either a Pair (v2) or a CL (v3) pool.
+2.  Users lock their `YSK` tokens to get `xYSK` tokens, which they then stake in the `VoteModule` to get voting power.
+3.  Users vote in the `Voter` contract to direct the flow of _YSK emissions_ from the `Minter` to their chosen liquidity pools.
+4.  Liquidity providers earn _YSK emissions_ as rewards for providing liquidity to the pools that receive the most votes.
+5.  Voters earn a share of the _fees_ generated by the pools they vote for.
+6.  The `AccessHub` acts as the central administrator, and the `Treasury` manages the protocol's assets.

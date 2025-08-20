@@ -7,9 +7,20 @@
 		"max-line-length": ["warn", 120],
 		"no-empty-blocks": "warn",
 		"no-inline-assembly": "warn",
-		"not-rely-on-time": "warn",
+		"not-rely-on-time": false,
 		"avoid-suicide": "error",
 		"avoid-sha3": "warn",
-		"no-console": false
-	}
+		"no-console": false,
+		"import-path-check": "off",
+		"no-global-import": "off"
+	},
+	"overrides": [
+		{
+			"files": ["test/**/*.sol"],
+			"rules": {
+				"func-name-mixedcase": false,
+				"state-visibility": false
+			}
+		}
+	]
 }
