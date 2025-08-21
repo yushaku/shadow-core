@@ -47,10 +47,10 @@ contract MinterTest is TheTestBase {
 		vm.startPrank(alice);
 		realMinter.kickoff(
 			address(ysk),
+			address(xYSK),
 			address(mockVoter),
 			INITIAL_WEEKLY_EMISSIONS,
-			INITIAL_MULTIPLIER,
-			address(xYSK)
+			INITIAL_MULTIPLIER
 		);
 		vm.stopPrank();
 
@@ -67,10 +67,10 @@ contract MinterTest is TheTestBase {
 		emit IMinter.SetVoter(address(mockVoter));
 		newMinter.kickoff(
 			address(newShadow),
+			address(xYSK),
 			address(mockVoter),
 			INITIAL_WEEKLY_EMISSIONS,
-			INITIAL_MULTIPLIER,
-			address(xYSK)
+			INITIAL_MULTIPLIER
 		);
 		vm.stopPrank();
 
@@ -103,28 +103,28 @@ contract MinterTest is TheTestBase {
 		newMinter.kickoff(
 			address(newShadow),
 			address(mockVoter),
+			address(xYSK),
 			INITIAL_WEEKLY_EMISSIONS,
-			INITIAL_MULTIPLIER,
-			address(xYSK)
+			INITIAL_MULTIPLIER
 		);
 
 		// Test already started
 		vm.startPrank(alice);
 		newMinter.kickoff(
 			address(newShadow),
+			address(xYSK),
 			address(mockVoter),
 			INITIAL_WEEKLY_EMISSIONS,
-			INITIAL_MULTIPLIER,
-			address(xYSK)
+			INITIAL_MULTIPLIER
 		);
 
 		vm.expectRevert(IMinter.STARTED.selector);
 		newMinter.kickoff(
 			address(newShadow),
 			address(mockVoter),
+			address(xYSK),
 			INITIAL_WEEKLY_EMISSIONS,
-			INITIAL_MULTIPLIER,
-			address(xYSK)
+			INITIAL_MULTIPLIER
 		);
 		vm.stopPrank();
 	}
@@ -305,30 +305,30 @@ contract MinterTest is TheTestBase {
 		vm.expectRevert(IMinter.INVALID_CONTRACT.selector);
 		newMinter.kickoff(
 			address(newShadow),
+			address(xYSK),
 			address(0),
 			INITIAL_WEEKLY_EMISSIONS,
-			INITIAL_MULTIPLIER,
-			address(xYSK)
+			INITIAL_MULTIPLIER
 		);
 
 		// Test zero address emissions token
 		vm.expectRevert(IMinter.INVALID_CONTRACT.selector);
 		newMinter.kickoff(
 			address(0),
+			address(xYSK),
 			address(mockVoter),
 			INITIAL_WEEKLY_EMISSIONS,
-			INITIAL_MULTIPLIER,
-			address(xYSK)
+			INITIAL_MULTIPLIER
 		);
 
 		// Test zero address xYSK
 		vm.expectRevert(IMinter.INVALID_CONTRACT.selector);
 		newMinter.kickoff(
 			address(newShadow),
+			address(0),
 			address(mockVoter),
 			INITIAL_WEEKLY_EMISSIONS,
-			INITIAL_MULTIPLIER,
-			address(0)
+			INITIAL_MULTIPLIER
 		);
 
 		vm.stopPrank();
@@ -473,10 +473,10 @@ contract MinterTest is TheTestBase {
 		vm.expectRevert(abi.encodeWithSelector(IVoter.NOT_AUTHORIZED.selector, bob));
 		newMinter.kickoff(
 			address(newShadow),
+			address(xYSK),
 			address(mockVoter),
 			INITIAL_WEEKLY_EMISSIONS,
-			INITIAL_MULTIPLIER,
-			address(xYSK)
+			INITIAL_MULTIPLIER
 		);
 
 		// Test that operator can kickoff
@@ -484,9 +484,9 @@ contract MinterTest is TheTestBase {
 		newMinter.kickoff(
 			address(newShadow),
 			address(mockVoter),
+			address(xYSK),
 			INITIAL_WEEKLY_EMISSIONS,
-			INITIAL_MULTIPLIER,
-			address(xYSK)
+			INITIAL_MULTIPLIER
 		);
 		assertEq(
 			address(newMinter.ysk()),

@@ -6,8 +6,8 @@ import "forge-std/Test.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 // import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import {MockERC20} from "./mocks/MockERC20.sol";
-import {WETH9} from "./mocks/WETH9.sol";
+import "./mocks/MockERC20.sol";
+import "./mocks/WETH9.sol";
 import "./mocks/MockX33.sol";
 
 import {YSK} from "contracts/YSK.sol";

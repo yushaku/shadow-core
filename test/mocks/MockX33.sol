@@ -7,37 +7,37 @@ import {XY} from "contracts/x/XY.sol";
 contract MockX33 {
 	address public operator;
 	address public accessHub;
-	address public xShadow;
+	address public xysk;
 	address public voter;
 	address public voteModule;
 
 	function initialize(
 		address _operator,
 		address _accessHub,
-		address _xShadow,
+		address _xysk,
 		address _voter,
 		address _voteModule
 	) external {
 		operator = _operator;
 		accessHub = _accessHub;
-		xShadow = _xShadow;
+		xysk = _xysk;
 		voter = _voter;
 		voteModule = _voteModule;
 	}
 }
 
 contract MockMinter {
-	address public shadow;
-	address public xShadow;
+	address public ysk;
+	address public xysk;
 	address public voter;
 	address public operator;
 	address public accessHub;
 	uint256 public emissionsMultiplier;
 	uint256 public mockPeriod;
 
-	function kickoff(address _shadow, address _voter, uint256, uint256, address _xShadow) external {
-		shadow = _shadow;
-		xShadow = _xShadow;
+	function kickoff(address _ysk, address _voter, uint256, uint256, address _xysk) external {
+		ysk = _ysk;
+		xysk = _xysk;
 		voter = _voter;
 	}
 
@@ -92,14 +92,14 @@ contract MockFeeCollector {
 contract MockVoter {
 	address public launcherPlugin;
 	address public voteModule;
-	address public shadow;
+	address public ysk;
 	address public governor;
 	address public minter;
 	address public legacyFactory;
 	address public gauges;
 	address public feeDistributorFactory;
 	address public msig;
-	address public xShadow;
+	address public xYSK;
 	address public clFactory;
 	address public clGaugeFactory;
 	address public nfpManager;
@@ -115,15 +115,15 @@ contract MockVoter {
 	uint256 public globalRatio;
 	mapping(address => mapping(address => bool)) public gaugeRewardWhitelist;
 
-	constructor(address _launcherPlugin, address _voteModule, address _shadow, address _minter) {
+	constructor(address _launcherPlugin, address _voteModule, address _ysk, address _minter) {
 		launcherPlugin = _launcherPlugin;
 		voteModule = _voteModule;
-		shadow = _shadow;
+		ysk = _ysk;
 		minter = _minter;
 	}
 
 	function initialize(
-		address _shadow,
+		address _ysk,
 		address _legacyFactory,
 		address _gauges,
 		address _feeDistributorFactory,
@@ -137,7 +137,7 @@ contract MockVoter {
 		address,
 		address
 	) external {
-		shadow = _shadow;
+		ysk = _ysk;
 		legacyFactory = _legacyFactory;
 		gauges = _gauges;
 		feeDistributorFactory = _feeDistributorFactory;
@@ -229,7 +229,7 @@ contract MockVoter {
 
 	function notifyRewardAmount(uint256 _amount) external {
 		// Mock implementation
-		IERC20(shadow).transferFrom(msg.sender, address(this), _amount);
+		IERC20(ysk).transferFrom(msg.sender, address(this), _amount);
 	}
 
 	function setCooldownExemption(address _candidate, bool _exempt) external {

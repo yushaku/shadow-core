@@ -18,3 +18,26 @@ contract MockERC20 is ERC20 {
 		return DECIMALS;
 	}
 }
+
+
+contract TaxToken is MockERC20 {
+    uint256 public constant TAX_RATE = 100; // 1% tax
+    uint256 public constant TAX_DENOMINATOR = 10_000;
+
+    constructor() MockERC20("TaxtToken", "TXT", 18) {}
+
+    function transfer(address to, uint256 amount) public override returns (bool) {
+        uint256 tax = (amount * TAX_RATE) / TAX_DENOMINATOR;
+        uint256 amountAfterTax = amount - tax;
+        super.transfer(address(this), tax);
+        return super.transfer(to, amountAfterTax);
+    }
+
+    function transferFrom(address from, address to, uint256 amount) public override returns (bool) {
+        uint256 tax = (amount * TAX_RATE) / TAX_DENOMINATOR;
+        uint256 amountAfterTax = amount - tax;
+        super.transferFrom(from, address(this), tax);
+        return super.transferFrom(from, to, amountAfterTax);
+    }
+}
+

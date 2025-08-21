@@ -3,13 +3,14 @@ pragma solidity ^0.8.0;
 
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
-import {TheTestBase} from "./Base.t.sol";
-import {MockERC20} from "./mocks/MockERC20.sol";
-
 import {Pair} from "contracts/legacy/Pair.sol";
 import {PairFactory} from "contracts/legacy/factories/PairFactory.sol";
 import {IPairCallee} from "contracts/interfaces/IPairCallee.sol";
 import {IPair} from "contracts/interfaces/IPair.sol";
+
+import "test/Base.t.sol";
+import "test/mocks/MockERC20.sol";
+
 
 contract MockCallee is IPairCallee {
     function hook(address sender, uint256 amount0Out, uint256 amount1Out, bytes calldata data) external {
