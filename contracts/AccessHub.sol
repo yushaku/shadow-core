@@ -8,7 +8,7 @@ import {IAccessHub} from "contracts/interfaces/IAccessHub.sol";
 import {IVoter} from "contracts/interfaces/IVoter.sol";
 import {IMinter} from "contracts/interfaces/IMinter.sol";
 import {ILauncherPlugin} from "contracts/interfaces/ILauncherPlugin.sol";
-import {IXY} from "contracts/interfaces/IXY.sol";
+import {IXYSK} from "contracts/interfaces/IXYSK.sol";
 import {IX33} from "contracts/interfaces/IX33.sol";
 
 import {IRamsesV3Factory} from "contracts/CL/core/interfaces/IRamsesV3Factory.sol";
@@ -38,7 +38,7 @@ contract AccessHub is IAccessHub, UUPSUpgradeable, AccessControlEnumerableUpgrad
 	IVoter public voter;
 	IMinter public minter;
 	ILauncherPlugin public launcherPlugin;
-	IXY public xYushaku;
+	IXYSK public xYushaku;
 	IX33 public x33;
 	IRamsesV3Factory public ramsesV3PoolFactory;
 	IPairFactory public poolFactory;
@@ -69,7 +69,7 @@ contract AccessHub is IAccessHub, UUPSUpgradeable, AccessControlEnumerableUpgrad
 		voter = IVoter(params.voter);
 		minter = IMinter(params.minter);
 		launcherPlugin = ILauncherPlugin(params.launcherPlugin);
-		xYushaku = IXY(params.xYushaku);
+		xYushaku = IXYSK(params.xYushaku);
 		x33 = IX33(params.x33);
 		ramsesV3PoolFactory = IRamsesV3Factory(params.ramsesV3PoolFactory);
 		poolFactory = IPairFactory(params.poolFactory);

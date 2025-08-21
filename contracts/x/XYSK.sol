@@ -3,21 +3,24 @@ pragma solidity ^0.8.26;
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
-import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+// import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import {IVoter} from "contracts/interfaces/IVoter.sol";
-import {IXY} from "contracts/interfaces/IXY.sol";
+import {IXYSK} from "contracts/interfaces/IXYSK.sol";
 import {IVoteModule} from "contracts/interfaces/IVoteModule.sol";
 
 /**
- * @title XY
+ * @title XYSK
  * @notice is the voting escrow token for the Yushaku ecosystem.
  * @dev 1 YSK = 1 xYushaku
  */
-contract XY is IXY, ERC20, Pausable {
+contract XYSK is IXYSK, ERC20, Pausable {
 	using EnumerableSet for EnumerableSet.AddressSet;
+	using SafeERC20 for IERC20;
+
 	uint256 public constant BASIS = 10_000;
 	uint256 public constant SLASHING_PENALTY = 5000;
 	uint256 public constant MIN_VEST = 14 days;
@@ -123,7 +126,7 @@ contract XY is IXY, ERC20, Pausable {
 	function convertEmissionsToken(uint256 _amount) external whenNotPaused {
 		if (_amount == 0) revert ZERO();
 
-		YSK.transferFrom(msg.sender, address(this), _amount);
+		YSK.safeTransferFrom(msg.sender, address(this), _amount);
 		_mint(msg.sender, _amount);
 		emit Converted(msg.sender, _amount);
 	}
@@ -152,7 +155,7 @@ contract XY is IXY, ERC20, Pausable {
 		pendingRebase += penalty;
 
 		exitAmount = _amount - penalty;
-		YSK.transfer(msg.sender, exitAmount);
+		YSK.safeTransfer(msg.sender, exitAmount);
 
 		emit InstantExit(msg.sender, exitAmount);
 	}
@@ -179,21 +182,28 @@ contract XY is IXY, ERC20, Pausable {
 		/// @dev zero out the amount before anything else as a safety measure
 		_vest.amount = 0;
 
-		/// @dev case: vest has not crossed the minimum vesting threshold
-		/// @dev mint cancelled xShadow back to msg.sender
+		/**
+		 * @dev case: cancelled vesting
+		 * @dev if the vesting time is less than the minimum vesting time
+		 * mint cancelled xYSK back to msg.sender
+		 */
 		if (block.timestamp < _start + MIN_VEST) {
 			_mint(msg.sender, _amount);
 			emit CancelVesting(msg.sender, _vestID, _amount);
 		}
-		/// @dev case: vest is complete
-		/// @dev send liquid Shadow to msg.sender
+		/**
+		 * @dev case: vest is complete
+		 * @dev send liquid YSK to msg.sender
+		 */
 		else if (_vest.maxEnd <= block.timestamp) {
-			YSK.transfer(msg.sender, _amount);
+			YSK.safeTransfer(msg.sender, _amount);
 			emit ExitVesting(msg.sender, _vestID, _amount);
 		}
-		/// @dev case: vest is in progress
-		/// @dev calculate % earned based on length of time that has vested
-		/// @dev linear calculations
+		/**
+		 * @dev case: vest is in progress
+		 * @dev calculate % earned based on length of time that has vested
+		 * @dev linear calculations
+		 */
 		else {
 			/// @dev the base to start at (50%)
 			uint256 base = (_amount * (SLASHING_PENALTY)) / BASIS;
@@ -206,19 +216,18 @@ contract XY is IXY, ERC20, Pausable {
 			/// @dev add to the existing pendingRebases
 			pendingRebase += (_amount - exitedAmount);
 			/// @dev transfer underlying to the sender after penalties removed
-			YSK.transfer(msg.sender, exitedAmount);
+			YSK.safeTransfer(msg.sender, exitedAmount);
 			emit ExitVesting(msg.sender, _vestID, _amount);
 		}
 	}
 
 	/*****************************************************************/
 	/* Permissions functions */
-	/* timelock/operator gated */
 	/*****************************************************************/
 
 	function operatorRedeem(uint256 _amount) external onlyGovernance {
 		_burn(operator, _amount);
-		YSK.transfer(operator, _amount);
+		YSK.safeTransfer(operator, _amount);
 		emit XYskRedeemed(address(this), _amount);
 	}
 
@@ -229,7 +238,7 @@ contract XY is IXY, ERC20, Pausable {
 		for (uint256 i = 0; i < _tokens.length; ++i) {
 			/// @dev cant fetch the underlying
 			require(_tokens[i] != address(YSK), CANT_RESCUE());
-			IERC20(_tokens[i]).transfer(operator, _amounts[i]);
+			IERC20(_tokens[i]).safeTransfer(operator, _amounts[i]);
 		}
 	}
 

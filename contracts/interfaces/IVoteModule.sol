@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.26;
 
-import {IXY} from "contracts/interfaces/IXY.sol";
+import {IXYSK} from "contracts/interfaces/IXYSK.sol";
 
 interface IVoteModule {
 	/** Custom Errors */
@@ -104,7 +104,7 @@ interface IVoteModule {
 
 	/// @notice the address of the xYSK token (staking/voting token)
 	/// @return _xYSK the address
-	function xYSK() external view returns (IXY _xYSK);
+	function xYSK() external view returns (IXYSK _xYSK);
 
 	/// @notice address of the voter contract
 	/// @return _voter the voter contract address

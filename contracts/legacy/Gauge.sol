@@ -9,7 +9,7 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 
 import {IVoter} from "contracts/interfaces/IVoter.sol";
 import {IGauge} from "contracts/interfaces/IGauge.sol";
-import {IXY} from "contracts/interfaces/IXY.sol";
+import {IXYSK} from "contracts/interfaces/IXYSK.sol";
 
 /// @dev we use a very minimal interface for easy fetching
 interface IMinimalPoolInterface {
@@ -32,7 +32,7 @@ contract Gauge is IGauge, ReentrancyGuard {
 	/// @notice the LP token that needs to be staked for rewards
 	address public immutable STAKE;
 	address public immutable VOTER;
-	IXY public immutable xYSK;
+	IXYSK public immutable xYSK;
 
 	/// @dev rewards in the array
 	address[] internal rewards;
@@ -52,7 +52,7 @@ contract Gauge is IGauge, ReentrancyGuard {
 
 		/// @dev temporary VOTER interface
 		IVoter tempVoter = IVoter(VOTER);
-		xYSK = IXY(tempVoter.xYSK());
+		xYSK = IXYSK(tempVoter.xYSK());
 
 		/// @dev temporary minimal pool interface to fetch token(0 / 1)
 		IMinimalPoolInterface pool = IMinimalPoolInterface(STAKE);

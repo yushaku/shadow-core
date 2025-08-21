@@ -27,7 +27,7 @@ import {IFeeDistributor} from "./interfaces/IFeeDistributor.sol";
 import {IFeeDistributorFactory} from "./interfaces/IFeeDistributorFactory.sol";
 import {IGauge} from "./interfaces/IGauge.sol";
 import {IGaugeFactory} from "./interfaces/IGaugeFactory.sol";
-import {IXY} from "./interfaces/IXY.sol";
+import {IXYSK} from "./interfaces/IXYSK.sol";
 
 /**
  * @title Voter
@@ -396,7 +396,7 @@ contract Voter is IVoter, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUp
 				/// @dev check xYSK "claimable"
 				if (_xYskClaimable > 0) {
 					/// @dev convert, then notify the xYSK
-					IXY(_xYSK).convertEmissionsToken(_xYskClaimable);
+					IXYSK(_xYSK).convertEmissionsToken(_xYskClaimable);
 					IGauge(_gauge).notifyRewardAmount(_xYSK, _xYskClaimable);
 				}
 

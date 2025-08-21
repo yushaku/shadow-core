@@ -4,12 +4,12 @@ pragma solidity ^0.8.26;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IVoter} from "./IVoter.sol";
 
-interface IXY is IERC20 {
+interface IXYSK is IERC20 {
 	struct VestPosition {
-		uint256 vestID;
 		uint256 amount;
 		uint256 start;
 		uint256 maxEnd;
+		uint256 vestID;
 	}
 
 	error NOT_WHITELISTED(address);

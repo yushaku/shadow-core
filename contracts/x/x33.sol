@@ -10,7 +10,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {IVoteModule} from "contracts/interfaces/IVoteModule.sol";
 import {IVoter} from "contracts/interfaces/IVoter.sol";
 import {IX33} from "contracts/interfaces/IX33.sol";
-import {IXY} from "contracts/interfaces/IXY.sol";
+import {IXYSK} from "contracts/interfaces/IXYSK.sol";
 
 /**
  * @title Liquid Staking Token
@@ -31,7 +31,7 @@ contract X33 is ERC4626, IX33, ReentrancyGuard {
 	address public immutable accessHub;
 	IVoteModule public immutable voteModule;
 	IERC20 public immutable YSK;
-	IXY public immutable xYSK;
+	IXYSK public immutable xYSK;
 	IVoter public immutable voter;
 
 	address public operator;
@@ -64,7 +64,7 @@ contract X33 is ERC4626, IX33, ReentrancyGuard {
 	) ERC20("YSK Liquid Staking Token", "X33") ERC4626(IERC20(_xYSK)) {
 		operator = _operator;
 		accessHub = _accessHub;
-		xYSK = IXY(_xYSK);
+		xYSK = IXYSK(_xYSK);
 		YSK = IERC20(xYSK.YSK());
 		voteModule = IVoteModule(_voteModule);
 		voter = IVoter(_voter);

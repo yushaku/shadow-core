@@ -10,7 +10,7 @@ import {IVoter} from "contracts/interfaces/IVoter.sol";
 import {IRouter} from "contracts/interfaces/IRouter.sol";
 import {IAccessHub} from "contracts/interfaces/IAccessHub.sol";
 import {IVoteModule} from "contracts/interfaces/IVoteModule.sol";
-import {IXY} from "contracts/interfaces/IXY.sol";
+import {IXYSK} from "contracts/interfaces/IXYSK.sol";
 
 /**
  * @title TreasuryHelper
@@ -58,7 +58,7 @@ contract TreasuryHelper is UUPSUpgradeable {
 	/// @dev STATE
 	struct Storage {
 		uint256 BASIS_POINTS;
-		IXY xShadow;
+		IXYSK xYSK;
 		IVoteModule voteModule;
 		address treasury;
 		address timelock;
@@ -108,13 +108,13 @@ contract TreasuryHelper is UUPSUpgradeable {
 		if (newImplementation == address(0)) revert ZeroAddress();
 	}
 
-	function initialize(IXY _xShadow, address _initialOperator) public initializer {
-		if (address(_xShadow) == address(0)) revert ZeroAddress();
+	function initialize(IXYSK _xYSK, address _initialOperator) public initializer {
+		if (address(_xYSK) == address(0)) revert ZeroAddress();
 		if (_initialOperator == address(0)) revert ZeroAddress();
 
 		Storage storage $ = getStorage();
-		$.xShadow = _xShadow;
-		IAccessHub accessHub = IAccessHub($.xShadow.ACCESS_HUB()); // only used for initialization
+		$.xYSK = _xYSK;
+		IAccessHub accessHub = IAccessHub($.xYSK.ACCESS_HUB()); // only used for initialization
 		$.timelock = accessHub.timelock();
 		$.treasury = accessHub.treasury();
 		$.voteModule = IVoteModule(accessHub.voteModule());
@@ -179,28 +179,25 @@ contract TreasuryHelper is UUPSUpgradeable {
 	}
 
 	/// @dev TREASURY OPERATIONS
-	function depositXShadow(uint256 _amount) external onlyTreasury {
+	function depositxYSK(uint256 _amount) external onlyTreasury {
 		Storage storage $ = getStorage();
 		if (_amount == 0) revert ZeroAmount();
-		$.xShadow.approve(address($.voteModule), _amount);
+		$.xYSK.approve(address($.voteModule), _amount);
 		$.voteModule.deposit(_amount);
 	}
 
-	function withdrawXShadow(uint256 _amount) external onlyTreasury {
+	function withdrawxYSK(uint256 _amount) external onlyTreasury {
 		Storage storage $ = getStorage();
 		if (_amount == 0) revert ZeroAmount();
 		$.voteModule.withdraw(_amount);
-		require(IERC20($.xShadow).balanceOf(address(this)) >= _amount, "RUGGED");
+		require(IERC20($.xYSK).balanceOf(address(this)) >= _amount, "RUGGED");
 	}
 
 	/// @dev OPERATOR UPKEEP
 	function claimRebase() external onlyOperator {
 		Storage storage $ = getStorage();
 		$.voteModule.getReward();
-		IERC20($.xShadow).approve(
-			address($.voteModule),
-			IERC20($.xShadow).balanceOf(address(this))
-		);
+		IERC20($.xYSK).approve(address($.voteModule), IERC20($.xYSK).balanceOf(address(this)));
 		$.voteModule.deposit(type(uint256).max);
 	}
 
@@ -348,9 +345,9 @@ contract TreasuryHelper is UUPSUpgradeable {
 	function treasuryVotingPower() external view returns (uint256) {
 		Storage storage $ = getStorage();
 		uint256 totalVotingPower = $.voteModule.balanceOf(address(this)) +
-			$.xShadow.balanceOf(address(this)) +
+			$.xYSK.balanceOf(address(this)) +
 			$.voteModule.earned(address(this));
-		uint256 totalSupply = $.xShadow.totalSupply();
+		uint256 totalSupply = $.xYSK.totalSupply();
 
 		return (totalVotingPower * 1e18) / totalSupply;
 	}
@@ -379,9 +376,9 @@ contract TreasuryHelper is UUPSUpgradeable {
 	}
 
 	/// @dev VIEW FUNCTIONS FOR STORAGE VARIABLES
-	function getXShadow() external view returns (address) {
+	function getxYSK() external view returns (address) {
 		Storage storage $ = getStorage();
-		return address($.xShadow);
+		return address($.xYSK);
 	}
 
 	function getVoteModule() external view returns (address) {

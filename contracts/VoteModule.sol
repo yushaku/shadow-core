@@ -10,15 +10,15 @@ import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 
 import {IVoteModule} from "./interfaces/IVoteModule.sol";
 import {IVoter} from "./interfaces/IVoter.sol";
-import {IXY} from "./interfaces/IXY.sol";
+import {IXYSK} from "./interfaces/IXYSK.sol";
 
 /**
  * @title Vote Module
- * @notice This contract is responsible for managing the staking and delegation of the xShadow token.
- * It serves as the primary module for determining a user's voting power within the Shadow protocol.
+ * @notice This contract is responsible for managing the staking and delegation of the xYSK token.
+ * It serves as the primary module for determining a user's voting power within the YSK protocol.
  *
  * Key Features:
- * - Staking: Users can deposit and withdraw their xShadow tokens to and from the contract.
+ * - Staking: Users can deposit and withdraw their xYSK tokens to and from the contract.
  * - Reward Distribution: The contract receives rewards and distributes them to stakers over a set duration.
  * - Delegation: Users can delegate their voting power to another address, allowing that address to vote on their behalf.
  * - Cooldown: A cooldown period is enforced for withdrawals after a rebase event to ensure system stability.
@@ -32,7 +32,7 @@ contract VoteModule is
 {
 	address public accessHub;
 	address public voter;
-	IXY public xYSK;
+	IXYSK public xYSK;
 	IERC20 public underlying;
 
 	/// @notice rebases are released over 30 minutes
@@ -93,15 +93,14 @@ contract VoteModule is
 		_;
 	}
 
-
 	/***************************************************************************************/
 	/* AccessHub/owner Functions */
 	/***************************************************************************************/
 
-  function setUp(address _xYSK) external onlyOwner {
-		xYSK = IXY(_xYSK);
+	function setUp(address _xYSK) external onlyOwner {
+		xYSK = IXYSK(_xYSK);
 		underlying = IERC20(xYSK.YSK());
-  }
+	}
 
 	function setAccessHub(address _accessHub) external onlyAccessHub {
 		if (_accessHub == address(0)) revert INVALID_ADDRESS();
@@ -137,7 +136,7 @@ contract VoteModule is
 	/***************************************************************************************/
 	/* User Functions */
 	/***************************************************************************************/
- 
+
 	/// @inheritdoc IVoteModule
 	function deposit(uint256 amount) public updateReward(msg.sender) nonReentrant {
 		if (amount == 0) revert ZERO_AMOUNT();
@@ -152,7 +151,7 @@ contract VoteModule is
 			amount = IERC20(xYSK).balanceOf(msg.sender);
 		}
 
-		/// @dev transfer xShadow in
+		/// @dev transfer xYSK in
 		IERC20(xYSK).transferFrom(msg.sender, address(this), amount);
 		/// @dev update accounting
 		totalSupply += amount;
@@ -188,7 +187,7 @@ contract VoteModule is
 		totalSupply -= amount;
 		/// @dev decrement from balance mapping
 		balanceOf[msg.sender] -= amount;
-		/// @dev transfer the xShadow to the caller
+		/// @dev transfer the xYSK to the caller
 		IERC20(xYSK).transfer(msg.sender, amount);
 
 		/// @dev update data via poke
@@ -199,8 +198,8 @@ contract VoteModule is
 	}
 
 	/// @inheritdoc IVoteModule
-	/// @dev only callable by xShadow contract
-	/// @dev this is ONLY callable by xShadow, which has important safety checks
+	/// @dev only callable by xYSK contract
+	/// @dev this is ONLY callable by xYSK, which has important safety checks
 	function notifyRewardAmount(uint256 amount) external updateReward(address(0)) nonReentrant {
 		require(amount != 0, ZERO_AMOUNT());
 		require(msg.sender == address(xYSK), NOT_X_YSK());
@@ -224,7 +223,7 @@ contract VoteModule is
 		/// @dev update periodFinish (when all rewards are streamed)
 		periodFinish = block.timestamp + duration;
 		/// @dev the timestamp of when people can withdraw next
-		/// @dev not DoSable because only xShadow can notify
+		/// @dev not DoSable because only xYSK can notify
 		unlockTime = cooldown + periodFinish;
 
 		emit NotifyReward(msg.sender, amount);
@@ -305,7 +304,7 @@ contract VoteModule is
 	/// @dev the return value is scaled (multiplied) by PRECISION = 10 ** 18
 	function rewardPerToken() public view returns (uint256 _rpt) {
 		_rpt = (
-			/// @dev if there's no staked xShadow
+			/// @dev if there's no staked xYSK
 			totalSupply == 0 /// @dev return the existing value
 				? rewardPerTokenStored /// @dev else add the existing value
 				: rewardPerTokenStored +
