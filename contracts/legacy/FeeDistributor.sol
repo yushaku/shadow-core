@@ -56,6 +56,7 @@ contract FeeDistributor is IFeeDistributor, ReentrancyGuard {
 	function getPeriodReward(uint256 period, address owner, address token) external nonReentrant {
 		require(IVoteModule(voteModule).isAdminFor(msg.sender, owner), NOT_AUTHORIZED());
 		_getReward(period, owner, token, msg.sender);
+		lastClaimByToken[token][owner] = period - 1;
 	}
 
 	/// @inheritdoc IFeeDistributor
@@ -63,7 +64,6 @@ contract FeeDistributor is IFeeDistributor, ReentrancyGuard {
 		require(IVoteModule(voteModule).isAdminFor(msg.sender, owner), NOT_AUTHORIZED());
 		_getAllRewards(owner, tokens, msg.sender);
 	}
-
 
 	/// @inheritdoc IFeeDistributor
 	function notifyRewardAmount(address token, uint256 amount) external nonReentrant {
@@ -127,7 +127,6 @@ contract FeeDistributor is IFeeDistributor, ReentrancyGuard {
 		emit VotesIncentivized(msg.sender, token, amount, nextPeriod);
 	}
 
-
 	/***************************************************************************************/
 	/* Voter.sol Functions */
 	/***************************************************************************************/
@@ -147,7 +146,7 @@ contract FeeDistributor is IFeeDistributor, ReentrancyGuard {
 		rewards.remove(_token);
 		emit RewardsRemoved(_token);
 	}
- 
+
 	/// @inheritdoc IFeeDistributor
 	function _deposit(uint256 amount, address owner) external {
 		require(msg.sender == voter, NOT_AUTHORIZED());
@@ -199,10 +198,9 @@ contract FeeDistributor is IFeeDistributor, ReentrancyGuard {
 
 	/// @inheritdoc IFeeDistributor
 	function earned(address token, address owner) external view returns (uint256 reward) {
-		/// @dev fetch the current period
 		uint256 currentPeriod = getPeriod();
-		/// @dev gather the last claim timestamp or the firstPeriod if no claim yet
 		uint256 lastClaim = Math.max(lastClaimByToken[token][owner], firstPeriod);
+
 		/// @dev loop from the lastClaim up to and including the current period
 		for (uint256 period = lastClaim; period <= currentPeriod; ++period) {
 			/// @dev if there are votes for the period
@@ -220,7 +218,6 @@ contract FeeDistributor is IFeeDistributor, ReentrancyGuard {
 	/* Internal Functions */
 	/***************************************************************************************/
 
-
 	/// @dev a core internal function for claiming rewards
 	function _getReward(uint256 period, address owner, address token, address receiver) internal {
 		require(period <= getPeriod(), NOT_FINALIZED());
@@ -230,11 +227,9 @@ contract FeeDistributor is IFeeDistributor, ReentrancyGuard {
 			uint256 votesWeight = (userVotes[period][owner] * 1e18) / votes[period];
 
 			uint256 _reward = (rewardSupply[period][token] * votesWeight) / 1e18;
-			/// @dev remove previous claims
 			_reward -= userClaimed[period][owner][token];
-			/// @dev add the upcoming claim to the mapping preemptively
 			userClaimed[period][owner][token] += _reward;
-			/// @dev if there exists some rewards after removing previous claims
+
 			if (_reward > 0) {
 				_safeTransfer(token, receiver, _reward);
 				emit ClaimRewards(period, owner, receiver, token, _reward);
@@ -243,13 +238,10 @@ contract FeeDistributor is IFeeDistributor, ReentrancyGuard {
 	}
 
 	function _getAllRewards(address owner, address[] memory tokens, address receiver) internal {
-		/// @dev fetch the current period
 		uint256 currentPeriod = getPeriod();
-		/// @dev placeholder
 		uint256 lastClaim;
-		/// @dev loop through all tokens in the array
+
 		for (uint256 i = 0; i < tokens.length; ++i) {
-			/// @dev fetch lastClaim
 			lastClaim = Math.max(lastClaimByToken[tokens[i]][owner], firstPeriod);
 			/// @dev nested loop starting from the lastClaim to up to and including the current period
 			for (uint256 period = lastClaim; period <= currentPeriod; ++period) {
