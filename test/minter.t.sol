@@ -3,7 +3,7 @@ pragma solidity ^0.8.26;
 
 import "./Base.t.sol";
 import {Minter} from "contracts/Minter.sol";
-import {XY} from "contracts/x/XY.sol";
+import {XYSK} from "contracts/x/XYSK.sol";
 import {YSK} from "contracts/YSK.sol";
 import {IMinter} from "contracts/interfaces/IMinter.sol";
 import {IVoter} from "contracts/interfaces/IVoter.sol";
@@ -16,7 +16,7 @@ contract MockXShadowRevertRebase {
 
 contract MinterTest is TheTestBase {
 	Minter public realMinter;
-	XY public xYSK;
+	XYSK public xYSK;
 	uint256 constant INITIAL_WEEKLY_EMISSIONS = 100_000 * 1e18;
 	uint256 constant INITIAL_MULTIPLIER = 10_000; // 100%
 
@@ -34,7 +34,7 @@ contract MinterTest is TheTestBase {
 			address(realMinter)
 		);
 
-		xYSK = new XY(
+		xYSK = new XYSK(
 			address(ysk),
 			address(mockVoter),
 			TREASURY,

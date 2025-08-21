@@ -11,7 +11,7 @@ import "./mocks/WETH9.sol";
 import "./mocks/MockX33.sol";
 
 import {YSK} from "contracts/YSK.sol";
-// import {XY} from "contracts/x/XY.sol";
+// import {XYSK} from "contracts/x/XYSK.sol";
 import {AccessHub} from "contracts/AccessHub.sol";
 // import {Voter} from "contracts/Voter.sol";
 

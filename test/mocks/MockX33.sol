@@ -2,7 +2,7 @@
 pragma solidity ^0.8.26;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {XY} from "contracts/x/XY.sol";
+import {XYSK} from "contracts/x/XYSK.sol";
 
 contract MockX33 {
 	address public operator;
@@ -61,7 +61,7 @@ contract MockMinter {
 
 contract MockVoteModule {
 	function notifyRewardAmount(uint256 amount) external {
-		IERC20(XY(msg.sender).YSK()).transferFrom(msg.sender, address(this), amount);
+		IERC20(XYSK(msg.sender).YSK()).transferFrom(msg.sender, address(this), amount);
 	}
 
 	function isAdminFor(address, address) external pure returns (bool) {
