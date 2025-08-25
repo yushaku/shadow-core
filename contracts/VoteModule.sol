@@ -62,7 +62,7 @@ contract VoteModule is
 		_disableInitializers();
 	}
 
-	function _authorizeUpgrade(address newImplementation) internal override {
+	function _authorizeUpgrade(address newImplementation) internal view override {
 		if (newImplementation == address(0)) revert INVALID_ADDRESS();
 		_checkOwner();
 	}

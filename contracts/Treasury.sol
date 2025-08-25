@@ -104,7 +104,7 @@ contract TreasuryHelper is UUPSUpgradeable {
 		_disableInitializers();
 	}
 
-	function _authorizeUpgrade(address newImplementation) internal override onlyOperator {
+	function _authorizeUpgrade(address newImplementation) internal override view onlyOperator {
 		if (newImplementation == address(0)) revert ZeroAddress();
 	}
 

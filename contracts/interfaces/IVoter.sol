@@ -73,7 +73,7 @@ interface IVoter {
 
 	event Poke(address indexed user);
 
-	function initialize(address) external;
+	function initialize(address owner, address _accessHub) external;
 
 	/// @notice denominator basis
 	function BASIS() external view returns (uint256);

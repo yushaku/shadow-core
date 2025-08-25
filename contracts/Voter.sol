@@ -124,13 +124,14 @@ contract Voter is IVoter, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUp
 		_disableInitializers();
 	}
 
-	function _authorizeUpgrade(address newImplementation) internal override {
+	function _authorizeUpgrade(address newImplementation) internal view override {
 		require(newImplementation != address(0), "Voter: newImplementation is zero");
 		_checkOwner();
 	}
 
-	function initialize(address owner) external initializer {
+	function initialize(address owner, address _accessHub) external initializer {
 		__Ownable_init(owner);
+		accessHub = _accessHub;
 
 		/// @dev default at 100% xRatio
 		xRatio = 1_000_000;
@@ -621,28 +622,27 @@ contract Voter is IVoter, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUp
 		int24 tickSpacing
 	) external returns (address) {
 		IRamsesV3Factory _factory = IRamsesV3Factory(clFactory);
-		/// @dev fetch the V3 pool's address
 		address _pool = _factory.getPool(tokenA, tokenB, tickSpacing);
-		/// @dev require the pool exists
 		require(_pool != address(0), NOT_POOL());
+
 		/// @dev check the reentrancy lock
 		(, , , , , , bool unlocked) = IRamsesV3Pool(_pool).slot0();
-		/// @dev require it is unlocked, else it is considered not initialized
 		require(unlocked, NOT_INIT());
+
 		/// @dev ensure a gauge does not already exist for the pool
 		require(gaugeForPool[_pool] == address(0), ACTIVE_GAUGE(gaugeForPool[_pool]));
-		/// @dev ensure both tokens are whitelisted
 		require(isWhitelisted[tokenA] && isWhitelisted[tokenB], NOT_WHITELISTED());
-		/// @dev fetch the feeCollector
-		address _feeCollector = _factory.feeCollector();
+
 		/// @dev create the FeeDistributor
+		address _feeCollector = _factory.feeCollector();
 		address _feeDistributor = IFeeDistributorFactory(feeDistributorFactory)
 			.createFeeDistributor(_feeCollector);
-		/// @dev create the gauge
+
 		address _gauge = IClGaugeFactory(clGaugeFactory).createGauge(_pool);
 		/// @dev unlimited approve ysk and xYSK to the gauge
 		IERC20(ysk).approve(_gauge, type(uint256).max);
 		IERC20(xYSK).approve(_gauge, type(uint256).max);
+
 		/// @dev update mappings
 		feeDistributorForClGauge[_gauge] = _feeDistributor;
 		gaugeForPool[_pool] = _gauge;
