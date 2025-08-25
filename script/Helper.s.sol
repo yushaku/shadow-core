@@ -21,12 +21,12 @@ contract Helper is Script {
 		}
 	}
 
-	function run() public {
-		bytes32 storageLocation = keccak256(
-			abi.encode(uint256(keccak256("ysk.treasury.helper.v1")) - 1)
-		) & ~bytes32(uint256(0xff));
-		console.log("storageLocation", vm.toString(storageLocation));
-	}
+	// function run() public {
+	// 	bytes32 storageLocation = keccak256(
+	// 		abi.encode(uint256(keccak256("ysk.treasury.helper.v1")) - 1)
+	// 	) & ~bytes32(uint256(0xff));
+	// 	console.log("storageLocation", vm.toString(storageLocation));
+	// }
 
 	function getConfig() public view returns (Config memory) {
 		return config;
