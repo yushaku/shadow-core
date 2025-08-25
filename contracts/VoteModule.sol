@@ -30,19 +30,19 @@ contract VoteModule is
 	ReentrancyGuardUpgradeable,
 	UUPSUpgradeable
 {
+	/// @notice decimal precision of 1e18
+	uint256 public constant PRECISION = 10 ** 18;
+
 	address public accessHub;
 	address public voter;
 	IXYSK public xYSK;
 	IERC20 public underlying;
 
 	/// @notice rebases are released over 30 minutes
-	uint256 public duration = 30 minutes;
+	uint256 public duration;
 
 	/// @notice lock period after rebase starts accruing
-	uint256 public cooldown = 12 hours;
-
-	/// @notice decimal precision of 1e18
-	uint256 public constant PRECISION = 10 ** 18;
+	uint256 public cooldown;
 
 	uint256 public totalSupply;
 	uint256 public lastUpdateTime;
@@ -80,6 +80,9 @@ contract VoteModule is
 		__Ownable_init(_admin);
 		voter = _voter;
 		accessHub = _accessHub;
+
+    duration = 30 minutes;
+    cooldown = 12 hours;
 	}
 
 	/// @dev common multi-rewarder-esquee modifier for updating on interactions

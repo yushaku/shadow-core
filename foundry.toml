@@ -10,6 +10,7 @@ cache_path = 'cache/foundry'
 optimize = true
 optimizer_runs = 1
 via_ir = true
+dynamic_test_linking = true
 
 remappings = [
     'forge-std/=lib/forge-std/src',
