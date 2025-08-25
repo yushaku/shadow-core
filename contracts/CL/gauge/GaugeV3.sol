@@ -78,7 +78,7 @@ contract GaugeV3 is IGaugeV3 {
 
 		firstPeriod = _blockTimestamp() / WEEK;
 
-		(address shadow, address xshadow) = (IVoter(_voter).shadow(), IVoter(_voter).xShadow());
+		(address ysk, address xYSK) = (IVoter(_voter).ysk(), IVoter(_voter).xYSK());
 
 		(address token0, address token1) = (
 			IRamsesV3Pool(_pool).token0(),
@@ -87,11 +87,11 @@ contract GaugeV3 is IGaugeV3 {
 
 		rewards.push(token0);
 		rewards.push(token1);
-		(isReward[token0], isReward[token1], isReward[xshadow]) = (true, true, true);
-		/// @dev if token0 and token1 aren't shadow add shadow in the records
-		if (token0 != shadow && token1 != shadow) {
-			rewards.push(shadow);
-			isReward[shadow] = true;
+		(isReward[token0], isReward[token1], isReward[xYSK]) = (true, true, true);
+		/// @dev if token0 and token1 aren't ysk add ysk in the records
+		if (token0 != ysk && token1 != ysk) {
+			rewards.push(ysk);
+			isReward[ysk] = true;
 		}
 
 		for (uint256 i; i < rewards.length; i++) {

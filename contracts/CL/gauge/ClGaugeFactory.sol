@@ -3,14 +3,14 @@ pragma solidity ^0.8.26;
 
 import {IClGaugeFactory} from "./interfaces/IClGaugeFactory.sol";
 import {GaugeV3} from "./GaugeV3.sol";
+
 /// @title Canonical CL gauge factory
-/// @notice Deploys CL gauges
 contract ClGaugeFactory is IClGaugeFactory {
-	/// @inheritdoc IClGaugeFactory
+	error NOT_AUTHORIZED();
+  error GAUGE_EXIST();
+
 	address public immutable override nfpManager;
-	/// @inheritdoc IClGaugeFactory
 	address public immutable override voter;
-	/// @inheritdoc IClGaugeFactory
 	address public immutable override feeCollector;
 
 	/// @inheritdoc IClGaugeFactory
@@ -26,8 +26,9 @@ contract ClGaugeFactory is IClGaugeFactory {
 
 	/// @inheritdoc IClGaugeFactory
 	function createGauge(address pool) external override returns (address gauge) {
-		require(msg.sender == voter, "AUTH");
-		require(getGauge[pool] == address(0), "GE");
+		require(msg.sender == voter, NOT_AUTHORIZED());
+		require(getGauge[pool] == address(0), GAUGE_EXIST());
+
 		gauge = address(new GaugeV3(voter, nfpManager, feeCollector, pool));
 		getGauge[pool] = gauge;
 		emit GaugeCreated(pool, gauge);
