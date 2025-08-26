@@ -30,19 +30,19 @@ contract VoteModule is
 	ReentrancyGuardUpgradeable,
 	UUPSUpgradeable
 {
+	/// @notice decimal precision of 1e18
+	uint256 public constant PRECISION = 10 ** 18;
+
 	address public accessHub;
 	address public voter;
 	IXYSK public xYSK;
 	IERC20 public underlying;
 
 	/// @notice rebases are released over 30 minutes
-	uint256 public duration = 30 minutes;
+	uint256 public duration;
 
 	/// @notice lock period after rebase starts accruing
-	uint256 public cooldown = 12 hours;
-
-	/// @notice decimal precision of 1e18
-	uint256 public constant PRECISION = 10 ** 18;
+	uint256 public cooldown;
 
 	uint256 public totalSupply;
 	uint256 public lastUpdateTime;
@@ -80,12 +80,21 @@ contract VoteModule is
 		__Ownable_init(_admin);
 		voter = _voter;
 		accessHub = _accessHub;
+
+		duration = 30 minutes;
+		cooldown = 12 hours;
 	}
 
-	/// @dev common multi-rewarder-esquee modifier for updating on interactions
+	/// @dev Common modifier used to update reward state on user interactions
+	/// @param account The address of the account to update rewards for
+	/// @notice Updates global reward state and user-specific reward state
+	/// @dev Similar to multi-rewarder pattern but for single reward token
 	modifier updateReward(address account) {
+		// Update global reward state
 		rewardPerTokenStored = rewardPerToken();
 		lastUpdateTime = lastTimeRewardApplicable();
+
+		// Update user-specific reward state if valid account
 		if (account != address(0)) {
 			storedRewardsPerUser[account] = earned(account);
 			userRewardPerTokenStored[account] = rewardPerTokenStored;
@@ -198,8 +207,6 @@ contract VoteModule is
 	}
 
 	/// @inheritdoc IVoteModule
-	/// @dev only callable by xYSK contract
-	/// @dev this is ONLY callable by xYSK, which has important safety checks
 	function notifyRewardAmount(uint256 amount) external updateReward(address(0)) nonReentrant {
 		require(amount != 0, ZERO_AMOUNT());
 		require(msg.sender == address(xYSK), NOT_X_YSK());
@@ -218,12 +225,8 @@ contract VoteModule is
 			rewardRate = (amount + _left) / duration;
 		}
 
-		/// @dev update timestamp for the rebase
 		lastUpdateTime = block.timestamp;
-		/// @dev update periodFinish (when all rewards are streamed)
 		periodFinish = block.timestamp + duration;
-		/// @dev the timestamp of when people can withdraw next
-		/// @dev not DoSable because only xYSK can notify
 		unlockTime = cooldown + periodFinish;
 
 		emit NotifyReward(msg.sender, amount);
@@ -278,21 +281,25 @@ contract VoteModule is
 	/***************************************************************************************/
 
 	/// @inheritdoc IVoteModule
-	function lastTimeRewardApplicable() public view returns (uint256 _lta) {
-		_lta = Math.min(block.timestamp, periodFinish);
+	/// @notice Returns the last time rewards were applicable (capped at period finish)
+	/// @dev This ensures rewards stop accruing when the reward period ends
+	/// @return The last time rewards were applicable
+	function lastTimeRewardApplicable() public view returns (uint256) {
+		return Math.min(block.timestamp, periodFinish);
 	}
 
-	/// @inheritdoc IVoteModule
-	function earned(address account) public view returns (uint256 _reward) {
-		_reward =
-			(/// @dev the vote balance of the account
-			(balanceOf[account] *
-				/// @dev current global reward per token, subtracted from the stored reward per token for the user
-				(rewardPerToken() - userRewardPerTokenStored[account])) /
-				/// @dev divide by the 1e18 precision
-				PRECISION) +
-			/// @dev add the existing stored rewards for the account to the total
-			storedRewardsPerUser[account];
+	/// @notice Calculates the total rewards earned by an account
+	/// @dev This function computes rewards using a reward-per-token mechanism:
+	///      1. Calculates new rewards since last update: (current reward per token - user's stored reward per token) * user balance
+	///      2. Adds any previously stored rewards that haven't been claimed yet
+	/// @param account The address to calculate rewards for
+	/// @return Total rewards earned by the account (in underlying token units)
+	function earned(address account) public view returns (uint256) {
+		uint256 currentRewardPerToken = rewardPerToken();
+		uint256 newRewards = (balanceOf[account] *
+			(currentRewardPerToken - userRewardPerTokenStored[account])) / PRECISION;
+
+		return newRewards + storedRewardsPerUser[account];
 	}
 
 	/// @inheritdoc IVoteModule
@@ -300,29 +307,26 @@ contract VoteModule is
 		_claim(msg.sender);
 	}
 
-	/// @inheritdoc IVoteModule
-	/// @dev the return value is scaled (multiplied) by PRECISION = 10 ** 18
-	function rewardPerToken() public view returns (uint256 _rpt) {
-		_rpt = (
-			/// @dev if there's no staked xYSK
-			totalSupply == 0 /// @dev return the existing value
-				? rewardPerTokenStored /// @dev else add the existing value
-				: rewardPerTokenStored +
-					/// @dev to remaining time (since update) multiplied by the current reward rate
-					/// @dev scaled to precision of 1e18, then divided by the total supply
-					(((lastTimeRewardApplicable() - lastUpdateTime) * rewardRate * PRECISION) /
-						totalSupply)
-		);
+	/// @notice Calculates the current reward per token (scaled by PRECISION)
+	/// @dev This function computes the global reward per token rate:
+	///      - If no tokens are staked, returns the stored value
+	///      - Otherwise, adds new rewards accrued since last update to the stored value
+	///      - New rewards = (time elapsed * reward rate * PRECISION) / total supply
+	/// @return Current reward per token (scaled by 10^18)
+	function rewardPerToken() public view returns (uint256) {
+		if (totalSupply == 0) return rewardPerTokenStored;
+
+		uint256 timeElapsed = lastTimeRewardApplicable() - lastUpdateTime;
+		uint256 newRewards = (timeElapsed * rewardRate * PRECISION) / totalSupply;
+		return rewardPerTokenStored + newRewards;
 	}
 
-	/// @inheritdoc IVoteModule
-	function left() public view returns (uint256 _left) {
-		_left = (
-			/// @dev if the timestamp is past the period finish
-			block.timestamp >= periodFinish /// @dev there are no rewards "left" to stream
-				? 0 /// @dev multiply the remaining seconds by the rewardRate to determine what is left to stream
-				: ((periodFinish - block.timestamp) * rewardRate)
-		);
+	/// @notice Returns the amount of rewards remaining to be distributed in the current period
+	/// @dev Calculates remaining rewards based on time left in the reward period
+	/// @return Amount of rewards remaining to be distributed
+	function left() public view returns (uint256) {
+		if (block.timestamp >= periodFinish) return 0;
+		return (periodFinish - block.timestamp) * rewardRate;
 	}
 
 	function isDelegateFor(address caller, address owner) external view returns (bool approved) {
