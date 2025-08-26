@@ -16,9 +16,9 @@ interface IX33 is IERC20 {
 	/**
 	 * Error strings
 	 */
-	error ZERO();
-	error NOT_ENOUGH();
-	error NOT_CONFORMED_TO_SCALE(uint256);
+	// error ZERO();
+	// error NOT_ENOUGH();
+	// error NOT_CONFORMED_TO_SCALE(uint256);
 	error NOT_ACCESSHUB(address);
 	error LOCKED();
 	error REBASE_IN_PROGRESS();
@@ -27,8 +27,8 @@ interface IX33 is IERC20 {
 	error AGGREGATOR_NOT_WHITELISTED(address);
 	error FORBIDDEN_TOKEN(address);
 
-	event Entered(address indexed user, uint256 amount, uint256 ratioAtDeposit);
-	event Exited(address indexed user, uint256 _outAmount, uint256 ratioAtWithdrawal);
+	// event Entered(address indexed user, uint256 amount, uint256 ratioAtDeposit);
+	// event Exited(address indexed user, uint256 _outAmount, uint256 ratioAtWithdrawal);
 
 	event NewOperator(address _oldOperator, address _newOperator);
 	event Compounded(uint256 oldRatio, uint256 newRatio, uint256 amount);
@@ -44,7 +44,7 @@ interface IX33 is IERC20 {
 
 	event Unlocked(uint256 _ts);
 
-	event UpdatedIndex(uint256 _index);
+	// event UpdatedIndex(uint256 _index);
 
 	/// @notice submits the optimized votes for the epoch
 	function submitVotes(address[] calldata _pools, uint256[] calldata _weights) external;
