@@ -320,6 +320,8 @@ contract Voter is IVoter, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUp
 		for (uint256 i; i < _pools.length; i++) {
 			totalVoteWeight += _weights[i];
 		}
+		if (totalVoteWeight == 0) return false;
+
 		/// @dev loop through all pools
 		for (uint256 i; i < _pools.length; i++) {
 			/// @dev fetch the gauge for the pool
