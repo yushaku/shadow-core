@@ -70,16 +70,38 @@ contract MockVoteModule {
 }
 
 contract MockLauncherPlugin {
-	function setConfigs(address _pool, uint256 _take, address _recipient) external {
-		// Mock implementation
+	address public operator;
+	mapping(address => bool) public poolEnabled;
+	mapping(address => uint256) public poolConfigs;
+	mapping(address => address) public poolTreasuries;
+	mapping(address => bool) public authorities;
+
+	function migratePool(address _oldPool, address _newPool) external {}
+
+	function setConfigs(address _pool, uint256 _config, address _treasury) external {
+		poolConfigs[_pool] = _config;
+		poolTreasuries[_pool] = _treasury;
 	}
 
 	function enablePool(address _pool) external {
-		// Mock implementation
+		poolEnabled[_pool] = true;
 	}
 
-	function migratePool(address _oldPool, address _newPool) external {
-		// Mock implementation
+	function disablePool(address _pool) external {
+		poolEnabled[_pool] = false;
+	}
+
+	function setOperator(address _operator) external {
+		operator = _operator;
+	}
+
+	function grantAuthority(address _authority, string calldata _name) external {
+		authorities[_authority] = true;
+		_name;
+	}
+
+	function revokeAuthority(address _authority) external {
+		authorities[_authority] = false;
 	}
 }
 

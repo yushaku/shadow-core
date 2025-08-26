@@ -38,7 +38,7 @@ contract AccessHub is IAccessHub, UUPSUpgradeable, AccessControlEnumerableUpgrad
 	IVoter public voter;
 	IMinter public minter;
 	ILauncherPlugin public launcherPlugin;
-	IXYSK public xYushaku;
+	IXYSK public xYSK;
 	IX33 public x33;
 	IRamsesV3Factory public ramsesV3PoolFactory;
 	IPairFactory public poolFactory;
@@ -69,7 +69,7 @@ contract AccessHub is IAccessHub, UUPSUpgradeable, AccessControlEnumerableUpgrad
 		voter = IVoter(params.voter);
 		minter = IMinter(params.minter);
 		launcherPlugin = ILauncherPlugin(params.launcherPlugin);
-		xYushaku = IXYSK(params.xYushaku);
+		xYSK = IXYSK(params.xYSK);
 		x33 = IX33(params.x33);
 		ramsesV3PoolFactory = IRamsesV3Factory(params.ramsesV3PoolFactory);
 		poolFactory = IPairFactory(params.poolFactory);
@@ -83,6 +83,11 @@ contract AccessHub is IAccessHub, UUPSUpgradeable, AccessControlEnumerableUpgrad
 		clGaugeFactory = params.clGaugeFactory;
 		gaugeFactory = params.gaugeFactory;
 		feeDistributorFactory = params.feeDistributorFactory;
+
+		_grantRole(SWAP_FEE_SETTER, params.treasury);
+		_grantRole(PROTOCOL_OPERATOR, params.treasury);
+		_grantRole(DEFAULT_ADMIN_ROLE, params.treasury);
+		_grantRole(DEFAULT_ADMIN_ROLE, params.timelock);
 	}
 
 	/***************************************************************************************/
@@ -220,33 +225,33 @@ contract AccessHub is IAccessHub, UUPSUpgradeable, AccessControlEnumerableUpgrad
 	}
 
 	/***************************************************************************************/
-	/* xYushaku Functions */
+	/* xYSK Functions */
 	/***************************************************************************************/
 
 	/// @inheritdoc IAccessHub
-	function transferWhitelistInXYushaku(
+	function transferWhitelistInxYSK(
 		address[] calldata _who,
 		bool[] calldata _whitelisted
 	) external onlyRole(PROTOCOL_OPERATOR) {
 		/// @dev ensure continuity of length
 		require(_who.length == _whitelisted.length, IVoter.LENGTH_MISMATCH());
-		xYushaku.setExemption(_who, _whitelisted);
+		xYSK.setExemption(_who, _whitelisted);
 	}
 
 	/// @inheritdoc IAccessHub
-	function toggleXYushakuGovernance(bool enable) external onlyRole(PROTOCOL_OPERATOR) {
+	function togglexYSKGovernance(bool enable) external onlyRole(PROTOCOL_OPERATOR) {
 		/// @dev if enabled we call unpause otherwise we pause to disable
-		enable ? xYushaku.unpause() : xYushaku.pause();
+		enable ? xYSK.unpause() : xYSK.pause();
 	}
 
 	/// @inheritdoc IAccessHub
-	function operatorRedeemXYushaku(uint256 _amount) external onlyRole(PROTOCOL_OPERATOR) {
-		xYushaku.operatorRedeem(_amount);
+	function operatorRedeemxYSK(uint256 _amount) external onlyRole(PROTOCOL_OPERATOR) {
+		xYSK.operatorRedeem(_amount);
 	}
 
 	/// @inheritdoc IAccessHub
 	function migrateOperator(address _operator) external onlyRole(PROTOCOL_OPERATOR) {
-		xYushaku.migrateOperator(_operator);
+		xYSK.migrateOperator(_operator);
 	}
 
 	/// @inheritdoc IAccessHub
@@ -254,7 +259,7 @@ contract AccessHub is IAccessHub, UUPSUpgradeable, AccessControlEnumerableUpgrad
 		address[] calldata _tokens,
 		uint256[] calldata _amounts
 	) external onlyRole(PROTOCOL_OPERATOR) {
-		xYushaku.rescueTrappedTokens(_tokens, _amounts);
+		xYSK.rescueTrappedTokens(_tokens, _amounts);
 	}
 
 	/***************************************************************************************/

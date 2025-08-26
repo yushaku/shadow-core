@@ -17,7 +17,7 @@ interface IAccessHub {
 		address voter;
 		address minter;
 		address launcherPlugin;
-		address xYushaku;
+		address xYSK;
 		address x33;
 		address ramsesV3PoolFactory;
 		address poolFactory;
@@ -80,7 +80,7 @@ interface IAccessHub {
 	/// @notice revives inactive/killed gauges
 	function reviveGauge(address[] calldata _pairs) external;
 
-	/// @notice sets the ratio of xYushaku/Yushaku awarded globally to LPs
+	/// @notice sets the ratio of xYSK/Yushaku awarded globally to LPs
 	function setEmissionsRatioInVoter(uint256 _pct) external;
 
 	/// @notice allows governance to retrieve emissions in the voter contract that will not be distributed due to the gauge being inactive
@@ -90,24 +90,24 @@ interface IAccessHub {
 	/// @notice allows governance to designate a tickspacing as the "main" one, to prevent governance spam and confusion
 	function setMainTickSpacingInVoter(address tokenA, address tokenB, int24 tickSpacing) external;
 
-	/** xYushaku Functions */
+	/** xYSK Functions */
 
-	/// @notice enables or disables the transfer whitelist in xYushaku
-	function transferWhitelistInXYushaku(
+	/// @notice enables or disables the transfer whitelist in xYSK
+	function transferWhitelistInxYSK(
 		address[] calldata _who,
 		bool[] calldata _whitelisted
 	) external;
 
-	/// @notice enables or disables the governance in xYushaku
-	function toggleXYushakuGovernance(bool enable) external;
+	/// @notice enables or disables the governance in xYSK
+	function togglexYSKGovernance(bool enable) external;
 
 	/// @notice allows redemption from the operator
-	function operatorRedeemXYushaku(uint256 _amount) external;
+	function operatorRedeemxYSK(uint256 _amount) external;
 
-	/// @notice migrates the xYushaku operator
+	/// @notice migrates the xYSK operator
 	function migrateOperator(address _operator) external;
 
-	/// @notice rescues any trapped tokens in xYushaku
+	/// @notice rescues any trapped tokens in xYSK
 	function rescueTrappedTokens(address[] calldata _tokens, uint256[] calldata _amounts) external;
 
 	/** X33 Functions */
