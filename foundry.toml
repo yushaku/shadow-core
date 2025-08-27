@@ -11,6 +11,10 @@ optimize = true
 optimizer_runs = 1
 via_ir = true
 dynamic_test_linking = true
+bytecode_hash = "none"
+cbor_metadata = false
+
+fs_permissions = [{ access = "read-write", path = "./broadcast/" }]
 
 remappings = [
     'forge-std/=lib/forge-std/src',
@@ -28,7 +32,7 @@ base_testnet = { key = "${ETHERSCAN_API_KEY}", url = "https://api-sepolia.basesc
 
 [rpc_endpoints]
 bsc = "https://bsc-dataseed.bnbchain.org"
-bsc_testnet = "https://bsc-testnet.bnbchain.org"
+bsc_testnet = "https://bnb-testnet.g.alchemy.com/v2/${ALCHEMY_KEY}"
 base = "https://base.llamarpc.com"
 base_testnet = "https://base-sepolia.gateway.tenderly.co"
 local = "http://127.0.0.1:8545"
