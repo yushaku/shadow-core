@@ -1,26 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import {AccessControlEnumerable} from "@openzeppelin/contracts/access/extensions/AccessControlEnumerable.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract ContractDeployer is AccessControlEnumerable {
-	bytes32 public constant DEPLOYER_ROLE = keccak256("DEPLOYER_ROLE");
+contract ContractDeployer is Ownable {
 	address public lastContract;
 	address[] public deployedContracts;
 
-	constructor(address admin, address deployer) {
-		_grantRole(DEFAULT_ADMIN_ROLE, admin);
-		_grantRole(DEPLOYER_ROLE, deployer);
-	}
+	constructor(address _owner) Ownable(_owner) {}
 
 	function deploy(
 		bytes memory bytecode,
 		uint256 _salt
-	) public onlyRole(DEPLOYER_ROLE) returns (address contractAddress) {
+	) public onlyOwner returns (address contractAddress) {
 		assembly {
 			contractAddress := create2(0, add(bytecode, 32), mload(bytecode), _salt)
 		}
-		require(contractAddress != address(0), "create2 failed");
+		if (contractAddress == address(0)) revert("create2 failed");
 
 		deployedContracts.push(contractAddress);
 		lastContract = contractAddress;
@@ -29,7 +25,7 @@ contract ContractDeployer is AccessControlEnumerable {
 	function deployMany(
 		bytes memory bytecode,
 		uint256[] memory salts
-	) external onlyRole(DEPLOYER_ROLE) returns (address[] memory contractAddresses) {
+	) external onlyOwner returns (address[] memory contractAddresses) {
 		contractAddresses = new address[](salts.length);
 		for (uint256 i; i < contractAddresses.length; ++i) {
 			contractAddresses[i] = deploy(bytecode, salts[i]);
