@@ -9,8 +9,8 @@ import {IRamsesV3Factory} from "./interfaces/IRamsesV3Factory.sol";
 contract RamsesV3PoolDeployer is IRamsesV3PoolDeployer {
 	address public immutable RamsesV3Factory;
 
-	constructor(address _RamsesV3Factory) {
-		RamsesV3Factory = _RamsesV3Factory;
+	constructor(address v3Factory) {
+		RamsesV3Factory = v3Factory;
 	}
 
 	/// @dev Deploys a pool with the given parameters by transiently setting the parameters storage slot and then

@@ -4,14 +4,12 @@ pragma solidity ^0.8.26;
 /// @title The interface for the CL gauge Factory
 /// @notice Deploys CL gauges
 interface IClGaugeFactory {
-	/// @notice Emitted when the owner of the factory is changed
-	/// @param oldOwner The owner before the owner was changed
-	/// @param newOwner The owner after the owner was changed
-	event OwnerChanged(address indexed oldOwner, address indexed newOwner);
+	error NOT_AUTHORIZED();
+	error GAUGE_EXIST();
 
 	/// @notice Emitted when a gauge is created
 	/// @param pool The address of the pool
-	/// @param pool The address of the created gauge
+	/// @param gauge The address of the created gauge
 	event GaugeCreated(address indexed pool, address gauge);
 
 	/// @notice Returns the NFP Manager address
