@@ -125,12 +125,12 @@ contract DeployScript is Script {
 			initVoteModule
 		);
 		voteModule = VoteModule(address(voteModuleProxy));
+
+		minter = new Minter(address(accessHub), config.deployer);
 	}
 
 	function _deployTokens() internal {
 		address operator = config.deployer;
-
-		minter = new Minter(address(accessHub), operator);
 
 		ysk = new YSK(address(minter));
 		tokens.push(address(ysk));
@@ -183,7 +183,7 @@ contract DeployScript is Script {
 	}
 
 	function _deployCL() internal {
-		clPoolFactory = new RamsesV3Factory(address(accessHub));
+		clPoolFactory = new RamsesV3Factory(address(accessHub), config.deployer);
 		clPoolDeployer = new RamsesV3PoolDeployer(address(clPoolFactory));
 		clPoolFactory.initialize(address(clPoolDeployer));
 
