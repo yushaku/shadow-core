@@ -14,6 +14,39 @@ This mechanism is the cornerstone of the protocol's tokenomics, designed to ince
 - **Dynamic Voting Power**: Integrates with the `VoteModule.sol` to use a user's real-time voting power.
 - **Fee-to-Voters Mechanism**: Orchestrates the system that redirects trading fees from legacy pools to the voters.
 
+## X ratio
+
+This one determines how the weekly YSK emissions are split between the liquid YSK token and the staked xYSK token when they are distributed to the liquidity pool gauges.
+
+How it Works
+
+When it's time to distribute the weekly emissions to a gauge, the Voter contract uses the following logic:
+
+1.  It calculates the total claimable emissions for the gauge.
+2.  It uses the xRatio to determine how much of those emissions should be paid out in xYSK. The formula is:
+
+$$
+amount_of_xYSK = (total_emissions * xRatio) / 1_000_000
+$$
+
+3.  The remaining amount is paid out in YSK.
+
+The 1_000_000 in the formula represents 100%.
+
+- `xRatio` = 1,000,000 (100%): All emissions are distributed as xYSK. This is the default setting.
+- `xRatio` = 500,000 (50%): The emissions are split 50/50. Half are paid out as xYSK, and the other half as YSK.
+- `xRatio` = 0 (0%): All emissions are distributed as YSK.
+
+Purpose of xRatio
+
+The xRatio gives the protocol's governance a powerful tool to influence the tokenomics of the system. By
+adjusting this ratio, governance can:
+
+- Incentivize Staking: By increasing the xRatio, governance can encourage users to hold the staked xYSK token,
+  which can lead to more price stability and long-term alignment with the protocol.
+- Increase Liquidity: By decreasing the xRatio, governance can provide more liquid YSK rewards, which might be
+  more attractive to short-term liquidity providers.
+
 ---
 
 ## Workflows

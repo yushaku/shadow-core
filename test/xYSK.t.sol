@@ -574,7 +574,7 @@ contract XShadowTest is TheTestBase {
 		xYSK.createVest(amount);
 
 		uint256 vestId = 0;
-		uint256 vestStart = xYSK.getVestInfo(alice, vestId).start;
+		// uint256 vestStart = xYSK.getVestInfo(alice, vestId).start;
 
 		// Fast forward past MIN_VEST to generate penalty
 		console.log("start timestamp", block.timestamp);

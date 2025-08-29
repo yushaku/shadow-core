@@ -1839,7 +1839,7 @@ contract VoterTest is TheTestBase {
 		voter.createCLGauge(tokenA, tokenB, tickSpacing);
 
 		// Step 3: Get sorted tokens for event verification
-		(address token0, address token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
+		// (address token0, address token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
 
 		// Step 4: Set main tick spacing and verify event
 		vm.prank(address(accessHub));
@@ -3596,8 +3596,18 @@ contract VoterTest is TheTestBase {
 		);
 	}
 
-	function test_gaugeForClPoolReturnsZeroForNonexistentPool() public view {
+	function test_gaugeForClPoolReturnsZeroForNonexistentPool() public {
 		// Step 1: Get gauge for nonexistent pool
+		vm.mockCall(
+			CL_FACTORY,
+			abi.encodeWithSelector(
+				IRamsesV3Factory.sortTokens.selector,
+				address(token0),
+				address(token1)
+			),
+			abi.encode(address(token0), address(token1))
+		);
+
 		address gauge = voter.gaugeForClPool(address(token0), address(token1), 60);
 
 		// Step 2: Verify zero address is returned
@@ -3825,6 +3835,19 @@ contract VoterTest is TheTestBase {
 			),
 			abi.encode(pool)
 		);
+
+    bytes[] memory mocks = new bytes[](2);
+    mocks[0] = abi.encode(address(tokenA), address(tokenB));
+    mocks[1] = abi.encode(address(tokenA), address(tokenB));
+		vm.mockCalls(
+			CL_FACTORY,
+			abi.encodeWithSelector(
+				IRamsesV3Factory.sortTokens.selector,
+				address(tokenA),
+				address(tokenB)
+			),
+			mocks
+    );
 
 		// Step 2: Mock slot0 call to indicate pool is initialized
 		vm.mockCall(

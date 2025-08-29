@@ -21,9 +21,9 @@ interface IVoter {
 
 	error NO_GAUGE();
 
-	error ALREADY_DISTRIBUTED(address gauge, uint256 period);
+	// error ALREADY_DISTRIBUTED(address gauge, uint256 period);
 
-	error ZERO_VOTE(address pool);
+	// error ZERO_VOTE(address pool);
 
 	error RATIO_TOO_HIGH(uint256 _xRatio);
 
@@ -44,14 +44,14 @@ interface IVoter {
 
 	event Abstained(address indexed owner, uint256 weight);
 
-	event Deposit(address indexed lp, address indexed gauge, address indexed owner, uint256 amount);
+	// event Deposit(address indexed lp, address indexed gauge, address indexed owner, uint256 amount);
 
-	event Withdraw(
-		address indexed lp,
-		address indexed gauge,
-		address indexed owner,
-		uint256 amount
-	);
+	// event Withdraw(
+	// 	address indexed lp,
+	// 	address indexed gauge,
+	// 	address indexed owner,
+	// 	uint256 amount
+	// );
 
 	event NotifyReward(address indexed sender, address indexed reward, uint256 amount);
 

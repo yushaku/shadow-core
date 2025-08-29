@@ -18,6 +18,7 @@ import "./Helper.s.sol";
 contract DeployCoreScript is Script {
 	Helper.Config public config;
 
+	Timelock public timelock;
 	AccessHub public accessHub;
 	Minter public minter;
 	VoteModule public voteModule;
@@ -32,7 +33,7 @@ contract DeployCoreScript is Script {
 		config = _config;
 	}
 
-	function run() public returns (address, address, address, address, address, address) {
+	function run() public returns (address, address, address, address, address, address, address) {
 		vm.startBroadcast(config.deployer);
 
 		bytes memory initAccessHub = abi.encodeWithSelector(
@@ -75,6 +76,15 @@ contract DeployCoreScript is Script {
 			address(accessHub)
 		);
 
+		// TIMELOCK DEPLOYMENT
+		// uint256 minDelay = 1 days;
+		// address[] memory proposers = new address[](1);
+		// proposers[0] = config.deployer;
+
+		// address[] memory executors = new address[](1);
+		// executors[0] = address(0); // means anyone can execute
+		// timelock = new Timelock(minDelay, proposers, executors, config.deployer);
+
 		vm.stopBroadcast();
 
 		return (
@@ -83,7 +93,8 @@ contract DeployCoreScript is Script {
 			address(voteModule),
 			address(minter),
 			address(feeRecipientFactory),
-			address(feeDistributorFactory)
+			address(feeDistributorFactory),
+			address(0) // timelock if needed
 		);
 	}
 }

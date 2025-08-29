@@ -104,26 +104,30 @@ contract TreasuryHelper is UUPSUpgradeable {
 		_disableInitializers();
 	}
 
-	function _authorizeUpgrade(address newImplementation) internal override view onlyOperator {
+	function _authorizeUpgrade(address newImplementation) internal view override onlyOperator {
 		if (newImplementation == address(0)) revert ZeroAddress();
 	}
 
-	function initialize(IXYSK _xYSK, address _initialOperator) public initializer {
+	/**
+	 * @notice Initialize the contract
+	 * @param _xYSK The xYSK token address
+	 * @param _operator The multi-sig wallet address
+	 */
+	function initialize(IXYSK _xYSK, address _operator) public initializer {
 		if (address(_xYSK) == address(0)) revert ZeroAddress();
-		if (_initialOperator == address(0)) revert ZeroAddress();
+		if (_operator == address(0)) revert ZeroAddress();
 
 		Storage storage $ = getStorage();
 		$.xYSK = _xYSK;
-		IAccessHub accessHub = IAccessHub($.xYSK.ACCESS_HUB()); // only used for initialization
+		$.operator = _operator;
+		IAccessHub accessHub = IAccessHub($.xYSK.ACCESS_HUB());
 		$.timelock = accessHub.timelock();
 		$.treasury = accessHub.treasury();
 		$.voteModule = IVoteModule(accessHub.voteModule());
 		$.voter = IVoter(accessHub.voter());
-		$.operator = _initialOperator;
 	}
 
 	/// @dev MODIFIERS
-
 	modifier onlyTimelock() {
 		Storage storage $ = getStorage();
 		if (msg.sender != $.timelock) revert NotTimelock(msg.sender);

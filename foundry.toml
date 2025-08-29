@@ -14,7 +14,16 @@ dynamic_test_linking = true
 bytecode_hash = "none"
 cbor_metadata = false
 
-fs_permissions = [{ access = "read-write", path = "./broadcast/" }]
+# ffi = true
+# ast = true
+# build_info = true
+# extra_output = ["storageLayout"]
+
+fs_permissions = [
+    { access = "read-write", path = "./broadcast/" },
+    { access = "read-write", path = "./deploy-addresses/" },
+    { access = "read", path = "./out/" },
+]
 
 remappings = [
     'forge-std/=lib/forge-std/src',

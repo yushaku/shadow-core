@@ -88,8 +88,7 @@ contract Voter is IVoter, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUp
 
 	mapping(uint256 period => uint256 rewards) public totalRewardPerPeriod;
 	mapping(uint256 period => uint256 weight) public totalVotesPerPeriod;
-	mapping(address gauge => mapping(uint256 period => uint256 reward))
-		public gaugeRewardsPerPeriod;
+	// mapping(address gauge => mapping(uint256 period => uint256 reward)) public gaugeRewardsPerPeriod;
 
 	mapping(address gauge => mapping(uint256 period => bool distributed))
 		public gaugePeriodDistributed;
@@ -115,17 +114,12 @@ contract Voter is IVoter, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUp
 	/// @dev redirects votes from other tick spacings to the main pool
 	mapping(address fromPool => address toPool) public poolRedirect;
 
-	modifier onlyGovernance() {
-		require(msg.sender == accessHub || msg.sender == governor, NOT_AUTHORIZED(msg.sender));
-		_;
-	}
-
 	constructor() {
 		_disableInitializers();
 	}
 
 	function _authorizeUpgrade(address newImplementation) internal view override {
-		require(newImplementation != address(0), "Voter: newImplementation is zero");
+		require(newImplementation != address(0));
 		_checkOwner();
 	}
 
@@ -173,22 +167,14 @@ contract Voter is IVoter, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUp
 		IERC20(ysk).approve(xYSK, type(uint256).max);
 	}
 
-	/// @notice sets the default xYskRatio
-	function setGlobalRatio(uint256 _xRatio) external onlyGovernance {
-		require(_xRatio <= BASIS, RATIO_TOO_HIGH(_xRatio));
-
-		emit EmissionsRatio(msg.sender, xRatio, _xRatio);
-		xRatio = _xRatio;
-	}
-
 	/***************************************************************************************/
-	/* Voting */
+	/* User Functions */
 	/***************************************************************************************/
 
+	/// @inheritdoc IVoter
 	function reset(address user) external {
-		/// @dev if the caller isn't the user
+		/// @dev if the caller isn't the user -> check delegation
 		if (msg.sender != user) {
-			/// @dev check for delegation
 			require(
 				IVoteModule(voteModule).isDelegateFor(msg.sender, user) || msg.sender == accessHub,
 				NOT_AUTHORIZED(msg.sender)
@@ -197,69 +183,34 @@ contract Voter is IVoter, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUp
 		_reset(user);
 	}
 
-	function _reset(address user) internal {
-		/// @dev voting for the next period
-		uint256 nextPeriod = getPeriod() + 1;
-		/// @dev fetch the previously voted pools
-		address[] memory votedPools = userVotedPoolsPerPeriod[user][nextPeriod];
-		/// @dev fetch the user's stored voting power for the voting period
-		uint256 votingPower = userVotingPowerPerPeriod[user][nextPeriod];
-		/// @dev if an existing vote is cast
-		if (votingPower > 0) {
-			/// @dev loop through the pools
-			for (uint256 i; i < votedPools.length; ++i) {
-				/// @dev fetch the individual casted for the pool for the next period
-				uint256 userVote = userVotesForPoolPerPeriod[user][nextPeriod][votedPools[i]];
-				/// @dev decrement the total vote by the existing vote
-				poolTotalVotesPerPeriod[votedPools[i]][nextPeriod] -= userVote;
-				/// @dev wipe the mapping
-				delete userVotesForPoolPerPeriod[user][nextPeriod][votedPools[i]];
-				/// @dev call _withdraw on the FeeDistributor
-				IFeeDistributor(feeDistributorForGauge[gaugeForPool[votedPools[i]]])._withdraw(
-					userVote,
-					user
-				);
-				emit Abstained(address(0), userVote);
-			}
-			/// @dev reduce the overall vote power casted
-			totalVotesPerPeriod[nextPeriod] -= votingPower;
-			/// @dev wipe the mappings
-			delete userVotingPowerPerPeriod[user][nextPeriod];
-			delete userVotedPoolsPerPeriod[user][nextPeriod];
-		}
-	}
-
+	/// @inheritdoc IVoter
 	function poke(address user) external {
-		/// @dev ensure the caller is either the user or the vote module
+		/// @dev if the caller isn't the user -> check delegation
 		if (msg.sender != user) {
-			/// @dev ...require they are authorized to be a delegate
 			require(
 				IVoteModule(voteModule).isDelegateFor(msg.sender, user) || msg.sender == voteModule,
 				NOT_AUTHORIZED(msg.sender)
 			);
 		}
+
 		uint256 _lastVoted = lastVoted[user];
-		/// @dev has no prior vote, terminate early
 		if (_lastVoted == 0) return;
-		/// @dev fetch the last voted pools since votes are casted into the next week's mapping
-		address[] memory votedPools = userVotedPoolsPerPeriod[user][_lastVoted + 1];
-		/// @dev fetch the voting power of the user in that period after
+
 		uint256 userVotePower = userVotingPowerPerPeriod[user][_lastVoted + 1];
-		/// @dev if nothing, terminate
 		if (userVotePower == 0) return;
 
+		/// @dev fetch the last voted pools since votes are casted into the next week's mapping
+		address[] memory votedPools = userVotedPoolsPerPeriod[user][_lastVoted + 1];
 		uint256[] memory voteWeights = new uint256[](votedPools.length);
-		/// @dev loop and fetch weights
 		for (uint256 i; i < votedPools.length; i++) {
 			voteWeights[i] = userVotesForPoolPerPeriod[user][_lastVoted + 1][votedPools[i]];
 		}
-		/// @dev grab current period
+
 		uint256 period = getPeriod();
-		/// @dev if the last voted period is the same as the current period
 		if (_lastVoted == period) {
-			/// @dev we reset the votes
 			_reset(user);
 		}
+
 		/// @dev recast with new voting power and same weights/pools as prior
 		/// @dev we ignore if this succeeds or not
 		_vote(user, votedPools, voteWeights);
@@ -298,140 +249,44 @@ contract Voter is IVoter, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUp
 		require(_vote(user, votedPools, _weights), VOTE_UNSUCCESSFUL());
 	}
 
-	function _vote(
-		address user,
-		address[] memory _pools,
-		uint256[] memory _weights
-	) internal returns (bool) {
-		/// @dev defaults to true
-		bool success = true;
-		/// @dev grab the nextPeriod
-		uint256 nextPeriod = getPeriod() + 1;
-		/// @dev fetch the user's votingPower
-		uint256 votingPower = IVoteModule(voteModule).balanceOf(user);
-		/// @dev set the voting power for the user for the period
-		userVotingPowerPerPeriod[user][nextPeriod] = votingPower;
-		/// @dev update the pools voted for
-		userVotedPoolsPerPeriod[user][nextPeriod] = _pools;
-
-		/// @dev loop through and add up the amounts,
-		///  we do this because weights are proportions and not directly the vote power values
-		uint256 totalVoteWeight;
-		for (uint256 i; i < _pools.length; i++) {
-			totalVoteWeight += _weights[i];
-		}
-		if (totalVoteWeight == 0) return false;
-
-		/// @dev loop through all pools
-		for (uint256 i; i < _pools.length; i++) {
-			/// @dev fetch the gauge for the pool
-			address _gauge = gaugeForPool[_pools[i]];
-			/// @dev set to false if a gauge is dead
-			if (!isAlive[_gauge]) {
-				return false;
-			}
-			/// @dev scale the weight of the pool
-			uint256 _poolWeight = (_weights[i] * votingPower) / totalVoteWeight;
-			/// @dev if weights are ever 0, set success to false
-			if (_weights[i] == 0) {
-				return false;
-			}
-			/// @dev increment to the votes for this pool
-			poolTotalVotesPerPeriod[_pools[i]][nextPeriod] += _poolWeight;
-			/// @dev increment the user's votes for this pool
-			userVotesForPoolPerPeriod[user][nextPeriod][_pools[i]] += _poolWeight;
-			/// @dev deposit the votes to the FeeDistributor
-			IFeeDistributor(feeDistributorForGauge[_gauge])._deposit(_poolWeight, user);
-			/// @dev emit the voted event, passing the user and the raw vote weight given to the pool
-			emit Voted(user, _poolWeight, _pools[i]);
-		}
-		/// @dev increment to the total
-		totalVotesPerPeriod[nextPeriod] += votingPower;
-		/// @dev last vote as current epoch
-		lastVoted[user] = nextPeriod - 1;
-		/// @dev return the result
-		return success;
-	}
-
-	/***************************************************************************************/
-	/* Emission Distribution */
-	/***************************************************************************************/
-
-	function _distribute(address _gauge, uint256 _claimable, uint256 _period) internal {
-		/// @dev check if the gauge is even alive
-		if (isAlive[_gauge]) {
-			/// @dev if there is 0 claimable terminate
-			if (_claimable == 0) return;
-			/// @dev if the gauge is already distributed for the period, terminate
-			if (gaugePeriodDistributed[_gauge][_period]) return;
-
-			/// @dev fetch ysk address
-			address _xYSK = address(xYSK);
-			/// @dev fetch the current ratio and multiply by the claimable
-			uint256 _xYskClaimable = (_claimable * xRatio) / BASIS;
-			/// @dev remove from the regular claimable tokens (YSK)
-			_claimable -= _xYskClaimable;
-
-			/// @dev can only distribute if the distributed amount / week > 0 and is > left()
-			bool canDistribute = true;
-
-			/// @dev _claimable could be 0 if emission is 100% xYSK
-			if (_claimable > 0) {
-				if (_claimable / DURATION == 0 || _claimable < IGauge(_gauge).left(ysk)) {
-					canDistribute = false;
-				}
-			}
-			/// @dev _xYskClaimable could be 0 if ratio is 100% emissions
-			if (_xYskClaimable > 0) {
-				if (_xYskClaimable / DURATION == 0 || _xYskClaimable < IGauge(_gauge).left(_xYSK)) {
-					canDistribute = false;
-				}
-			}
-			/// @dev if the checks pass and the gauge can be distributed
-			if (canDistribute) {
-				/// @dev set it to true firstly
-				gaugePeriodDistributed[_gauge][_period] = true;
-				/// @dev check YSK "claimable"
-				if (_claimable > 0) {
-					/// @dev notify emissions
-					IGauge(_gauge).notifyRewardAmount(ysk, _claimable);
-				}
-				/// @dev check xYSK "claimable"
-				if (_xYskClaimable > 0) {
-					/// @dev convert, then notify the xYSK
-					IXYSK(_xYSK).convertEmissionsToken(_xYskClaimable);
-					IGauge(_gauge).notifyRewardAmount(_xYSK, _xYskClaimable);
-				}
-
-				emit DistributeReward(msg.sender, _gauge, _claimable + _xYskClaimable);
-			}
-		}
-	}
-
 	/***************************************************************************************/
 	/* Governance Functions */
 	/***************************************************************************************/
 
-	function setGovernor(address _governor) external onlyGovernance {
+	function setGovernor(address _governor) external {
+		_onlyGovernance();
+
 		if (governor != _governor) {
 			governor = _governor;
 			emit NewGovernor(msg.sender, _governor);
 		}
 	}
 
-	function whitelist(address _token) public onlyGovernance {
+	/// @notice sets the default xYskRatio
+	function setGlobalRatio(uint256 _xRatio) external {
+		_onlyGovernance();
+		require(_xRatio <= BASIS, RATIO_TOO_HIGH(_xRatio));
+
+		emit EmissionsRatio(msg.sender, xRatio, _xRatio);
+		xRatio = _xRatio;
+	}
+
+	function whitelist(address _token) external {
+		_onlyGovernance();
 		require(!isWhitelisted[_token], ALREADY_WHITELISTED(_token));
 		isWhitelisted[_token] = true;
 		emit Whitelisted(msg.sender, _token);
 	}
 
-	function revokeWhitelist(address _token) public onlyGovernance {
+	function revokeWhitelist(address _token) external {
+		_onlyGovernance();
 		require(isWhitelisted[_token], NOT_WHITELISTED());
 		isWhitelisted[_token] = false;
 		emit WhitelistRevoked(msg.sender, _token, true);
 	}
 
-	function killGauge(address _gauge) public onlyGovernance {
+	function killGauge(address _gauge) public {
+		_onlyGovernance();
 		/// @dev ensure the gauge is alive already, and exists
 		require(isAlive[_gauge] && gauges.contains(_gauge), GAUGE_INACTIVE(_gauge));
 		/// @dev set the gauge to dead
@@ -479,9 +334,10 @@ contract Voter is IVoter, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUp
 		emit GaugeKilled(_gauge);
 	}
 
-	function reviveGauge(address _gauge) public onlyGovernance {
-		/// @dev ensure the gauge is dead and exists
+	function reviveGauge(address _gauge) public {
+		_onlyGovernance();
 		require(!isAlive[_gauge] && gauges.contains(_gauge), ACTIVE_GAUGE(_gauge));
+
 		/// @dev set the gauge to alive
 		isAlive[_gauge] = true;
 		/// @dev check if it's a legacy gauge
@@ -498,8 +354,8 @@ contract Voter is IVoter, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUp
 	}
 
 	/// @dev in case of emission stuck due to killed gauges and unsupported operations
-	function stuckEmissionsRecovery(address _gauge, uint256 _period) external onlyGovernance {
-		/// @dev require gauge is dead
+	function stuckEmissionsRecovery(address _gauge, uint256 _period) external {
+		_onlyGovernance();
 		require(!isAlive[_gauge], ACTIVE_GAUGE(_gauge));
 
 		/// @dev ensure the gauge exists
@@ -518,11 +374,9 @@ contract Voter is IVoter, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUp
 		}
 	}
 
-	function whitelistGaugeRewards(address _gauge, address _reward) external onlyGovernance {
-		/// @dev ensure the gauge exists
+	function whitelistGaugeRewards(address _gauge, address _reward) external {
+		_onlyGovernance();
 		require(gauges.contains(_gauge), GAUGE_INACTIVE(_gauge));
-
-		/// @dev enforce whitelisted in voter
 		require(isWhitelisted[_reward], NOT_WHITELISTED());
 
 		/// @dev if CL
@@ -535,8 +389,8 @@ contract Voter is IVoter, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUp
 		}
 	}
 
-	function removeGaugeRewardWhitelist(address _gauge, address _reward) external onlyGovernance {
-		/// @dev ensure the gauge exists
+	function removeGaugeRewardWhitelist(address _gauge, address _reward) external {
+		_onlyGovernance();
 		require(gauges.contains(_gauge), GAUGE_INACTIVE(_gauge));
 		/// @dev if CL
 		if (isClGauge[_gauge]) {
@@ -548,13 +402,48 @@ contract Voter is IVoter, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUp
 		}
 	}
 
-	function removeFeeDistributorReward(
-		address _feeDistributor,
-		address reward
-	) external onlyGovernance {
-		/// @dev ensure the feeDist exists
+	function removeFeeDistributorReward(address _feeDistributor, address reward) external {
+		_onlyGovernance();
 		require(feeDistributors.contains(_feeDistributor));
+
 		IFeeDistributor(_feeDistributor).removeReward(reward);
+	}
+
+	function setMainTickSpacing(address tokenA, address tokenB, int24 tickSpacing) external {
+		_onlyGovernance();
+
+		(address token0, address token1) = IRamsesV3Factory(clFactory).sortTokens(tokenA, tokenB);
+		address mainGauge = _gaugeForClPool[token0][token1][tickSpacing];
+		require(mainGauge != address(0), NO_GAUGE());
+
+		address mainPool = poolForGauge[mainGauge];
+		address mainFeeDist = feeDistributorForClGauge[mainGauge];
+		_mainTickSpacingForPair[token0][token1] = tickSpacing;
+		uint256 _gaugeLength = _tickSpacingsForPair[token0][token1].length;
+
+		/// @dev direct future votes to new main gauge
+		/// @dev already cast votes won't be moved, voters should update their votes or call poke()
+		/// @dev change feeDist for gauges to the main feeDist, so FeeCollector sends fees to the right place
+		/// @dev kill from gauge if needed
+		for (uint256 i = 0; i < _gaugeLength; i++) {
+			int24 _fromTickSpacing = _tickSpacingsForPair[token0][token1][i];
+			address _fromGauge = _gaugeForClPool[token0][token1][_fromTickSpacing];
+			address _fromPool = poolForGauge[_fromGauge];
+			poolRedirect[_fromPool] = mainPool;
+			feeDistributorForGauge[_fromGauge] = mainFeeDist;
+
+			/// @dev kill gauges if needed
+			if (_fromGauge != mainGauge && isAlive[_fromGauge]) {
+				killGauge(_fromGauge);
+			}
+		}
+
+		/// @dev revive main gauge if needed
+		if (!isAlive[mainGauge]) {
+			reviveGauge(mainGauge);
+		}
+
+		emit MainTickSpacingChanged(token0, token1, tickSpacing);
 	}
 
 	/***************************************************************************************/
@@ -661,7 +550,10 @@ contract Voter is IVoter, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUp
 
 		/// @dev mainTickSpacing logic
 		{
-			(address token0, address token1) = _sortTokens(tokenA, tokenB);
+			(address token0, address token1) = IRamsesV3Factory(clFactory).sortTokens(
+				tokenA,
+				tokenB
+			);
 
 			_tickSpacingsForPair[token0][token1].push(tickSpacing);
 			_gaugeForClPool[token0][token1][tickSpacing] = _gauge;
@@ -690,51 +582,6 @@ contract Voter is IVoter, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUp
 		}
 
 		return _gauge;
-	}
-
-	function setMainTickSpacing(
-		address tokenA,
-		address tokenB,
-		int24 tickSpacing
-	) external onlyGovernance {
-		/// @dev sort the tokens
-		(address token0, address token1) = _sortTokens(tokenA, tokenB);
-		/// @dev fetch the proposed mainGauge from the sorted tokens and passed tickSpacing
-		address mainGauge = _gaugeForClPool[token0][token1][tickSpacing];
-		/// @dev ensure this gauge exists
-		require(mainGauge != address(0), NO_GAUGE());
-		/// @dev fetch the proposed main pool from the gauge -> pool mapping
-		address mainPool = poolForGauge[mainGauge];
-		/// @dev fetch the proposed main fee distributor from the gauge -> feeDist mapping
-		address mainFeeDist = feeDistributorForClGauge[mainGauge];
-		/// @dev set the mainTickSpacing mapping to the new tickSpacing
-		_mainTickSpacingForPair[token0][token1] = tickSpacing;
-		/// @dev fetch the amount of tickSpacings for the pair
-		uint256 _gaugeLength = _tickSpacingsForPair[token0][token1].length;
-
-		/// @dev direct future votes to new main gauge
-		/// @dev already cast votes won't be moved, voters should update their votes or call poke()
-		/// @dev change feeDist for gauges to the main feeDist, so FeeCollector sends fees to the right place
-		/// @dev kill from gauge if needed
-		for (uint256 i = 0; i < _gaugeLength; i++) {
-			int24 _fromTickSpacing = _tickSpacingsForPair[token0][token1][i];
-			address _fromGauge = _gaugeForClPool[token0][token1][_fromTickSpacing];
-			address _fromPool = poolForGauge[_fromGauge];
-			poolRedirect[_fromPool] = mainPool;
-			feeDistributorForGauge[_fromGauge] = mainFeeDist;
-
-			/// @dev kill gauges if needed
-			if (_fromGauge != mainGauge && isAlive[_fromGauge]) {
-				killGauge(_fromGauge);
-			}
-		}
-
-		/// @dev revive main gauge if needed
-		if (!isAlive[mainGauge]) {
-			reviveGauge(mainGauge);
-		}
-
-		emit MainTickSpacingChanged(token0, token1, tickSpacing);
 	}
 
 	/***************************************************************************************/
@@ -793,22 +640,19 @@ contract Voter is IVoter, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUp
 	function distribute(address _gauge) public nonReentrant {
 		/// @dev update the period if not already done
 		IMinter(minter).updatePeriod();
-		/// @dev fetch the last distribution
+
 		uint256 _lastDistro = lastDistro[_gauge];
-		/// @dev fetch the current period
 		uint256 currentPeriod = getPeriod();
-		/// @dev fetch the pool address from the gauge
 		address pool = poolForGauge[_gauge];
+
 		/// @dev loop through _lastDistro + 1 up to and including the currentPeriod
 		for (uint256 period = _lastDistro + 1; period <= currentPeriod; ++period) {
-			/// @dev fetch the claimable amount
 			uint256 claimable = _claimablePerPeriod(pool, period);
-			/// @dev distribute for the period
 			_distribute(_gauge, claimable, period);
 		}
+
 		/// @dev if the last distribution wasnt the current period
 		if (_lastDistro != currentPeriod) {
-			/// @dev check if a CL gauge
 			if (isClGauge[_gauge]) {
 				IRamsesV3Pool poolV3 = IRamsesV3Pool(pool);
 				/// @dev attempt period advancing
@@ -817,16 +661,18 @@ contract Voter is IVoter, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUp
 				IFeeCollector(IRamsesV3Factory(clFactory).feeCollector()).collectProtocolFees(
 					poolV3
 				);
-				/// @dev if it's a legacy gauge, fees are handled as LP tokens and thus need to be treated diff
+
+				/// @dev if it's a legacy gauge,
+				/// fees are handled as LP tokens and thus need to be treated diff
 			} else if (isLegacyGauge[_gauge]) {
-				/// @dev mint the fees
 				IPair(pool).mintFee();
-				/// @dev notify the fees to the FeeDistributor
-				IFeeRecipient(IFeeRecipientFactory(feeRecipientFactory).feeRecipientForPair(pool))
-					.notifyFees();
+				address feeRecipient = IFeeRecipientFactory(feeRecipientFactory)
+					.feeRecipientForPair(pool);
+				IFeeRecipient(feeRecipient).notifyFees();
 			}
 			/// @dev no actions needed for custom gauge
 		}
+
 		/// @dev set the last distribution for the gauge as the currentPeriod
 		lastDistro[_gauge] = currentPeriod;
 	}
@@ -906,13 +752,13 @@ contract Voter is IVoter, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUp
 		address tokenA,
 		address tokenB
 	) public view returns (int24[] memory) {
-		(address token0, address token1) = _sortTokens(tokenA, tokenB);
+		(address token0, address token1) = IRamsesV3Factory(clFactory).sortTokens(tokenA, tokenB);
 
 		return _tickSpacingsForPair[token0][token1];
 	}
 
 	function mainTickSpacingForPair(address tokenA, address tokenB) public view returns (int24) {
-		(address token0, address token1) = _sortTokens(tokenA, tokenB);
+		(address token0, address token1) = IRamsesV3Factory(clFactory).sortTokens(tokenA, tokenB);
 
 		return _mainTickSpacingForPair[token0][token1];
 	}
@@ -922,9 +768,151 @@ contract Voter is IVoter, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUp
 		address tokenB,
 		int24 tickSpacing
 	) public view returns (address) {
-		(address token0, address token1) = _sortTokens(tokenA, tokenB);
+		(address token0, address token1) = IRamsesV3Factory(clFactory).sortTokens(tokenA, tokenB);
 
 		return _gaugeForClPool[token0][token1][tickSpacing];
+	}
+
+	/***************************************************************************************/
+	/* Internal Functions */
+	/***************************************************************************************/
+
+	function _distribute(address _gauge, uint256 _claimable, uint256 _period) internal {
+		/// @dev check if the gauge is even alive
+		if (isAlive[_gauge]) {
+			/// @dev if there is 0 claimable terminate
+			if (_claimable == 0) return;
+			/// @dev if the gauge is already distributed for the period, terminate
+			if (gaugePeriodDistributed[_gauge][_period]) return;
+
+			/// @dev fetch ysk address
+			address _xYSK = address(xYSK);
+			/// @dev fetch the current ratio and multiply by the claimable
+			uint256 _xYskClaimable = (_claimable * xRatio) / BASIS;
+			/// @dev remove from the regular claimable tokens (YSK)
+			_claimable -= _xYskClaimable;
+
+			/// @dev can only distribute if the distributed amount / week > 0 and is > left()
+			bool canDistribute = true;
+
+			/// @dev _claimable could be 0 if emission is 100% xYSK
+			if (_claimable > 0) {
+				if (_claimable / DURATION == 0 || _claimable < IGauge(_gauge).left(ysk)) {
+					canDistribute = false;
+				}
+			}
+			/// @dev _xYskClaimable could be 0 if ratio is 100% emissions
+			if (_xYskClaimable > 0) {
+				if (_xYskClaimable / DURATION == 0 || _xYskClaimable < IGauge(_gauge).left(_xYSK)) {
+					canDistribute = false;
+				}
+			}
+			/// @dev if the checks pass and the gauge can be distributed
+			if (canDistribute) {
+				/// @dev set it to true firstly
+				gaugePeriodDistributed[_gauge][_period] = true;
+				/// @dev check YSK "claimable"
+				if (_claimable > 0) {
+					/// @dev notify emissions
+					IGauge(_gauge).notifyRewardAmount(ysk, _claimable);
+				}
+				/// @dev check xYSK "claimable"
+				if (_xYskClaimable > 0) {
+					/// @dev convert, then notify the xYSK
+					IXYSK(_xYSK).convertEmissionsToken(_xYskClaimable);
+					IGauge(_gauge).notifyRewardAmount(_xYSK, _xYskClaimable);
+				}
+
+				emit DistributeReward(msg.sender, _gauge, _claimable + _xYskClaimable);
+			}
+		}
+	}
+
+	function _vote(
+		address user,
+		address[] memory _pools,
+		uint256[] memory _weights
+	) internal returns (bool) {
+		/// @dev defaults to true
+		bool success = true;
+		/// @dev grab the nextPeriod
+		uint256 nextPeriod = getPeriod() + 1;
+		/// @dev fetch the user's votingPower
+		uint256 votingPower = IVoteModule(voteModule).balanceOf(user);
+		/// @dev set the voting power for the user for the period
+		userVotingPowerPerPeriod[user][nextPeriod] = votingPower;
+		/// @dev update the pools voted for
+		userVotedPoolsPerPeriod[user][nextPeriod] = _pools;
+
+		/// @dev loop through and add up the amounts,
+		///  we do this because weights are proportions and not directly the vote power values
+		uint256 totalVoteWeight;
+		for (uint256 i; i < _pools.length; i++) {
+			totalVoteWeight += _weights[i];
+		}
+		if (totalVoteWeight == 0) return false;
+
+		/// @dev loop through all pools
+		for (uint256 i; i < _pools.length; i++) {
+			/// @dev fetch the gauge for the pool
+			address _gauge = gaugeForPool[_pools[i]];
+			/// @dev set to false if a gauge is dead
+			if (!isAlive[_gauge]) {
+				return false;
+			}
+			/// @dev scale the weight of the pool
+			uint256 _poolWeight = (_weights[i] * votingPower) / totalVoteWeight;
+			/// @dev if weights are ever 0, set success to false
+			if (_weights[i] == 0) {
+				return false;
+			}
+			/// @dev increment to the votes for this pool
+			poolTotalVotesPerPeriod[_pools[i]][nextPeriod] += _poolWeight;
+			/// @dev increment the user's votes for this pool
+			userVotesForPoolPerPeriod[user][nextPeriod][_pools[i]] += _poolWeight;
+			/// @dev deposit the votes to the FeeDistributor
+			IFeeDistributor(feeDistributorForGauge[_gauge])._deposit(_poolWeight, user);
+			/// @dev emit the voted event, passing the user and the raw vote weight given to the pool
+			emit Voted(user, _poolWeight, _pools[i]);
+		}
+		/// @dev increment to the total
+		totalVotesPerPeriod[nextPeriod] += votingPower;
+		/// @dev last vote as current epoch
+		lastVoted[user] = nextPeriod - 1;
+		/// @dev return the result
+		return success;
+	}
+
+	function _reset(address user) internal {
+		/// @dev voting for the next period
+		uint256 nextPeriod = getPeriod() + 1;
+		/// @dev fetch the previously voted pools
+		address[] memory votedPools = userVotedPoolsPerPeriod[user][nextPeriod];
+		/// @dev fetch the user's stored voting power for the voting period
+		uint256 votingPower = userVotingPowerPerPeriod[user][nextPeriod];
+		/// @dev if an existing vote is cast
+		if (votingPower > 0) {
+			/// @dev loop through the pools
+			for (uint256 i; i < votedPools.length; ++i) {
+				/// @dev fetch the individual casted for the pool for the next period
+				uint256 userVote = userVotesForPoolPerPeriod[user][nextPeriod][votedPools[i]];
+				/// @dev decrement the total vote by the existing vote
+				poolTotalVotesPerPeriod[votedPools[i]][nextPeriod] -= userVote;
+				/// @dev wipe the mapping
+				delete userVotesForPoolPerPeriod[user][nextPeriod][votedPools[i]];
+				/// @dev call _withdraw on the FeeDistributor
+				IFeeDistributor(feeDistributorForGauge[gaugeForPool[votedPools[i]]])._withdraw(
+					userVote,
+					user
+				);
+				emit Abstained(address(0), userVote);
+			}
+			/// @dev reduce the overall vote power casted
+			totalVotesPerPeriod[nextPeriod] -= votingPower;
+			/// @dev wipe the mappings
+			delete userVotingPowerPerPeriod[user][nextPeriod];
+			delete userVotedPoolsPerPeriod[user][nextPeriod];
+		}
 	}
 
 	/// @dev shows how much is claimable per period
@@ -936,12 +924,7 @@ contract Voter is IVoter, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUp
 		return (numerator == 0 ? 0 : (numerator / totalVotesPerPeriod[period] / 1e18));
 	}
 
-	/// @dev sorts the two tokens
-	function _sortTokens(
-		address tokenA,
-		address tokenB
-	) internal pure returns (address token0, address token1) {
-		token0 = tokenA < tokenB ? tokenA : tokenB;
-		token1 = token0 == tokenA ? tokenB : tokenA;
+	function _onlyGovernance() internal view {
+		require(msg.sender == accessHub || msg.sender == governor, NOT_AUTHORIZED(msg.sender));
 	}
 }
