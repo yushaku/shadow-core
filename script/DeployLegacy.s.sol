@@ -10,7 +10,7 @@ import "contracts/legacy/Router.sol";
 
 import "./Helper.s.sol";
 
-contract DeployLegacy is Script {
+contract DeployLegacyScript is Script {
 	Helper.Config public config;
 	Helper helper;
 
