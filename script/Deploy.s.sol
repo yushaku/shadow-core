@@ -18,8 +18,8 @@ import "contracts/x/x33.sol";
 
 import "contracts/legacy/factories/GaugeFactory.sol";
 import "contracts/legacy/factories/PairFactory.sol";
-import "contracts/legacy/factories/FeeRecipientFactory.sol";
-import "contracts/legacy/factories/FeeDistributorFactory.sol";
+import "contracts/fee/FeeRecipientFactory.sol";
+import "contracts/fee/FeeDistributorFactory.sol";
 import "contracts/legacy/LauncherPlugin.sol";
 import "contracts/legacy/Router.sol";
 

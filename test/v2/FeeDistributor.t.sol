@@ -2,7 +2,7 @@
 pragma solidity ^0.8.26;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {FeeDistributor} from "contracts/legacy/FeeDistributor.sol";
+import {FeeDistributor} from "contracts/fee/FeeDistributor.sol";
 
 import "test/mocks/MockERC20.sol";
 import "test/Base.t.sol";

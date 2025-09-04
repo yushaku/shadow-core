@@ -20,9 +20,10 @@ contract RamsesV3Factory is IRamsesV3Factory {
 
 	/// @inheritdoc IRamsesV3Factory
 	mapping(int24 tickSpacing => uint24 initialFee) public tickSpacingInitialFee;
- 
+
 	/// @inheritdoc IRamsesV3Factory
-	mapping(address tokenA => mapping(address tokenB => mapping(int24 tickSpacing => address pool))) public getPool;
+	mapping(address tokenA => mapping(address tokenB => mapping(int24 tickSpacing => address pool)))
+		public getPool;
 
 	mapping(address pool => uint8 feeProtocol) internal _poolFeeProtocol;
 
@@ -34,7 +35,7 @@ contract RamsesV3Factory is IRamsesV3Factory {
 	}
 
 	/// @dev set initial tickspacings and feeSplits
-	constructor(address _accessHub) {
+	constructor(address _accessHub, address _deployer) {
 		accessHub = _accessHub;
 		/// @dev 0.01% fee, 1bps tickspacing
 		tickSpacingInitialFee[1] = 100;
@@ -59,14 +60,14 @@ contract RamsesV3Factory is IRamsesV3Factory {
 		/// @dev 5% to FeeCollector
 		feeProtocol = 5;
 
-		ramsesV3PoolDeployer = msg.sender;
+		ramsesV3PoolDeployer = _deployer;
 
 		emit SetFeeProtocol(0, feeProtocol);
 	}
 
-	function initialize(address _ramsesV3PoolDeployer) external {
+	function initialize(address _poolDeployer) external {
 		require(ramsesV3PoolDeployer == msg.sender);
-		ramsesV3PoolDeployer = _ramsesV3PoolDeployer;
+		ramsesV3PoolDeployer = _poolDeployer;
 	}
 
 	/// @inheritdoc IRamsesV3Factory
@@ -79,10 +80,10 @@ contract RamsesV3Factory is IRamsesV3Factory {
 		require(tokenA != tokenB, IT());
 
 		(address token0, address token1) = sortTokens(tokenA, tokenB);
-		if(token0 == address(0)) revert ZERO_ADDRESS();
+		if (token0 == address(0)) revert ZERO_ADDRESS();
 
 		uint24 fee = tickSpacingInitialFee[tickSpacing];
-		if(fee == 0) revert ZERO_FEE();
+		if (fee == 0) revert ZERO_FEE();
 
 		require(getPool[token0][token1][tickSpacing] == address(0), POOL_EXIST());
 
@@ -106,7 +107,6 @@ contract RamsesV3Factory is IRamsesV3Factory {
 			IRamsesV3Pool(pool).initialize(sqrtPriceX96);
 		}
 	}
-
 
 	/***************************************************************************************/
 	/* Governance Functions */
@@ -147,16 +147,16 @@ contract RamsesV3Factory is IRamsesV3Factory {
 		IRamsesV3Pool(pool).setFeeProtocol();
 	}
 
-
 	/// @inheritdoc IRamsesV3Factory
 	function setFeeCollector(address _feeCollector) external override onlyGovernance {
-		emit FeeCollectorChanged(feeCollector, _feeCollector);
+		if (_feeCollector == address(0)) revert ZERO_ADDRESS();
 		feeCollector = _feeCollector;
+		emit FeeCollectorChanged(feeCollector, _feeCollector);
 	}
 
 	/// @inheritdoc IRamsesV3Factory
 	function setVoter(address _voter) external onlyGovernance {
-    if(_voter == address(0)) revert ZERO_ADDRESS();
+		if (_voter == address(0)) revert ZERO_ADDRESS();
 		voter = _voter;
 	}
 

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.26;
 
 import {IFeeRecipientFactory} from "contracts/interfaces/IFeeRecipientFactory.sol";
-import {FeeRecipient} from "contracts/legacy/FeeRecipient.sol";
+import {FeeRecipient} from "contracts/fee/FeeRecipient.sol";
 
 contract FeeRecipientFactory is IFeeRecipientFactory {
 	address public immutable VOTER;

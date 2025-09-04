@@ -12,9 +12,9 @@ import {IVoter} from "contracts/interfaces/IVoter.sol";
 import {XYSK} from "contracts/x/XYSK.sol";
 import {VoteModule} from "contracts/VoteModule.sol";
 import {PairFactory} from "contracts/legacy/factories/PairFactory.sol";
-import {FeeRecipientFactory} from "contracts/legacy/factories/FeeRecipientFactory.sol";
+import {FeeRecipientFactory} from "contracts/fee/FeeRecipientFactory.sol";
 import {GaugeFactory} from "contracts/legacy/factories/GaugeFactory.sol";
-import {FeeDistributorFactory} from "contracts/legacy/factories/FeeDistributorFactory.sol";
+import {FeeDistributorFactory} from "contracts/fee/FeeDistributorFactory.sol";
 import {IPair} from "contracts/interfaces/IPair.sol";
 import {IFeeRecipientFactory} from "contracts/interfaces/IFeeRecipientFactory.sol";
 import {IRamsesV3Factory} from "contracts/CL/core/interfaces/IRamsesV3Factory.sol";
@@ -3836,9 +3836,9 @@ contract VoterTest is TheTestBase {
 			abi.encode(pool)
 		);
 
-    bytes[] memory mocks = new bytes[](2);
-    mocks[0] = abi.encode(address(tokenA), address(tokenB));
-    mocks[1] = abi.encode(address(tokenA), address(tokenB));
+		bytes[] memory mocks = new bytes[](2);
+		mocks[0] = abi.encode(address(tokenA), address(tokenB));
+		mocks[1] = abi.encode(address(tokenA), address(tokenB));
 		vm.mockCalls(
 			CL_FACTORY,
 			abi.encodeWithSelector(
@@ -3847,7 +3847,7 @@ contract VoterTest is TheTestBase {
 				address(tokenB)
 			),
 			mocks
-    );
+		);
 
 		// Step 2: Mock slot0 call to indicate pool is initialized
 		vm.mockCall(

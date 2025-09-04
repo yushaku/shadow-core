@@ -154,7 +154,9 @@ contract TreasuryHelper is UUPSUpgradeable {
 		if (stakedBalanceAfter < stakedBalanceBefore) revert WARNING();
 	}
 
-	/// @dev MANAGEMENT
+	/***************************************************************************************/
+	/** @dev MANAGER FUNCTIONS */
+	/***************************************************************************************/
 
 	function updateMember(address _account, uint256 _weight) external onlyTreasury {
 		Storage storage $ = getStorage();
@@ -182,7 +184,10 @@ contract TreasuryHelper is UUPSUpgradeable {
 		$.operator = _newOperator;
 	}
 
-	/// @dev TREASURY OPERATIONS
+	/***************************************************************************************/
+	/** @dev TREASURY FUNCTIONS */
+	/***************************************************************************************/
+
 	function depositxYSK(uint256 _amount) external onlyTreasury {
 		Storage storage $ = getStorage();
 		if (_amount == 0) revert ZeroAmount();
@@ -197,7 +202,10 @@ contract TreasuryHelper is UUPSUpgradeable {
 		require(IERC20($.xYSK).balanceOf(address(this)) >= _amount, "RUGGED");
 	}
 
-	/// @dev OPERATOR UPKEEP
+	/***************************************************************************************/
+	/** @dev OPERATOR FUNCTIONS */
+	/***************************************************************************************/
+
 	function claimRebase() external onlyOperator {
 		Storage storage $ = getStorage();
 		$.voteModule.getReward();
@@ -317,7 +325,32 @@ contract TreasuryHelper is UUPSUpgradeable {
 		}
 	}
 
-	/// @dev VIEW FUNCTIONS
+	function recoverERC20(address _token, uint256 _amount) external onlyTreasury {
+		Storage storage $ = getStorage();
+		IERC20(_token).transfer($.treasury, _amount);
+	}
+
+	function recoverNative() external onlyTreasury {
+		Storage storage $ = getStorage();
+		(bool success, ) = $.treasury.call{value: address(this).balance}("");
+		if (!success) revert TransferFailed();
+	}
+
+	function emergencyExecute(address _to, bytes calldata _data) external onlyTimelock {
+		if (_to == address(0)) revert ZeroAddress();
+		(bool success, ) = _to.call(_data);
+		if (!success) revert CallFailed();
+	}
+
+	function clawBackToTreasury(address _token, uint256 _amount) external onlyOperator {
+		Storage storage $ = getStorage();
+		IERC20(_token).transfer($.treasury, _amount);
+	}
+
+	/***************************************************************************************/
+	/** @dev VIEW FUNCTIONS */
+	/***************************************************************************************/
+
 	function getMemberWeight(address _account) external view returns (uint256) {
 		Storage storage $ = getStorage();
 		require($.memberWeights.contains(_account), NotMember(_account));
@@ -356,30 +389,6 @@ contract TreasuryHelper is UUPSUpgradeable {
 		return (totalVotingPower * 1e18) / totalSupply;
 	}
 
-	/// @dev SAFETY FUNCTIONS
-	function recoverERC20(address _token, uint256 _amount) external onlyTreasury {
-		Storage storage $ = getStorage();
-		IERC20(_token).transfer($.treasury, _amount);
-	}
-
-	function recoverNative() external onlyTreasury {
-		Storage storage $ = getStorage();
-		(bool success, ) = $.treasury.call{value: address(this).balance}("");
-		if (!success) revert TransferFailed();
-	}
-
-	function emergencyExecute(address _to, bytes calldata _data) external onlyTimelock {
-		if (_to == address(0)) revert ZeroAddress();
-		(bool success, ) = _to.call(_data);
-		if (!success) revert CallFailed();
-	}
-
-	function clawBackToTreasury(address _token, uint256 _amount) external onlyOperator {
-		Storage storage $ = getStorage();
-		IERC20(_token).transfer($.treasury, _amount);
-	}
-
-	/// @dev VIEW FUNCTIONS FOR STORAGE VARIABLES
 	function getxYSK() external view returns (address) {
 		Storage storage $ = getStorage();
 		return address($.xYSK);

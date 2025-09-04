@@ -13,11 +13,11 @@ The `Gauge` contract is a rewards gauge for a specific `ClPool`. Its primary pur
 
 ## FeeCollector.sol
 
-The `FeeCollector.sol` contract is responsible for collecting protocol fees from the `RamsesV3Pool` and directing them to the correct destinations.
+The `FeeCollector.sol` contract is responsible for collecting protocol fees from the `V3Pool` and directing them to the correct destinations.
 
 `collectProtocolFees()`: called by the `GaugeV3` contract's `pushFees` modifier. Here's what it does:
 
-1.  `Fetches Pending Fees`: It checks the associated `RamsesV3Pool` for any accumulated protocol fees.
+1.  `Fetches Pending Fees`: It checks the associated `V3Pool` for any accumulated protocol fees.
 2.  `Checks for a Gauge:` It queries the `voter` contract to get an active gauge associated with the pool.
 3.  `Direct to Treasury (No Gauge):` If there's no active gauge for the pool,
     it assumes there's no one to distribute fees to, so it sends 100% of the collected fees directly to the `treasury`.

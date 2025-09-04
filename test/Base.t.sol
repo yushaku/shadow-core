@@ -15,8 +15,8 @@ import {YSK} from "contracts/YSK.sol";
 import {AccessHub} from "contracts/AccessHub.sol";
 // import {Voter} from "contracts/Voter.sol";
 
-import {FeeRecipient} from "contracts/legacy/FeeRecipient.sol";
-import {FeeRecipientFactory} from "contracts/legacy/factories/FeeRecipientFactory.sol";
+import {FeeRecipient} from "contracts/fee/FeeRecipient.sol";
+import {FeeRecipientFactory} from "contracts/fee/FeeRecipientFactory.sol";
 
 contract TheTestBase is Test {
 	address public constant ZERO_ADDRESS = address(0);
