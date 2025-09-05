@@ -13,6 +13,8 @@ import {NonfungiblePositionManager} from "contracts/CL/periphery/NonfungiblePosi
 import {NonfungibleTokenPositionDescriptor} from "contracts/CL/periphery/NonfungibleTokenPositionDescriptor.sol";
 import {SwapRouter} from "contracts/CL/periphery/SwapRouter.sol";
 import {UniversalRouter, RouterParameters} from "contracts/CL/universalRouter/UniversalRouter.sol";
+import {QuoterV2} from "contracts/CL/periphery/lens/QuoterV2.sol";
+import {TickLens} from "contracts/CL/periphery/lens/TickLens.sol";
 
 import "./Helper.s.sol";
 
@@ -118,6 +120,10 @@ contract DeployCLScript is Script {
 			address(_voterAddress),
 			address(clFeeCollector)
 		);
+
+		QuoterV2 quoter = new QuoterV2(address(clPoolDeployer), config.WETH);
+
+		TickLens tickLens = new TickLens();
 
 		vm.stopBroadcast();
 

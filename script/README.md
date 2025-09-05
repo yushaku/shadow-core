@@ -34,25 +34,25 @@ forge test
 ```sh
 source .env
 
-forge script script/DeployCore.s.sol:DeployScript \
+forge script script/DeployCore.s.sol:DeployCoreScript \
    --rpc-url $NETWORK \
    --account $ACCOUNT \
    --broadcast \
    --verify -vvv
 
-forge script script/DeployTokens.s.sol:DeployScript \
+forge script script/DeployTokens.s.sol:DeployTokenScript \
    --rpc-url $NETWORK \
    --account $ACCOUNT \
    --broadcast \
    --verify -vvv
 
-forge script script/DeployLegacy.s.sol:DeployScript \
+forge script script/DeployLegacy.s.sol:DeployLegacy \
    --rpc-url $NETWORK \
    --account $ACCOUNT \
    --broadcast \
    --verify -vvv
 
-forge script script/DeployCL.s.sol:DeployScript \
+forge script script/DeployCL.s.sol:DeployCLScript \
    --rpc-url $NETWORK \
    --account $ACCOUNT \
    --broadcast \

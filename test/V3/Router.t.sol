@@ -16,24 +16,27 @@ contract SwapRouterTest is Fixture {
 	// Test parameters
 	uint160 public constant INITIAL_SQRT_PRICE = 1 * 2 ** 96; // 1:1 price
 	int24 public constant TICK_SPACING = 5;
-	int24 public constant TICK_LOWER = -1000;
-	int24 public constant TICK_UPPER = 1000;
 
 	function setUp() public override {
 		super.setUp();
 
-		// Create a pool with properly sorted tokens
+		_newPool();
+		_addLiquidityToPool();
+	}
+
+	function _newPool() internal returns (address pool) {
 		(address tokenA, address tokenB) = clPoolFactory.sortTokens(
 			address(token0),
 			address(token1)
 		);
-		pool = RamsesV3Pool(
-			clPoolFactory.createPool(tokenA, tokenB, TICK_SPACING, INITIAL_SQRT_PRICE)
-		);
-		pool.slot0();
 
-		// Add liquidity to the pool
-		_addLiquidityToPool();
+		return
+			nfpManager.createAndInitializePoolIfNecessary(
+				address(tokenA),
+				address(tokenB),
+				TICK_SPACING,
+				INITIAL_SQRT_PRICE
+			);
 	}
 
 	function _addLiquidityToPool() internal {
@@ -42,6 +45,21 @@ contract SwapRouterTest is Fixture {
 			address(token0),
 			address(token1)
 		);
+
+		// Define a price range for the liquidity position (+/- 20% from the initial price)
+		// These values would typically be calculated off-chain from human-readable prices.
+		// sqrt(1.2) * 2**96
+		uint160 sqrtPriceUpper = 87093355825038324433148514523;
+		// sqrt(0.8) * 2**96
+		uint160 sqrtPriceLower = 70935998359330342992372843935;
+
+		// Convert the sqrtPrices to ticks using the TickMath library
+		int24 tickLowerUnrounded = TickMath.getTickAtSqrtRatio(sqrtPriceLower);
+		int24 tickUpperUnrounded = TickMath.getTickAtSqrtRatio(sqrtPriceUpper);
+
+		// Round the ticks to the nearest tickSpacing
+		int24 tickLower = (tickLowerUnrounded / TICK_SPACING) * TICK_SPACING;
+		int24 tickUpper = (tickUpperUnrounded / TICK_SPACING) * TICK_SPACING;
 
 		// Mint tokens to alice
 		token0.mint(alice, 1000e18);
@@ -53,14 +71,14 @@ contract SwapRouterTest is Fixture {
 		token0.approve(address(nfpManager), type(uint256).max);
 		token1.approve(address(nfpManager), type(uint256).max);
 
-		// Create position with sorted tokens
+		// Create position with sorted tokens and calculated ticks
 		INonfungiblePositionManager.MintParams memory params = INonfungiblePositionManager
 			.MintParams({
 				token0: tokenA,
 				token1: tokenB,
 				tickSpacing: TICK_SPACING,
-				tickLower: TICK_LOWER,
-				tickUpper: TICK_UPPER,
+				tickLower: tickLower,
+				tickUpper: tickUpper,
 				amount0Desired: 100e18,
 				amount1Desired: 100e18,
 				amount0Min: 0,
@@ -447,8 +465,8 @@ contract SwapRouterTest is Fixture {
 				token0: address(WETH),
 				token1: address(token0),
 				tickSpacing: TICK_SPACING,
-				tickLower: TICK_LOWER,
-				tickUpper: TICK_UPPER,
+				tickLower: -1000,
+				tickUpper: 1000,
 				amount0Desired: 10e18,
 				amount1Desired: 10e18,
 				amount0Min: 0,
