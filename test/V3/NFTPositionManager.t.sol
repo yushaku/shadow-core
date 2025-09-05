@@ -8,12 +8,21 @@ import "contracts/CL/periphery/libraries/PoolAddress.sol";
 
 contract NonfungiblePositionManagerTest is Fixture {
 	uint256 constant DEADLINE = 1e18;
-	int24 constant TICK_SPACING = 60;
+	uint160 constant INITIAL_SQRT_PRICE = 1 * 2 ** 96; // 1:1 price
+	int24 constant TICK_SPACING = 5;
 	int24 constant TICK_LOWER = -120;
 	int24 constant TICK_UPPER = 120;
 
 	function setUp() public override {
 		super.setUp();
+
+		(address tokenA, address tokenB) = getSortedTokens();
+		nfpManager.createAndInitializePoolIfNecessary(
+			tokenA,
+			tokenB,
+			TICK_SPACING,
+			INITIAL_SQRT_PRICE
+		);
 
 		// Fund test accounts
 		token0.mint(alice, 10000e18);
@@ -29,7 +38,7 @@ contract NonfungiblePositionManagerTest is Fixture {
 	}
 
 	// Helper function to get tokens in correct order
-	function getSortedTokens() internal view returns (address tokenA, address tokenB) {
+	function getSortedTokens() internal view returns (address, address) {
 		if (address(token0) < address(token1)) {
 			return (address(token0), address(token1));
 		} else {
@@ -118,10 +127,12 @@ contract NonfungiblePositionManagerTest is Fixture {
 		vm.startPrank(alice);
 		token0.approve(address(nfpManager), type(uint256).max);
 
+		(address tokenA, address tokenB) = clPoolFactory.sortTokens(address(WETH), address(token0));
+
 		INonfungiblePositionManager.MintParams memory params = INonfungiblePositionManager
 			.MintParams({
-				token0: address(WETH),
-				token1: address(token0),
+				token0: tokenA,
+				token1: tokenB,
 				tickSpacing: TICK_SPACING,
 				tickLower: TICK_LOWER,
 				tickUpper: TICK_UPPER,
