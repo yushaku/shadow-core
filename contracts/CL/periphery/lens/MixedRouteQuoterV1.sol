@@ -15,7 +15,7 @@ import "contracts/interfaces/IPair.sol";
 import "contracts/interfaces/IPairFactory.sol";
 import "contracts/CL/periphery/interfaces/IMixedRouteQuoterV1.sol";
 import "contracts/CL/periphery/libraries/PoolTicksCounter.sol";
-import "contracts/CL/universalRouter/modules/uniswap/v2/RamsesLegacyLibrary.sol";
+import "contracts/universalRouter/modules/uniswap/v2/V2Library.sol";
 /// @title Provides on chain quotes for V3, V2, and MixedRoute exact input swaps
 /// @notice Allows getting the expected amount out for a given swap without executing the swap
 /// @notice Does not support exact output swaps since using the contract balance between exactOut swaps is not supported
@@ -66,24 +66,14 @@ contract MixedRouteQuoterV1 is IMixedRouteQuoterV1, IUniswapV3SwapCallback {
 		address tokenOut,
 		bool stable
 	) private view returns (uint256) {
-		address pair = RamsesLegacyLibrary.pairFor(
-			pairFactory,
-			initCodeHash,
-			tokenIn,
-			tokenOut,
-			stable
-		);
+		address pair = V2Library.pairFor(pairFactory, initCodeHash, tokenIn, tokenOut, stable);
 		uint256 fee = IPairFactory(pairFactory).pairFee(pair);
-		(
-			uint256 reserveIn,
-			uint256 reserveOut,
-			uint256 decimalsIn,
-			uint256 decimalsOut
-		) = RamsesLegacyLibrary.getReserves(pairFactory, initCodeHash, tokenIn, tokenOut, stable);
+		(uint256 reserveIn, uint256 reserveOut, uint256 decimalsIn, uint256 decimalsOut) = V2Library
+			.getReserves(pairFactory, initCodeHash, tokenIn, tokenOut, stable);
 
 		amountIn -= (amountIn * fee) / 10000;
 		return
-			RamsesLegacyLibrary.getAmountOut(
+			V2Library.getAmountOut(
 				amountIn,
 				reserveIn,
 				reserveOut,
