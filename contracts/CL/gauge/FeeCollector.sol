@@ -29,17 +29,15 @@ contract FeeCollector is IFeeCollector {
 
 	/// @inheritdoc IFeeCollector
 	function setTreasury(address _treasury) external override onlyTreasury {
-		emit TreasuryChanged(treasury, _treasury);
-
 		treasury = _treasury;
+		emit TreasuryChanged(treasury, _treasury);
 	}
 
 	/// @inheritdoc IFeeCollector
 	function setTreasuryFees(uint256 _treasuryFees) external override onlyTreasury {
 		require(_treasuryFees <= BASIS, FTL());
-		emit TreasuryFeesChanged(treasuryFees, _treasuryFees);
-
 		treasuryFees = _treasuryFees;
+		emit TreasuryFeesChanged(treasuryFees, _treasuryFees);
 	}
 
 	/// @inheritdoc IFeeCollector

@@ -46,7 +46,8 @@ contract Pair is IPair, ERC20, ReentrancyGuard {
 	uint256 public reserve1CumulativeLast;
 	/// @dev reserve0 * reserve1, as of immediately after the most recent liquidity event
 	uint256 public kLast;
-	/// @dev the portion that goes to feeRecipient, rest goes to LPs. 100% of the fees goes to feeRecipient if it's set to 10000
+	/// @dev the portion that goes to feeRecipient, rest goes to LPs.
+	/// 100% of the fees goes to feeRecipient if it's set to 10000
 	uint256 public feeSplit;
 	uint256 public fee;
 
@@ -184,13 +185,10 @@ contract Pair is IPair, ERC20, ReentrancyGuard {
 
 	/// @dev if fee is on, mint liquidity up to the entire growth in sqrt(k)
 	function _mintFee(uint112 _reserve0, uint112 _reserve1) private returns (bool feeOn) {
-		/// @dev gas savings
 		address _feeRecipient = feeRecipient;
-		/// @dev gas savings
 		uint256 _kLast = kLast;
-		/// @dev we define fee being on as the existence of the fee recipient
+
 		feeOn = _feeRecipient != address(0);
-		/// @dev if there are any fees not going to LP providers
 		if (feeOn) {
 			/// @dev portion of fees that go to feeRecipient
 			uint256 _feeSplit = feeSplit;
@@ -239,6 +237,7 @@ contract Pair is IPair, ERC20, ReentrancyGuard {
 				}
 			}
 		}
+
 		/// @dev if !feeOn
 		else if (_kLast != 0) {
 			/// @dev update kLast to reflect reserves
@@ -419,12 +418,11 @@ contract Pair is IPair, ERC20, ReentrancyGuard {
 
 	/// @inheritdoc IPair
 	function mintFee() external nonReentrant {
-		/// @dev fetch the current public reserves
 		uint112 _reserve0 = reserve0;
 		uint112 _reserve1 = reserve1;
+
 		/// @dev mint the accumulated fees
 		bool feeOn = _mintFee(_reserve0, _reserve1);
-		/// @dev if minting was successful
 		if (feeOn) kLast = _k(uint256(_reserve0), uint256(_reserve1));
 	}
 
@@ -444,10 +442,8 @@ contract Pair is IPair, ERC20, ReentrancyGuard {
 
 	function _f(uint256 x0, uint256 y) internal pure returns (uint256) {
 		return
-			(x0 * ((((y * y) / 1e18) * y) / 1e18)) /
-			1e18 +
-			(((((x0 * x0) / 1e18) * x0) / 1e18) * y) /
-			1e18;
+			(x0 * ((((y * y) / 1e18) * y) / 1e18)) / 1e18 +
+			(((((x0 * x0) / 1e18) * x0) / 1e18) * y) / 1e18;
 	}
 
 	function _d(uint256 x0, uint256 y) internal pure returns (uint256) {

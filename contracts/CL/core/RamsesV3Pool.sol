@@ -573,7 +573,8 @@ contract RamsesV3Pool is IRamsesV3Pool {
 				state.amountCalculated += (step.amountIn + step.feeAmount).toInt256();
 			}
 
-			/// @dev if the protocol fee is on, calculate how much is owed, decrement feeAmount, and increment protocolFee
+			/// @dev if the protocol fee is on, calculate how much is owed,
+			/// decrement feeAmount, and increment protocolFee
 			if (cache.feeProtocol > 0) {
 				unchecked {
 					uint256 delta = (step.feeAmount * cache.feeProtocol) / 100;
@@ -995,18 +996,7 @@ contract RamsesV3Pool is IRamsesV3Pool {
 	/// @notice Get information about a specific position in the pool
 	function positions(
 		bytes32 key
-	)
-		external
-		view
-		override
-		returns (
-			uint128,
-			uint256,
-			uint256,
-			uint128,
-			uint128
-		)
-	{
+	) external view override returns (uint128, uint256, uint256, uint128, uint128) {
 		PositionInfo storage positionData = PoolStorage.getStorage().positions[key];
 		return (
 			positionData.liquidity,

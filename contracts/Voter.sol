@@ -459,29 +459,24 @@ contract Voter is IVoter, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUp
 
 		/// @dev fetch token0 and token1 from the pool's metadata
 		(, , , , , address token0, address token1) = IPair(_pool).metadata();
-		/// @dev ensure that both tokens are whitelisted
 		require(isWhitelisted[token0] && isWhitelisted[token1], NOT_WHITELISTED());
 
 		/// @dev create the feeRecipient via the factory
 		address feeRecipient = IFeeRecipientFactory(feeRecipientFactory).createFeeRecipient(_pool);
-		/// @dev create the feeDist via factory from the feeRecipient
 		address _feeDistributor = IFeeDistributorFactory(feeDistributorFactory)
 			.createFeeDistributor(feeRecipient);
-		/// @dev init feeRecipient with the feeDist
+
 		IFeeRecipient(feeRecipient).initialize(_feeDistributor);
-		/// @dev set the feeRecipient in the factory
 		IPairFactory(legacyFactory).setFeeRecipient(_pool, feeRecipient);
+
 		/// @dev fetch the feesplit
 		uint256 feeSplit = IPair(_pool).feeSplit();
-		/// @dev if there is no feeSplit yet
 		if (feeSplit == 0) {
-			/// @dev fetch the legacy factory
 			address _legacyFactory = legacyFactory;
-			/// @dev fetch the feeSplit from the factory
 			feeSplit = IPairFactory(_legacyFactory).feeSplit();
-			/// @dev set the feeSplit to align with the factory
 			IPairFactory(_legacyFactory).setPairFeeSplit(_pool, feeSplit);
 		}
+
 		/// @dev create a legacy gauge from the factory
 		address _gauge = IGaugeFactory(gaugeFactory).createGauge(_pool);
 		/// @dev give infinite approvals in advance
