@@ -11,6 +11,8 @@ contract Helper is Script {
 		address WETH;
 		address deployer;
 		address permit2;
+		address v4PoolManager;
+		address v4PositionManager;
 	}
 
 	Config internal config;
@@ -25,19 +27,19 @@ contract Helper is Script {
 		}
 	}
 
-	// function run() public {
-	// 	bytes32 storageLocation = keccak256(
-	// 		abi.encode(uint256(keccak256("ysk.treasury.helper.v1")) - 1)
-	// 	) & ~bytes32(uint256(0xff));
-	// 	console.log("storageLocation", vm.toString(storageLocation));
-	// }
-
 	function getConfig() public view returns (Config memory) {
 		return config;
 	}
 
 	function getSepolia() public pure returns (Config memory) {
-		return Config({WETH: address(0), deployer: address(0), permit2: address(0)});
+		return
+			Config({
+				WETH: address(0),
+				deployer: address(0),
+				permit2: 0x000000000022D473030F116dDEE9F6B43aC78BA3,
+				v4PoolManager: address(0),
+				v4PositionManager: address(0)
+			});
 	}
 
 	function getBSCTestnet() public view returns (Config memory) {
@@ -46,7 +48,9 @@ contract Helper is Script {
 			Config({
 				WETH: address(0),
 				deployer: deployer,
-				permit2: 0x000000000022D473030F116dDEE9F6B43aC78BA3
+				permit2: 0x000000000022D473030F116dDEE9F6B43aC78BA3,
+				v4PoolManager: address(0),
+				v4PositionManager: address(0)
 			});
 	}
 
@@ -61,7 +65,14 @@ contract Helper is Script {
 		WETH9 weth = new WETH9();
 		vm.stopBroadcast();
 
-		return Config({WETH: address(weth), deployer: deployer, permit2: address(0)});
+		return
+			Config({
+				WETH: address(weth),
+				deployer: deployer,
+				permit2: address(0),
+				v4PoolManager: address(0),
+				v4PositionManager: address(0)
+			});
 	}
 
 	function getPath() public view returns (string memory) {

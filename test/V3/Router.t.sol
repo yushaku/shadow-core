@@ -24,7 +24,7 @@ contract SwapRouterTest is Fixture {
 		_addLiquidityToPool();
 	}
 
-	function _newPool() internal returns (address pool) {
+	function _newPool() internal returns (address) {
 		(address tokenA, address tokenB) = clPoolFactory.sortTokens(
 			address(token0),
 			address(token1)

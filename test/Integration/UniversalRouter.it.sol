@@ -2,12 +2,11 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import {Commands} from "contracts/CL/universalRouter/libraries/Commands.sol";
-import "contracts/CL/universalRouter/interfaces/IUniversalRouter.sol";
-import "contracts/CL/universalRouter/UniversalRouter.sol";
+import "contracts/universalRouter/libraries/Commands.sol";
+import "contracts/universalRouter/interfaces/IUniversalRouter.sol";
+import "contracts/universalRouter/UniversalRouter.sol";
 
 import "lib/permit2/src/interfaces/IAllowanceTransfer.sol";
 

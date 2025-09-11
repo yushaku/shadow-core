@@ -203,7 +203,7 @@ contract PairFactoryTest is TheTestBase {
 		factory.setSkimEnabled(pair, true);
 	}
 
-	function test_pairCodeHash() public view {
+	function test_pairCodeHash() public {
 		bytes32 expectedHash = keccak256(abi.encodePacked(type(Pair).creationCode));
 		assertEq(factory.pairCodeHash(), expectedHash, "PairCodeHash mismatch");
 	}
@@ -227,7 +227,7 @@ contract PairFactoryTest is TheTestBase {
 		address token0,
 		address token1,
 		bool stable
-	) internal view returns (address) {
+	) internal returns (address) {
 		bytes32 salt = keccak256(abi.encodePacked(token0, token1, stable));
 		bytes32 hash = keccak256(
 			abi.encodePacked(

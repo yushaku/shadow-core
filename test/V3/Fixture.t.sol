@@ -14,7 +14,7 @@ import {RamsesV3PoolDeployer} from "contracts/CL/core/RamsesV3PoolDeployer.sol";
 import {NonfungiblePositionManager} from "contracts/CL/periphery/NonfungiblePositionManager.sol";
 import {NonfungibleTokenPositionDescriptor} from "contracts/CL/periphery/NonfungibleTokenPositionDescriptor.sol";
 import {SwapRouter} from "contracts/CL/periphery/SwapRouter.sol";
-import {UniversalRouter} from "contracts/CL/universalRouter/UniversalRouter.sol";
+// import {UniversalRouter} from "contracts/CL/universalRouter/UniversalRouter.sol";
 
 import {DeployCLScript} from "script/DeployCL.s.sol";
 
@@ -33,7 +33,7 @@ contract Fixture is Test {
 	NonfungiblePositionManager public nfpManager;
 	NonfungibleTokenPositionDescriptor public nfpDescriptor;
 	SwapRouter public swapRouter;
-	UniversalRouter public universalRouter;
+	// UniversalRouter public universalRouter;
 
 	WETH9 public WETH;
 	MockERC20 public token0;
@@ -62,8 +62,9 @@ contract Fixture is Test {
 			address _nfpManager,
 			address _nfpDescriptor,
 			address _swapRouter,
-			address _universalRouter
-		) = deployCL.forTest(address(ACCESS_HUB), address(VOTER), address(TREASURY), address(0));
+			,
+
+		) = deployCL.forTest(address(ACCESS_HUB), address(VOTER), address(TREASURY));
 
 		clPoolFactory = RamsesV3Factory(_clPoolFactory);
 		clPoolDeployer = RamsesV3PoolDeployer(_clPoolDeployer);
@@ -72,7 +73,7 @@ contract Fixture is Test {
 		nfpManager = NonfungiblePositionManager(payable(_nfpManager));
 		nfpDescriptor = NonfungibleTokenPositionDescriptor(_nfpDescriptor);
 		swapRouter = SwapRouter(payable(_swapRouter));
-		universalRouter = UniversalRouter(payable(_universalRouter));
+		// universalRouter = UniversalRouter(payable(_universalRouter));
 
 		address weth = swapRouter.WETH9();
 		WETH = WETH9(payable(weth));
