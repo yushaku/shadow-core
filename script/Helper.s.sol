@@ -69,7 +69,7 @@ contract Helper is Script {
 			Config({
 				WETH: address(weth),
 				deployer: deployer,
-				permit2: address(0),
+				permit2: 0x000000000022D473030F116dDEE9F6B43aC78BA3,
 				v4PoolManager: address(0),
 				v4PositionManager: address(0)
 			});

@@ -58,6 +58,12 @@ forge script script/DeployCL.s.sol:DeployCLScript \
    --broadcast \
    --verify -vvv
 
+forge script script/DeployURouter.s.sol:DeployURouterScript \
+   --rpc-url $NETWORK \
+   --account $ACCOUNT \
+   --broadcast \
+   --verify -vvv
+
 forge script script/Setup.s.sol:SetupScript \
    --rpc-url $NETWORK \
    --account $ACCOUNT \
