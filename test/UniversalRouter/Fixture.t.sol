@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
 
@@ -7,7 +7,12 @@ import {MockERC20} from "test/mocks/MockERC20.sol";
 import {WETH9} from "test/mocks/WETH9.sol";
 
 import {IPermit2} from "lib/permit2/src/interfaces/IPermit2.sol";
-import {PairFactory} from "contracts/legacy/factories/PairFactory.sol";
+
+import "contracts/legacy/factories/GaugeFactory.sol";
+import "contracts/legacy/factories/PairFactory.sol";
+import "contracts/legacy/LauncherPlugin.sol";
+import "contracts/legacy/Router.sol";
+
 import {RamsesV3Pool} from "contracts/CL/core/RamsesV3Pool.sol";
 import {FeeCollector} from "contracts/CL/gauge/FeeCollector.sol";
 import {ClGaugeFactory} from "contracts/CL/gauge/ClGaugeFactory.sol";
@@ -20,6 +25,7 @@ import {UniversalRouter} from "contracts/universalRouter/UniversalRouter.sol";
 
 import {DeployCLScript} from "script/DeployCL.s.sol";
 import {DeployURouterScript, Helper} from "script/DeployURouter.s.sol";
+import {DeployLegacyScript} from "script/DeployLegacy.s.sol";
 
 contract Fixture is Test {
 	address public constant OPERATOR = address(0x1);
@@ -27,9 +33,15 @@ contract Fixture is Test {
 	address public constant TIMELOCK = address(0x3);
 	address public constant VOTER = address(0x4);
 	address public constant ACCESS_HUB = address(0x5);
+	address public constant FEE_RECIPIENT_FACTORY = address(0x6);
 
 	IPermit2 public permit2;
+
+	GaugeFactory public gaugeFactory;
 	PairFactory public pairFactory;
+	LauncherPlugin public launcherPlugin;
+	Router public router;
+
 	RamsesV3Pool public clPool;
 	FeeCollector public clFeeCollector;
 	ClGaugeFactory public clGaugeFactory;
@@ -38,6 +50,7 @@ contract Fixture is Test {
 	NonfungiblePositionManager public nfpManager;
 	NonfungibleTokenPositionDescriptor public nfpDescriptor;
 	SwapRouter public swapRouter;
+
 	UniversalRouter public universalRouter;
 
 	WETH9 public WETH;
@@ -52,6 +65,7 @@ contract Fixture is Test {
 		vm.createFork("bsc_testnet");
 		vm.selectFork(0);
 
+		_deployLegacy();
 		_deployCL();
 		_setup();
 
@@ -59,9 +73,22 @@ contract Fixture is Test {
 		token1 = new MockERC20("Token1", "TK1", 18);
 	}
 
-	function _deployCL() internal {
-		pairFactory = new PairFactory(address(VOTER), TREASURY, address(ACCESS_HUB), address(0));
+	function _deployLegacy() internal {
+		DeployLegacyScript deployLegacy = new DeployLegacyScript();
+		(
+			address _gaugeFactory,
+			address _pairFactory,
+			address _launcherPlugin,
+			address _router
+		) = deployLegacy.forTest(ACCESS_HUB, VOTER, TREASURY, FEE_RECIPIENT_FACTORY, OPERATOR);
 
+		gaugeFactory = GaugeFactory(_gaugeFactory);
+		pairFactory = PairFactory(_pairFactory);
+		launcherPlugin = LauncherPlugin(_launcherPlugin);
+		router = Router(payable(_router));
+	}
+
+	function _deployCL() internal {
 		DeployCLScript deployCL = new DeployCLScript();
 		(
 			address _clPoolFactory,

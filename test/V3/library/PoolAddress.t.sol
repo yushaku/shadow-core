@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
@@ -13,16 +12,17 @@ contract PoolFactoryTest is Fixture {
 	function setUp() public override {
 		super.setUp();
 
-    bytes32 hash = keccak256(type(RamsesV3Pool).creationCode);
-    console.log("hash", vm.toString(hash));
+		bytes32 hash = keccak256(type(RamsesV3Pool).creationCode);
+		console.log("hash", vm.toString(hash));
 	}
 
 	/**
-	 * @dev expect library PoolAddress of NonfungiblePositionManager to return the same address as PoolFactory create new pool
+	 * @dev expect library PoolAddress of NonfungiblePositionManager to return
+	 * the same address as PoolFactory create new pool
 	 * @notice this test is important to ensure that the pool address is computed correctly
 	 * @notice if failed -> POOL_INIT_CODE_HASH of PoolAddress is not correct
 	 */
-  function testAddress() external {
+	function testAddress() external {
 		(address tokenA, address tokenB) = clPoolFactory.sortTokens(
 			address(token0),
 			address(token1)
@@ -34,10 +34,17 @@ contract PoolFactoryTest is Fixture {
 			tickSpacing: TICK_SPACING
 		});
 
+		// address calPool0 = universalRouter.computePoolAddress(tokenA, tokenB, uint24(TICK_SPACING));
+
 		address calPool = PoolAddress.computeAddress(address(clPoolDeployer), poolKey);
 
-    address realPool = clPoolFactory.createPool(tokenA, tokenB, TICK_SPACING, INITIAL_SQRT_PRICE);
+		address realPool = clPoolFactory.createPool(
+			tokenA,
+			tokenB,
+			TICK_SPACING,
+			INITIAL_SQRT_PRICE
+		);
 
-    assertEq(calPool, realPool);
-  }
+		assertEq(calPool, realPool);
+	}
 }

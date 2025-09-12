@@ -12,6 +12,8 @@ import {SwapRoute} from "contracts/universalRouter/libraries/SwapRoute.sol";
 import {V2Library} from "./V2Library.sol";
 import {UniswapImmutables} from "../UniswapImmutables.sol";
 
+import "forge-std/console.sol";
+
 /// @title Router for v2 Trades
 abstract contract V2SwapRouter is UniswapImmutables, Permit2Payments {
 	error V2TooLittleReceived();
@@ -46,6 +48,7 @@ abstract contract V2SwapRouter is UniswapImmutables, Permit2Payments {
 				uint256 amountInput = ERC20(input).balanceOf(pair) - reserveInput;
 				amountInput -=
 					(amountInput * IPairFactory(UNISWAP_V2_FACTORY).pairFee(pair)) / 1_000_000;
+
 				uint256 amountOutput = V2Library.getAmountOut(
 					amountInput,
 					reserveInput,
@@ -54,6 +57,9 @@ abstract contract V2SwapRouter is UniswapImmutables, Permit2Payments {
 					decimalsInput,
 					decimalsOutput
 				);
+
+				console.log(amountInput, reserveInput, reserveOutput);
+
 				(uint256 amount0Out, uint256 amount1Out) = input == token0
 					? (uint256(0), amountOutput)
 					: (amountOutput, uint256(0));
@@ -96,6 +102,7 @@ abstract contract V2SwapRouter is UniswapImmutables, Permit2Payments {
 		if (
 			amountIn != Constants.ALREADY_PAID // amountIn of 0 to signal that the pair already has the tokens
 		) {
+			console.log("take token", amountIn);
 			payOrPermit2Transfer(path[0].from, payer, firstPair, amountIn);
 		}
 
